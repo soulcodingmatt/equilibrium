@@ -1,0 +1,90 @@
+package org.soulcodingmatt.equilibrium.processor;
+
+import com.google.auto.service.AutoService;
+import org.soulcodingmatt.equilibrium.annotations.GenerateDto;
+import org.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
+
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.*;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+import java.util.Set;
+
+@AutoService(Processor.class)
+@SupportedAnnotationTypes({
+    "org.soulcodingmatt.equilibrium.annotations.GenerateDto",
+    "org.soulcodingmatt.equilibrium.annotations.IgnoreDto",
+    "org.soulcodingmatt.equilibrium.annotations.IgnoreAll"
+})
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SupportedOptions({
+    "equilibrium.dto.package",
+    "equilibrium.dto.postfix",
+    "equilibrium.strict.mode"
+})
+public class EquilibriumProcessor extends AbstractProcessor {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
+
+    private Types typeUtils;
+    private Elements elementUtils;
+    private Filer filer;
+    private Messager messager;
+    private EquilibriumConfig config;
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+        typeUtils = processingEnv.getTypeUtils();
+        elementUtils = processingEnv.getElementUtils();
+        filer = processingEnv.getFiler();
+        messager = processingEnv.getMessager();
+        config = new EquilibriumConfig(processingEnv);
+    }
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        try {
+            // Process @GenerateDto annotations
+            for (Element element : roundEnv.getElementsAnnotatedWith(GenerateDto.class)) {
+                if (element.getKind() != ElementKind.CLASS) {
+                    error(element, "@GenerateDto can only be applied to classes");
+                    continue;
+                }
+                processGenerateDto((TypeElement) element);
+            }
+        } catch (Exception e) {
+            error(null, "Failed to process annotations: " + e.getMessage());
+        }
+        return true;
+    }
+
+    private void processGenerateDto(TypeElement classElement) {
+        try {
+            GenerateDto annotation = classElement.getAnnotation(GenerateDto.class);
+            String packageName = config.validateAndGetPackage(annotation.packageName(), "DTO");
+            String postfix = annotation.postfix().isEmpty() ? config.getDtoPostfix() : annotation.postfix();
+            boolean strictMode = Boolean.parseBoolean(processingEnv.getOptions().getOrDefault("equilibrium.strict.mode", "false"));
+
+            // Create and run the DTO generator
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, filer, messager, strictMode);
+            generator.generate();
+
+            note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
+        } catch (Exception e) {
+            error(classElement, "Failed to generate DTO: " + e.getMessage());
+        }
+    }
+
+    private void error(Element element, String message) {
+        messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+    }
+
+    private void note(Element element, String message) {
+        messager.printMessage(Diagnostic.Kind.NOTE, message, element);
+    }
+}
