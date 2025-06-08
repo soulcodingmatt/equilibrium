@@ -19,16 +19,14 @@ public class DtoGenerator {
     private final String postfix;
     private final Filer filer;
     private final Messager messager;
-    private final boolean strictMode;
 
     public DtoGenerator(TypeElement classElement, String packageName, String postfix,
-                        Filer filer, Messager messager, boolean strictMode) {
+                        Filer filer, Messager messager) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.filer = filer;
         this.messager = messager;
-        this.strictMode = strictMode;
     }
 
     public void generate() throws IOException {

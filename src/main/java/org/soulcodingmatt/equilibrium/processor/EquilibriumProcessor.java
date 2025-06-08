@@ -21,8 +21,7 @@ import java.util.Set;
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @SupportedOptions({
     "equilibrium.dto.package",
-    "equilibrium.dto.postfix",
-    "equilibrium.strict.mode"
+    "equilibrium.dto.postfix"
 })
 public class EquilibriumProcessor extends AbstractProcessor {
     @Override
@@ -68,10 +67,9 @@ public class EquilibriumProcessor extends AbstractProcessor {
             GenerateDto annotation = classElement.getAnnotation(GenerateDto.class);
             String packageName = config.validateAndGetPackage(annotation.packageName(), "DTO");
             String postfix = annotation.postfix().isEmpty() ? config.getDtoPostfix() : annotation.postfix();
-            boolean strictMode = Boolean.parseBoolean(processingEnv.getOptions().getOrDefault("equilibrium.strict.mode", "false"));
 
             // Create and run the DTO generator
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, filer, messager, strictMode);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, filer, messager);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);

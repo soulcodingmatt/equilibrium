@@ -11,7 +11,6 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
 - Automatic DTO generation with `@GenerateDto` annotation
 - Configurable package names and class postfixes
 - Field exclusion with `@IgnoreDto` and `@IgnoreAll` annotations
-- Support for different generation modes (strict and safe)
 - Field type preservation, including generics
 
 ## Installation
@@ -42,7 +41,6 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
             <arg>-Xlint:all</arg>
             <arg>-Aequilibrium.dto.package=com.example.dto</arg>
             <arg>-Aequilibrium.dto.postfix=Dto</arg>
-            <arg>-Aequilibrium.strict.mode=false</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
@@ -63,7 +61,6 @@ The following compiler arguments can be configured:
 
 - `-Aequilibrium.dto.package`: Target package for generated DTOs
 - `-Aequilibrium.dto.postfix`: Suffix for generated class names (default: "Dto")
-- `-Aequilibrium.strict.mode`: Whether to run in strict mode (default: false)
 
 ## Usage
 
@@ -98,6 +95,10 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 ## Contact
 
 For any questions or concerns, please open an issue in the repository.
+
+## Third Party
+
+This project uses Lombok (https://projectlombok.org), licensed under the MIT License.
 
 ---
 **Note:** This project is currently under development.
