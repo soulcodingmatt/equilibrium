@@ -26,4 +26,12 @@ public @interface GenerateDto {
      * @return the postfix for the generated class
      */
     String postfix() default "Dto";
+
+    /**
+     * Flag whether the generated DTO should have Lombok's @SuperBuilder annotation.
+     * Use builder = true, if you want to use the Builder Pattern with the generated DTOs.
+     * Default is false.
+     * @return
+     */
+    boolean builder() default false;
 } 

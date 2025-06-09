@@ -29,8 +29,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
         return SourceVersion.latest();
     }
 
-    private Types typeUtils;
-    private Elements elementUtils;
     private Filer filer;
     private Messager messager;
     private EquilibriumConfig config;
@@ -38,8 +36,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
-        typeUtils = processingEnv.getTypeUtils();
-        elementUtils = processingEnv.getElementUtils();
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
         config = new EquilibriumConfig(processingEnv);
@@ -67,9 +63,10 @@ public class EquilibriumProcessor extends AbstractProcessor {
             GenerateDto annotation = classElement.getAnnotation(GenerateDto.class);
             String packageName = config.validateAndGetPackage(annotation.packageName(), "DTO");
             String postfix = annotation.postfix().isEmpty() ? config.getDtoPostfix() : annotation.postfix();
+            boolean builder = annotation.builder();
 
             // Create and run the DTO generator
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, filer, messager);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, builder, filer, messager);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
