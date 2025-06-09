@@ -1,11 +1,14 @@
 package org.soulcodingmatt.equilibrium.processor.generator;
 
-import org.soulcodingmatt.equilibrium.annotations.IgnoreDto;
 import org.soulcodingmatt.equilibrium.annotations.IgnoreAll;
+import org.soulcodingmatt.equilibrium.annotations.IgnoreDto;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
-import javax.lang.model.element.*;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
@@ -79,9 +82,10 @@ public class DtoGenerator {
     private List<VariableElement> getIncludedFields() {
         return classElement.getEnclosedElements().stream()
             .filter(element -> element.getKind() == ElementKind.FIELD)
-            .map(element -> (VariableElement) element)
+//            .map(element -> (VariableElement) element)
+            .map(VariableElement.class::cast)
             .filter(this::shouldIncludeField)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private boolean shouldIncludeField(VariableElement field) {
