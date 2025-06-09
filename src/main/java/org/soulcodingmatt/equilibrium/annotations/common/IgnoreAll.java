@@ -1,4 +1,4 @@
-package org.soulcodingmatt.equilibrium.annotations;
+package org.soulcodingmatt.equilibrium.annotations.common;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

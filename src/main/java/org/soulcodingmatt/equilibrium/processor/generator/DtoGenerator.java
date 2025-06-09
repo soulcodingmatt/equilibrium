@@ -1,7 +1,7 @@
 package org.soulcodingmatt.equilibrium.processor.generator;
 
-import org.soulcodingmatt.equilibrium.annotations.IgnoreAll;
-import org.soulcodingmatt.equilibrium.annotations.IgnoreDto;
+import org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
+import org.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
@@ -82,7 +82,6 @@ public class DtoGenerator {
     private List<VariableElement> getIncludedFields() {
         return classElement.getEnclosedElements().stream()
             .filter(element -> element.getKind() == ElementKind.FIELD)
-//            .map(element -> (VariableElement) element)
             .map(VariableElement.class::cast)
             .filter(this::shouldIncludeField)
             .toList();
