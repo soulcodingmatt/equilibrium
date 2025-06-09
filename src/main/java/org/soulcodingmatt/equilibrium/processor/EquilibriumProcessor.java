@@ -1,7 +1,7 @@
 package org.soulcodingmatt.equilibrium.processor;
 
 import com.google.auto.service.AutoService;
-import org.soulcodingmatt.equilibrium.annotations.GenerateDto;
+import org.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
 import org.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
 
 import javax.annotation.processing.*;
@@ -14,9 +14,9 @@ import java.util.Set;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes({
-    "org.soulcodingmatt.equilibrium.annotations.GenerateDto",
-    "org.soulcodingmatt.equilibrium.annotations.IgnoreDto",
-    "org.soulcodingmatt.equilibrium.annotations.IgnoreAll"
+    "org.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
+    "org.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
+    "org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @SupportedOptions({
