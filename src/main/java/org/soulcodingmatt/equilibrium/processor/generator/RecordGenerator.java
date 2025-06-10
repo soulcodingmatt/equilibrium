@@ -4,7 +4,6 @@ import org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
 import org.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord;
 
 import javax.annotation.processing.Filer;
-import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -21,15 +20,13 @@ public class RecordGenerator {
     private final String packageName;
     private final String postfix;
     private final Filer filer;
-    private final Messager messager;
 
     public RecordGenerator(TypeElement classElement, String packageName, String postfix,
-                       Filer filer, Messager messager) {
+                       Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.filer = filer;
-        this.messager = messager;
     }
 
     public void generate() throws IOException {

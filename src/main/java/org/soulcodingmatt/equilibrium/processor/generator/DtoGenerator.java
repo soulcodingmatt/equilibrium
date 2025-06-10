@@ -4,7 +4,6 @@ import org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
 import org.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto;
 
 import javax.annotation.processing.Filer;
-import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -20,17 +19,15 @@ public class DtoGenerator {
     private final TypeElement classElement;
     private final String packageName;
     private final String postfix;
-    private boolean builder;
+    private final boolean builder;
     private final Filer filer;
-    private final Messager messager;
 
     public DtoGenerator(TypeElement classElement, String packageName, String postfix,
-                        boolean builder, Filer filer, Messager messager) {
+                        boolean builder, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.filer = filer;
-        this.messager = messager;
         this.builder = builder;
     }
 
