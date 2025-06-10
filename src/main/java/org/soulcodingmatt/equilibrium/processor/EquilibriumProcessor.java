@@ -3,8 +3,10 @@ package org.soulcodingmatt.equilibrium.processor;
 import com.google.auto.service.AutoService;
 import org.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
 import org.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
+import org.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
 import org.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
 import org.soulcodingmatt.equilibrium.processor.generator.RecordGenerator;
+import org.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -18,22 +20,28 @@ import java.util.stream.Collectors;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes({
-    "org.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
-    "org.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
-    "org.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
-    "org.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
-    "org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll"
+        "org.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
+        "org.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
+        "org.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
+        "org.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
+        "org.soulcodingmatt.equilibrium.annotations.vo.GenerateVo",
+        "org.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo",
+        "org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @SupportedOptions({
-    "equilibrium.dto.package",
-    "equilibrium.dto.postfix",
-    "equilibrium.record.package",
-    "equilibrium.record.postfix"
+        "equilibrium.dto.package",
+        "equilibrium.dto.postfix",
+        "equilibrium.record.package",
+        "equilibrium.record.postfix",
+        "equilibrium.vo.package",
+        "equilibrium.vo.postfix"
+
+
 })
 public class EquilibriumProcessor extends AbstractProcessor {
     private final Set<String> processedElements = new HashSet<>();
-    
+
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
@@ -60,9 +68,9 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
         // Check if any of our supported annotations are present
         boolean hasRelevantAnnotations = annotations.stream()
-            .map(TypeElement::getQualifiedName)
-            .map(Object::toString)
-            .anyMatch(name -> name.startsWith("org.soulcodingmatt.equilibrium.annotations"));
+                .map(TypeElement::getQualifiedName)
+                .map(Object::toString)
+                .anyMatch(name -> name.startsWith("org.soulcodingmatt.equilibrium.annotations"));
 
         // If none of our annotations are present, don't claim them
         if (!hasRelevantAnnotations) {
@@ -72,17 +80,17 @@ public class EquilibriumProcessor extends AbstractProcessor {
         try {
             // Get valid class elements that need processing
             Set<TypeElement> validElements = getValidClassElements(roundEnv);
-            
+
             // If no valid elements found, don't claim the annotations
             if (validElements.isEmpty()) {
                 return false;
             }
-            
+
             // Process each valid element
             for (TypeElement typeElement : validElements) {
                 processElement(typeElement);
             }
-            
+
             // We've processed our annotations, so claim them
             return true;
         } catch (Exception e) {
@@ -97,11 +105,12 @@ public class EquilibriumProcessor extends AbstractProcessor {
         Set<Element> elements = new HashSet<>();
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateDto.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateRecord.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateVo.class));
 
         return elements.stream()
-            .filter(this::isValidClassElement)
-            .map(TypeElement.class::cast)
-            .collect(Collectors.toSet());
+                .filter(this::isValidClassElement)
+                .map(TypeElement.class::cast)
+                .collect(Collectors.toSet());
     }
 
     private boolean isValidClassElement(Element element) {
@@ -114,7 +123,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
     private void processElement(TypeElement typeElement) {
         String qualifiedName = typeElement.getQualifiedName().toString();
-        
+
         // Skip if already processed
         if (processedElements.contains(qualifiedName)) {
             return;
@@ -131,6 +140,12 @@ public class EquilibriumProcessor extends AbstractProcessor {
         GenerateRecord recordAnnotation = typeElement.getAnnotation(GenerateRecord.class);
         if (recordAnnotation != null) {
             processGenerateRecord(typeElement);
+        }
+
+        // Generate Value Object if needed
+        GenerateVo voAnnotation = typeElement.getAnnotation(GenerateVo.class);
+        if (voAnnotation != null) {
+            processGenerateVo(typeElement);
         }
     }
 
@@ -165,6 +180,27 @@ public class EquilibriumProcessor extends AbstractProcessor {
             note(classElement, "Generated Record class: " + packageName + "." + classElement.getSimpleName() + postfix);
         } catch (Exception e) {
             error(classElement, "Failed to generate Record: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void processGenerateVo(TypeElement classElement) {
+        try {
+            GenerateVo annotation = classElement.getAnnotation(GenerateVo.class);
+            String packageName = config.validateAndGetPackage(annotation.packageName(), "VO");
+            String postfix = annotation.postfix().isEmpty() ? config.getVoPostfix() : annotation.postfix();
+            String idField = annotation.id();
+            boolean generateSetter = annotation.setter();
+            boolean standardOverrides = annotation.standardOverrides();
+
+            // Create and run the Value Object generator
+            VoGenerator generator = new VoGenerator(classElement, packageName, postfix, 
+                                                  idField, generateSetter, standardOverrides, filer);
+            generator.generate();
+
+            note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
+        } catch (Exception e) {
+            error(classElement, "Failed to generate Value Object: " + e.getMessage());
             e.printStackTrace();
         }
     }
