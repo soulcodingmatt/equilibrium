@@ -4,13 +4,13 @@ A Java annotation processor for generating DTOs, transport types, and value cont
 
 ## Description
 
-Equilibrium is a Java annotation processor that helps you maintain consistency between your domain classes and their corresponding Data Transfer Objects (DTOs), entities, and other value container classes. It automatically generates and updates these classes based on your source classes, preserving type information and reducing boilerplate code.
+Equilibrium is a Java annotation processor that helps you maintain consistency between your domain classes and their corresponding Data Transfer Objects (DTOs), Java Records, and other value container classes. It automatically generates and updates these classes based on your source classes, preserving type information and reducing boilerplate code.
 
 ## Features
 
-- Automatic DTO generation with `@GenerateDto` annotation
+- Automatic DTO generation with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo` annotation
 - Configurable package names and class postfixes
-- Field exclusion with `@IgnoreDto` and `@IgnoreAll` annotations
+- Field exclusion with `@IgnoreDto`, `@IgnoreRecord`, `@IgnoreVo`, and `@IgnoreAll` annotations
 - Field type preservation, including generics
 
 ## Installation
@@ -61,6 +61,10 @@ The following compiler arguments can be configured:
 
 - `-Aequilibrium.dto.package`: Target package for generated DTOs
 - `-Aequilibrium.dto.postfix`: Suffix for generated class names (default: "Dto")
+- `-Aequilibrium.record.package`: Target package for generated Java Records
+- `-Aequilibrium.record.postfix`: Suffix for generated class names (default: "Record")
+- `-Aequilibrium.vo.package`: Target package for generated VOs
+- `-Aequilibrium.vo.postfix`: Suffix for generated class names (default: "Vo")
 
 ## Usage
 
