@@ -8,12 +8,16 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DtoGenerator {
     private final TypeElement classElement;
@@ -77,11 +81,27 @@ public class DtoGenerator {
     }
 
     private List<VariableElement> getIncludedFields() {
-        return classElement.getEnclosedElements().stream()
-            .filter(element -> element.getKind() == ElementKind.FIELD)
+        return collectFieldsFromHierarchy(classElement);
+    }
+
+    private List<VariableElement> collectFieldsFromHierarchy(TypeElement element) {
+        List<VariableElement> fields = element.getEnclosedElements().stream()
+            .filter(e -> e.getKind() == ElementKind.FIELD)
             .map(VariableElement.class::cast)
             .filter(this::shouldIncludeField)
             .toList();
+
+        // Get parent class fields
+        TypeMirror superclass = element.getSuperclass();
+        if (superclass.getKind() != TypeKind.NONE && !superclass.toString().equals("java.lang.Object")) {
+            TypeElement superclassElement = (TypeElement) ((DeclaredType) superclass).asElement();
+            fields = Stream.concat(
+                fields.stream(),
+                collectFieldsFromHierarchy(superclassElement).stream()
+            ).toList();
+        }
+
+        return fields;
     }
 
     private boolean shouldIncludeField(VariableElement field) {
