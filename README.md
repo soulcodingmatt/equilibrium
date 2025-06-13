@@ -1,6 +1,6 @@
 # Project Equilibrium
 
-A Java annotation processor for generating DTOs, transport types, and other value container classes.
+A Java annotation processor for generating DTOs and other value container classes.
 
 **Disclaimer:** The project is currently under development.
 
