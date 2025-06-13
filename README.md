@@ -6,7 +6,7 @@ A Java annotation processor for generating DTOs and other value container classe
 
 ## Description
 
-Equilibrium is a Java annotation processor that helps you maintain consistency between your domain classes and their corresponding Data Transfer Objects (DTOs), Java Records, and other value container classes. It automatically generates and updates these classes based on your source classes, preserving type information and reducing boilerplate code.
+Equilibrium is a Java annotation processor that helps you maintain consistency between your domain classes and their corresponding Data Transfer Objects (DTOs), Java Records, and other value container classes. It automatically generates and updates these classes based on your source classes.
 
 ## Features
 
