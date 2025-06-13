@@ -161,6 +161,11 @@ public class User {
     // getters and setters
 }
 ```
+**Note**: This section of the documentation is still in progress and will be expanded soon.
+
+## Adding custom fields to generated DTOs
+**TBD**
+**Note**: The intended way to handle custom fields is to extend the generated DTOs and add them in your own subclass. This is the short explanation for now—more detailed documentation will follow.
 
 ## Requirements
 
