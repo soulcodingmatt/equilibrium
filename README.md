@@ -14,8 +14,9 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
 - Configurable package names and class postfixes
 - Field exclusion with `@IgnoreDto`, `@IgnoreRecord`, `@IgnoreVo`, and `@IgnoreAll` annotations
 - Field type preservation, including generics
+- Inheritance support: Generated DTOs, Records and VOs inherit all fields from their parent classes
 
-## Installation
+## Installation (Maven)
 
 **1. Add the dependency to your `pom.xml`:**
 
@@ -57,8 +58,9 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
 </build>
 ```
 
-**3. Adjust the compilation settings of your IDE.**
-In IntelliJ IDEA ()
+**3. Adjust the compilation settings of your IDE (for Maven).**
+
+In IntelliJ IDEA (IntelliJ IDEA 2025.1.2) open this menu:
 ```
 > File 
     > Settings 
@@ -120,6 +122,9 @@ your `pom.xml` file **and** to the `annotationProcessorPaths` of the `maven-comp
 </project>
 ```
 
+## Installation (Gradle)
+**TBD**
+
 ## Configuration Options
 
 The following compiler arguments can be configured:
@@ -152,7 +157,9 @@ public class User {
 ## Requirements
 
 - Java 21 or higher
-- Maven 3.x
+- Maven 3.x **or** Gradle 8.x
+
+**Note**: Earlier versions of Java, Maven or Gradle might also work, but that wasn't tested.
 
 ## Contributing
 
