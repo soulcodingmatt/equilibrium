@@ -8,15 +8,20 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class VoGenerator {
+    public static final String STRING_END = "    }\n\n";
+    public static final String OVERRIDE = "    @Override\n";
     private final TypeElement classElement;
     private final String packageName;
     private final String postfix;
@@ -86,11 +91,27 @@ public class VoGenerator {
     }
 
     private List<VariableElement> getIncludedFields() {
-        return classElement.getEnclosedElements().stream()
-            .filter(element -> element.getKind() == ElementKind.FIELD)
+        return collectFieldsFromHierarchy(classElement);
+    }
+
+    private List<VariableElement> collectFieldsFromHierarchy(TypeElement element) {
+        List<VariableElement> fields = element.getEnclosedElements().stream()
+            .filter(e -> e.getKind() == ElementKind.FIELD)
             .map(VariableElement.class::cast)
             .filter(this::shouldIncludeField)
             .toList();
+
+        // Get parent class fields
+        TypeMirror superclass = element.getSuperclass();
+        if (superclass.getKind() != TypeKind.NONE && !superclass.toString().equals("java.lang.Object")) {
+            TypeElement superclassElement = (TypeElement) ((DeclaredType) superclass).asElement();
+            fields = Stream.concat(
+                fields.stream(),
+                collectFieldsFromHierarchy(superclassElement).stream()
+            ).toList();
+        }
+
+        return fields;
     }
 
     private boolean shouldIncludeField(VariableElement field) {
@@ -163,7 +184,7 @@ public class VoGenerator {
             String name = field.getSimpleName().toString();
             writer.write("        this." + name + " = " + name + ";\n");
         }
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 
     private void writeAccessors(Writer writer, VariableElement field) throws IOException {
@@ -174,18 +195,18 @@ public class VoGenerator {
         // Getter
         writer.write("    public " + type + " get" + capitalizedName + "() {\n");
         writer.write("        return " + name + ";\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
         
         // Setter (only if enabled)
         if (generateSetter) {
             writer.write("    public void set" + capitalizedName + "(" + type + " " + name + ") {\n");
             writer.write("        this." + name + " = " + name + ";\n");
-            writer.write("    }\n\n");
+            writer.write(STRING_END);
         }
     }
 
     private void writeEquals(Writer writer, List<VariableElement> fields, String className) throws IOException {
-        writer.write("    @Override\n");
+        writer.write(OVERRIDE);
         writer.write("    public boolean equals(Object o) {\n");
         writer.write("        if (this == o) return true;\n");
         writer.write("        if (o == null || getClass() != o.getClass()) return false;\n");
@@ -198,11 +219,11 @@ public class VoGenerator {
         }
         
         writer.write("        return true;\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 
     private void writeHashCode(Writer writer, List<VariableElement> fields) throws IOException {
-        writer.write("    @Override\n");
+        writer.write(OVERRIDE);
         writer.write("    public int hashCode() {\n");
         writer.write("        return Objects.hash(");
         
@@ -217,11 +238,11 @@ public class VoGenerator {
         }
         
         writer.write(");\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 
     private void writeToString(Writer writer, List<VariableElement> fields) throws IOException {
-        writer.write("    @Override\n");
+        writer.write(OVERRIDE);
         writer.write("    public String toString() {\n");
         writer.write("        return \"" + classElement.getSimpleName() + postfix + "{\" +\n");
         
@@ -238,6 +259,6 @@ public class VoGenerator {
         }
         
         writer.write(" +\n            \"}\";\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 }
