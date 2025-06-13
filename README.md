@@ -165,6 +165,7 @@ public class User {
 
 ## Adding custom fields to generated DTOs
 **TBD**
+
 **Note**: The intended way to handle custom fields is to extend the generated DTOs and add them in your own subclass. This is the short explanation for now—more detailed documentation will follow.
 
 ## Requirements
