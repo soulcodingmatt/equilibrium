@@ -1,6 +1,8 @@
-# Equilibrium
+# Project Equilibrium
 
-A Java annotation processor for generating DTOs, transport types, and value container classes.
+A Java annotation processor for generating DTOs, transport types, and other value container classes.
+
+**Disclaimer:** The project is currently under development.
 
 ## Description
 
@@ -8,24 +10,24 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
 
 ## Features
 
-- Automatic DTO generation with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo` annotation
+- Automatic generation of value container classes (DTOs, Records, VOs, ...) with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo` annotation
 - Configurable package names and class postfixes
 - Field exclusion with `@IgnoreDto`, `@IgnoreRecord`, `@IgnoreVo`, and `@IgnoreAll` annotations
 - Field type preservation, including generics
 
 ## Installation
 
-1. Add the dependency to your `pom.xml`:
+**1. Add the dependency to your `pom.xml`:**
 
 ```xml
 <dependency>
     <groupId>org.soulcodingmatt</groupId>
     <artifactId>equilibrium</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version><!-- insert latest version here --></version>
 </dependency>
 ```
 
-2. Configure the annotation processor in your `pom.xml`:
+**2. Configure the annotation processor in your `pom.xml`:**
 
 ```xml
 <build>
@@ -33,7 +35,7 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
+        <version><!-- insert latest version here --></version>
         <configuration>
           <release>${maven.compiler.release}</release>
           <showWarnings>true</showWarnings>
@@ -46,13 +48,76 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
             <path>
               <groupId>org.soulcodingmatt</groupId>
               <artifactId>equilibrium</artifactId>
-              <version>0.1.0-SNAPSHOT</version>
+              <version><!-- insert latest version here --></version>
             </path>
           </annotationProcessorPaths>
         </configuration>
       </plugin>
     </plugins>
 </build>
+```
+
+**3. Adjust the compilation settings of your IDE.**
+In IntelliJ IDEA ()
+```
+> File 
+    > Settings 
+        > Build, Execution, Deployment 
+            > Build Tools 
+                > Maven 
+                    > Runner
+```
+There you have to **check** the option "Delegate IDE build/run actions to Maven.
+If left unchecked, you will encounter compilation errors when using generated DTOs or other generated
+value container classes from a static context, like in the context of the execution **main()** method, when
+the IDE starts a pre-compile process.
+
+With the settings described above, you will not encounter the mentioned compilation error. 
+However, the downside is that each time you execute your static method, a full Maven build will 
+run, which takes more time than without the selected option and also produces more console output.
+
+For the development of the current project, IntelliJ IDEA 2025.1.2 (Ultimate Edition) was used. The settings
+might be located elsewhere in older or newer versions of IntelliJ IDEA. Additional configuration details for other IDEs are planned for future releases.
+
+**4. (Optional) Lombok integration**
+
+When making use of features like the builder feature (e.g. `@GenerateDto(builder=true)`), it is mandatory
+to add Lombok dependencies to your project. If you use Maven, you have to add the Lombok dependency to
+your `pom.xml` file **and** to the `annotationProcessorPaths` of the `maven-compiler-plugin` configuration.
+
+```xml
+<project>
+<!-- ... --> 
+    <dependencies>
+        <!-- ... -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version><!-- insert latest version here --></version>
+        </dependency>
+    </dependencies>
+    <!-- ... -->
+    
+    <build>
+        <plugins>    
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version><!-- insert latest version here --></version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                          <groupId>org.projectlombok</groupId>
+                          <artifactId>lombok</artifactId>
+                          <version><!-- insert latest version here --></version>
+                        </path>
+                        <!-- ... -->
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
 ```
 
 ## Configuration Options
@@ -65,6 +130,7 @@ The following compiler arguments can be configured:
 - `-Aequilibrium.record.postfix`: Suffix for generated class names (default: "Record")
 - `-Aequilibrium.vo.package`: Target package for generated VOs
 - `-Aequilibrium.vo.postfix`: Suffix for generated class names (default: "Vo")
+
 
 ## Usage
 
