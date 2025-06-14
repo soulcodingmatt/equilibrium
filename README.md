@@ -186,7 +186,7 @@ generated DTOs and customized DTO classes that extend the generated VOs.
 ### @GenerateRecord
 **Arguments for @GenerateRecord**
 
-**pkg**
+`pkg`
 
 - Usage: `@GenerateRecord(pkg="org.thisisanexample.record")`
 - Default: Defaults to the compiler arguments for Java Records.
@@ -221,13 +221,13 @@ Therefore, in most cases, it is desirable to exclude ID fields.
 - Default: This parameter defaults to false. Value objects (VOs) are typically immutable, meaning all 
 fields are final and there are no setters. This prevents mutation after creation.
 However, if you really need setters for your VO fields (for whatever reason), you can set this parameter 
-to true.
+to `true`.
 
 `overrides`
 - Usage: `@GenerateVo(overrides=false)`
 - Default: This parameter defaults to `true`. For value objects, the standard methods `equals()`, `hashCode()`, 
 and `toString()` should be overridden (in fact, this is generally considered good practice). This is handled 
-automatically by Equilibrium, unless this parameter is explicitly set to false.
+automatically by Equilibrium, unless this parameter is explicitly set to `false`.
 
 
 ### @IgnoreDto, @IgnoreRecord, @IgnoreVo, @IgnoreAll
@@ -241,7 +241,8 @@ that shouldn't be part of the data transfer or value object representations.
 ## Adding custom fields to generated DTOs
 **TBD**
 
-**Note**: The intended way to handle custom fields is to extend the generated DTOs and add them in your own subclass. This is the short explanation for now—more detailed documentation will follow.
+**Note**: The intended way to handle custom fields is to extend the generated DTOs and add them in your own subclass. 
+This is the short explanation for now—more detailed documentation will follow.
 
 ## Requirements
 
