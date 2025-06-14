@@ -68,7 +68,7 @@ Maven repository path or use a flat directory repository and manually place the 
 
 **3. Adjust the compilation settings of your IDE (for Maven).**
 
-In IntelliJ IDEA (IntelliJ IDEA 2025.1.2) open this menu:
+In IntelliJ IDEA open this menu:
 ```
 > File 
     > Settings 
@@ -86,7 +86,7 @@ With the settings described above, you will not encounter the mentioned compilat
 However, the downside is that each time you execute your static method, a full Maven build will 
 run, which takes more time than without the selected option and also produces more console output.
 
-For the development of the current project, IntelliJ IDEA 2025.1.2 (Ultimate Edition) was used. The settings
+**Note**: For the development of the current project, IntelliJ IDEA 2025.1.2 (Ultimate Edition) was used. The settings
 might be located elsewhere in older or newer versions of IntelliJ IDEA. Additional configuration details for other IDEs are planned for future releases.
 
 **4. (Optional) Lombok integration**
@@ -229,7 +229,7 @@ automatically by Equilibrium, unless this parameter is explicitly set to false.
 
 ### @IgnoreDto, @IgnoreRecord, @IgnoreVo, @IgnoreAll
 `@IgnoreDto`, `@IgnoreRecord`, and `@IgnoreVo` are field-level annotations that exclude specific fields from 
-being included in their respective generated classes (DTO, Record, or Value Object). @IgnoreAll is a 
+being included in their respective generated classes (DTO, Record, or Value Object). `@IgnoreAll` is a 
 more general field-level annotation that excludes fields from all generated classes, regardless of their 
 type. These annotations are particularly useful for excluding internal fields, sensitive data, or fields 
 that shouldn't be part of the data transfer or value object representations.
