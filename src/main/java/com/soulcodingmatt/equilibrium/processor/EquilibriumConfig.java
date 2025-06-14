@@ -1,4 +1,4 @@
-package org.soulcodingmatt.equilibrium.processor;
+package com.soulcodingmatt.equilibrium.processor;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import java.util.Map;

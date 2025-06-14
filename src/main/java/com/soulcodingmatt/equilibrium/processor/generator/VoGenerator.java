@@ -1,7 +1,7 @@
-package org.soulcodingmatt.equilibrium.processor.generator;
+package com.soulcodingmatt.equilibrium.processor.generator;
 
-import org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
-import org.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo;
+import com.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
+import com.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.ElementKind;

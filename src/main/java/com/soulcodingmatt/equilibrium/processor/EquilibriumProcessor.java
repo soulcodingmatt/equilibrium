@@ -1,12 +1,12 @@
-package org.soulcodingmatt.equilibrium.processor;
+package com.soulcodingmatt.equilibrium.processor;
 
 import com.google.auto.service.AutoService;
-import org.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
-import org.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
-import org.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
-import org.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
-import org.soulcodingmatt.equilibrium.processor.generator.RecordGenerator;
-import org.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
+import com.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
+import com.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
+import com.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
+import com.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
+import com.soulcodingmatt.equilibrium.processor.generator.RecordGenerator;
+import com.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -20,13 +20,13 @@ import java.util.stream.Collectors;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes({
-        "org.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
-        "org.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
-        "org.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
-        "org.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
-        "org.soulcodingmatt.equilibrium.annotations.vo.GenerateVo",
-        "org.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo",
-        "org.soulcodingmatt.equilibrium.annotations.common.IgnoreAll"
+        "com.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
+        "com.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
+        "com.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
+        "com.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
+        "com.soulcodingmatt.equilibrium.annotations.vo.GenerateVo",
+        "com.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo",
+        "com.soulcodingmatt.equilibrium.annotations.common.IgnoreAll"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @SupportedOptions({
@@ -68,7 +68,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         boolean hasRelevantAnnotations = annotations.stream()
                 .map(TypeElement::getQualifiedName)
                 .map(Object::toString)
-                .anyMatch(name -> name.startsWith("org.soulcodingmatt.equilibrium.annotations"));
+                .anyMatch(name -> name.startsWith("com.soulcodingmatt.equilibrium.annotations"));
 
         // If none of our annotations are present, don't claim them
         if (!hasRelevantAnnotations) {
