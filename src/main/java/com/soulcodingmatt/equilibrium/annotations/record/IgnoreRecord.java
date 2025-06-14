@@ -1,4 +1,4 @@
-package org.soulcodingmatt.equilibrium.annotations.vo;
+package com.soulcodingmatt.equilibrium.annotations.record;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)
-public @interface IgnoreVo {
+public @interface IgnoreRecord {
 }
