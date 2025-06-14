@@ -147,6 +147,7 @@ The following compiler arguments can be configured:
 
 ## Usage
 
+### @GenerateDto
 Annotate your domain classes with `@GenerateDto`:
 
 ```java
@@ -161,7 +162,78 @@ public class User {
     // getters and setters
 }
 ```
-**Note**: This section of the documentation is still in progress and will be expanded soon.
+**Arguments for @GenerateDto**
+
+`pkg`
+- Usage: `@GenerateDto(pkg="org.thisisanexample.dto")`
+- Default: Defaults to the compiler arguments for DTOs.
+
+`postfix`
+- Usage: `@GenerateDto(postfix="Dto")`
+- Default: Defaults to the compiler arguments for DTOs. If the compiler arguments aren't
+  set either, the default value is "Dto".
+
+`builder`
+- Usage: `@GenerateDto(builder=true)`
+- Default: This parameter is set to `false` by default. If set to `true`, Lombok's `@SuperBuilder`
+annotation will be added to the generated class, allowing to make use of the builder pattern for 
+generated DTOs and customized DTO classes that extend the generated VOs.
+- **Note**: For this feature to work, Project Lombok **must be added** to your project.
+
+### @GenerateRecord
+**Arguments for @GenerateRecord**
+
+**pkg**
+
+- Usage: `@GenerateRecord(pkg="org.thisisanexample.record")`
+- Default: Defaults to the compiler arguments for Java Records.
+
+`postfix`
+- Usage: `@GenerateRecord(postfix="Record")`
+- Default: Defaults to the compiler arguments for Java Records. If the compiler arguments aren't
+  set either, the default value is "Record".
+
+
+### @GenerateVo
+**Arguments for @GenerateVo**
+
+`pkg`
+- Usage: `@GenerateVo(pkg="org.thisisanexample.vo")`
+- Default: Defaults to the compiler arguments for VOs.
+
+`postfix`
+- Usage: `@GenerateVo(postfix="Vo")`
+- Default: Defaults to the compiler arguments for VOs. If the compiler arguments aren't
+  set either, the default value is "Vo".
+
+`id`
+- Usage: `@GenerateVo(id="idfield")`
+- Default: This parameter is **not** set by default. If it is set, the referenced field will be ignored 
+during the generation of the value object (VO).
+Value objects typically do not have an identity, in contrast to domain classes. 
+Therefore, in most cases, it is desirable to exclude ID fields.
+
+`setter`
+- Usage: `@GenerateVo(setter=true)`
+- Default: This parameter defaults to false. Value objects (VOs) are typically immutable, meaning all 
+fields are final and there are no setters. This prevents mutation after creation.
+However, if you really need setters for your VO fields (for whatever reason), you can set this parameter 
+to true.
+
+`overrides`
+- Usage: `@GenerateVo(overrides=false)`
+- Default: This parameter defaults to `true`. For value objects, the standard methods `equals()`, `hashCode()`, 
+and `toString()` should be overridden (in fact, this is generally considered good practice). This is handled 
+automatically by Equilibrium, unless this parameter is explicitly set to false.
+
+
+### @IgnoreDto, @IgnoreRecord, @IgnoreVo, @IgnoreAll
+`@IgnoreDto`, `@IgnoreRecord`, and `@IgnoreVo` are field-level annotations that exclude specific fields from 
+being included in their respective generated classes (DTO, Record, or Value Object). @IgnoreAll is a 
+more general field-level annotation that excludes fields from all generated classes, regardless of their 
+type. These annotations are particularly useful for excluding internal fields, sensitive data, or fields 
+that shouldn't be part of the data transfer or value object representations.
+
 
 ## Adding custom fields to generated DTOs
 **TBD**
