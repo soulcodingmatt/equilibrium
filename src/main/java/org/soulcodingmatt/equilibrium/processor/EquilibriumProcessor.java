@@ -36,8 +36,6 @@ import java.util.stream.Collectors;
         "equilibrium.record.postfix",
         "equilibrium.vo.package",
         "equilibrium.vo.postfix"
-
-
 })
 public class EquilibriumProcessor extends AbstractProcessor {
     private final Set<String> processedElements = new HashSet<>();
@@ -152,7 +150,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private void processGenerateDto(TypeElement classElement) {
         try {
             GenerateDto annotation = classElement.getAnnotation(GenerateDto.class);
-            String packageName = config.validateAndGetPackage(annotation.packageName(), "DTO");
+            String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
             String postfix = annotation.postfix().isEmpty() ? config.getDtoPostfix() : annotation.postfix();
             boolean builder = annotation.builder();
 
@@ -170,7 +168,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private void processGenerateRecord(TypeElement classElement) {
         try {
             GenerateRecord annotation = classElement.getAnnotation(GenerateRecord.class);
-            String packageName = config.validateAndGetPackage(annotation.packageName(), "Record");
+            String packageName = config.validateAndGetPackage(annotation.pkg(), "Record");
             String postfix = annotation.postfix().isEmpty() ? config.getRecordPostfix() : annotation.postfix();
 
             // Create and run the Record generator
@@ -187,15 +185,15 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private void processGenerateVo(TypeElement classElement) {
         try {
             GenerateVo annotation = classElement.getAnnotation(GenerateVo.class);
-            String packageName = config.validateAndGetPackage(annotation.packageName(), "VO");
+            String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
             String postfix = annotation.postfix().isEmpty() ? config.getVoPostfix() : annotation.postfix();
             String idField = annotation.id();
             boolean generateSetter = annotation.setter();
-            boolean standardOverrides = annotation.standardOverrides();
+            boolean overrides = annotation.overrides();
 
             // Create and run the Value Object generator
             VoGenerator generator = new VoGenerator(classElement, packageName, postfix, 
-                                                  idField, generateSetter, standardOverrides, filer);
+                                                  idField, generateSetter, overrides, filer);
             generator.generate();
 
             note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
