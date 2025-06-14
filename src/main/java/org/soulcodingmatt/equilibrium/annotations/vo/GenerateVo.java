@@ -18,7 +18,7 @@ public @interface GenerateVo {
      * If not specified, the global package configuration from pom.xml will be used.
      * @return the target package name
      */
-    String packageName() default "";
+    String pkg() default "";
 
     /**
      * The postfix to be added to the generated class name.
@@ -51,5 +51,5 @@ public @interface GenerateVo {
      * Defaults to {@code true}.
      * @return {@code true} to include standard overrides; {@code false} otherwise
      */
-    boolean standardOverrides() default true;
+    boolean overrides() default true;
 }
