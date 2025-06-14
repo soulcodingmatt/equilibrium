@@ -157,7 +157,7 @@
           <release>${maven.compiler.release}</release>
           <showWarnings>true</showWarnings>
           <compilerArgs>
-            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-processing</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
