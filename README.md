@@ -25,7 +25,7 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
 
 ```xml
 <dependency>
-    <groupId>com.soulcodingmatt</groupId>
+    <groupId>io.github.soulcodingmatt</groupId>
     <artifactId>equilibrium</artifactId>
     <version><!-- insert latest version here --></version>
 </dependency>
@@ -58,7 +58,7 @@ Maven repository path or use a flat directory repository and manually place the 
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
-              <groupId>com.soulcodingmatt</groupId>
+              <groupId>io.github.soulcodingmatt</groupId>
               <artifactId>equilibrium</artifactId>
               <version><!-- insert latest version here --></version>
             </path>

@@ -3,13 +3,14 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.soulcodingmatt</groupId>
+  <groupId>io.github.soulcodingmatt</groupId>
   <artifactId>equilibrium</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0-RC1</version>
   <packaging>jar</packaging>
 
   <name>Equilibrium</name>
   <description>A Java annotation processor for generating DTOs, transport types, and value container classes</description>
+  <url>https://github.com/soulcodingmatt/equilibrium</url>
 
   <licenses>
     <license>
@@ -19,6 +20,31 @@
     </license>
   </licenses>
 
+  <developers>
+    <developer>
+      <id>soulcodingmatt</id>
+      <name>Matthias Lange</name>
+      <email>matt@soulcodingmatt.com</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <url>https://github.com/soulcodingmatt/equilibrium</url>
+    <connection>scm:git:git://github.com/soulcodingmatt/equilibrium.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/soulcodingmatt/equilibrium.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -60,35 +86,36 @@
 
   <build>
     <plugins>
+      <!-- Annotation processing -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <executions>
-          <!-- Run annotation processors on source files -->
+          <!-- Run annotation processors -->
           <execution>
             <id>process-annotations</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>compile</goal>
             </goals>
-        <configuration>
+            <configuration>
               <proc>only</proc>
-          <release>${maven.compiler.release}</release>
-          <showWarnings>true</showWarnings>
-          <compilerArgs>
-            <arg>-Xlint:-processing</arg>
-          </compilerArgs>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>com.google.auto.service</groupId>
-              <artifactId>auto-service</artifactId>
-              <version>${auto-service.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
+              <release>${maven.compiler.release}</release>
+              <showWarnings>true</showWarnings>
+              <compilerArgs>
+                <arg>-Xlint:-processing</arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>com.google.auto.service</groupId>
+                  <artifactId>auto-service</artifactId>
+                  <version>${auto-service.version}</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
           </execution>
-          <!-- Compile the sources -->
+          <!-- Compile sources -->
           <execution>
             <id>default-compile</id>
             <phase>compile</phase>
@@ -106,15 +133,15 @@
           </execution>
         </executions>
       </plugin>
-      
-      <!-- Ensure tests are run -->
+
+      <!-- Run unit tests -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
       </plugin>
 
-      <!-- Generate sources jar -->
+      <!-- Sources JAR -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
@@ -129,7 +156,22 @@
         </executions>
       </plugin>
 
-      <!-- Add generated sources to build path -->
+      <!-- Javadoc JAR (erforderlich für Maven Central) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.6.3</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Add generated sources to source path -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
@@ -149,6 +191,36 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- Sign artifacts with GPG -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Deploy to Sonatype OSSRH -->
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.13</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
+
 </project>
