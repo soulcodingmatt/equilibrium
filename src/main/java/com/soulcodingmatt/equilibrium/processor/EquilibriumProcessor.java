@@ -151,7 +151,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         try {
             GenerateDto annotation = classElement.getAnnotation(GenerateDto.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
-            String postfix = annotation.postfix().isEmpty() ? config.getDtoPostfix() : annotation.postfix();
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), "DTO");
             boolean builder = annotation.builder();
 
             // Create and run the DTO generator
@@ -169,7 +169,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         try {
             GenerateRecord annotation = classElement.getAnnotation(GenerateRecord.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "Record");
-            String postfix = annotation.postfix().isEmpty() ? config.getRecordPostfix() : annotation.postfix();
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), "Record");
 
             // Create and run the Record generator
             RecordGenerator generator = new RecordGenerator(classElement, packageName, postfix, filer);
@@ -186,8 +186,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
         try {
             GenerateVo annotation = classElement.getAnnotation(GenerateVo.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
-            String postfix = annotation.postfix().isEmpty() ? config.getVoPostfix() : annotation.postfix();
-            String idField = annotation.id();
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), "VO");
+            String idField = config.isValidFieldName(annotation.id()) ? annotation.id() : "";
             boolean generateSetter = annotation.setter();
             boolean overrides = annotation.overrides();
 
