@@ -35,14 +35,6 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
     <version><!-- insert latest version here --></version>
 </dependency>
 ```
-**Note**: Project Equilibrium is currently in an early stage of development. To use it as a dependency, 
-you must first clone the repository and build the project locally. After building the JAR file, install 
-it into your local build tool's repository — for example, the .m2 directory when using Maven (`mvn install`), 
-or via `publishToMavenLocal` when using Gradle, which also places the artifact into `.m2`.
-
-This approach assumes that your Gradle project is configured to resolve dependencies from the local Maven 
-repository using `mavenLocal()`. If you're not using `mavenLocal()`, you’ll need to either define a custom local 
-Maven repository path or use a flat directory repository and manually place the JAR file there.
 
 **2. Configure the annotation processor in your `pom.xml`:**
 
