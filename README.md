@@ -11,6 +11,11 @@ If you find this project useful, consider supporting me ☕
 
 Equilibrium is a Java annotation processor that helps you maintain consistency between your domain classes and their corresponding Data Transfer Objects (DTOs), Java Records, and other value container classes. It automatically generates and updates these classes based on your source classes.
 
+## Latest version
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
+
+
 ## Features
 
 - Automatic generation of value container classes (DTOs, Records, VOs, ...) with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo` annotation
