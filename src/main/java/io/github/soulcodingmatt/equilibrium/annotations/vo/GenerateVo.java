@@ -1,6 +1,7 @@
 package io.github.soulcodingmatt.equilibrium.annotations.vo;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -8,11 +9,23 @@ import java.lang.annotation.Target;
 /**
  * Annotation to generate a Value Object class from the annotated class.
  * The generated class will mirror the structure of the annotated class,
- * excluding any fields marked with @IgnoreRecord or @IgnoreAll.
+ * excluding any fields marked with @IgnoreVo or @IgnoreAll.
+ * 
+ * This annotation can be used multiple times on the same class to generate
+ * multiple VOs with different configurations.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
+@Repeatable(GenerateVos.class)
 public @interface GenerateVo {
+    /**
+     * Optional ID for this VO generation annotation.
+     * Used with @IgnoreVo(ids={...}) to selectively ignore fields for specific VOs.
+     * When multiple @GenerateVo annotations are used, each must have a unique ID if specified.
+     * @return the ID for this VO generation
+     */
+    int id() default -1;
+
     /**
      * The package where the Value Object should be generated.
      * If not specified, the global package configuration from pom.xml will be used.

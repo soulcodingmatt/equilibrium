@@ -30,9 +30,10 @@ public class VoGenerator {
     private final boolean generateSetters;
     private final boolean standardOverrides;
     private final Filer filer;
+    private final int voId;
 
     public VoGenerator(TypeElement classElement, String packageName, String postfix,
-                       Set<String> ignoredFields, boolean generateSetters, boolean standardOverrides, Filer filer) {
+                       Set<String> ignoredFields, boolean generateSetters, boolean standardOverrides, int voId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
@@ -40,6 +41,7 @@ public class VoGenerator {
         this.generateSetters = generateSetters;
         this.standardOverrides = standardOverrides;
         this.filer = filer;
+        this.voId = voId;
     }
 
     public void generate() throws IOException {
@@ -116,10 +118,27 @@ public class VoGenerator {
     }
 
     private boolean shouldIncludeField(VariableElement field) {
-        // Exclude fields marked with @IgnoreVo or @IgnoreAll
-        if (field.getAnnotation(IgnoreVo.class) != null ||
-            field.getAnnotation(IgnoreAll.class) != null) {
+        // Exclude fields marked with @IgnoreAll
+        if (field.getAnnotation(IgnoreAll.class) != null) {
             return false;
+        }
+        
+        // Handle ID-based @IgnoreVo exclusion
+        IgnoreVo ignoreVoAnnotation = field.getAnnotation(IgnoreVo.class);
+        if (ignoreVoAnnotation != null) {
+            int[] ignoredIds = ignoreVoAnnotation.ids();
+            
+            // If no IDs specified, ignore for all VOs
+            if (ignoredIds.length == 0) {
+                return false;
+            }
+            
+            // If IDs specified, only ignore if current VO ID is in the list
+            for (int ignoredId : ignoredIds) {
+                if (ignoredId == voId) {
+                    return false;
+                }
+            }
         }
         
         // Exclude any fields specified in the ignore collection

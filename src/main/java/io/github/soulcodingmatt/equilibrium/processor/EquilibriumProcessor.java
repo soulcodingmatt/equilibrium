@@ -6,6 +6,8 @@ import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto;
 import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
+import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVos;
+import io.github.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo;
 import io.github.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.generator.RecordGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
         "io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
         "io.github.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
         "io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo",
+        "io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVos",
         "io.github.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo",
         "io.github.soulcodingmatt.equilibrium.annotations.common.IgnoreAll"
 })
@@ -111,6 +114,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateDtos.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateRecord.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateVo.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateVos.class));
 
         return elements.stream()
                 .filter(this::isValidClassElement)
@@ -144,11 +148,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
             processGenerateRecord(typeElement);
         }
 
-        // Generate Value Object if needed
-        GenerateVo voAnnotation = typeElement.getAnnotation(GenerateVo.class);
-        if (voAnnotation != null) {
-            processGenerateVo(typeElement);
-        }
+        // Process multiple VO annotations
+        processGenerateVos(typeElement);
     }
 
     private void processGenerateDtos(TypeElement classElement) {
@@ -283,9 +284,54 @@ public class EquilibriumProcessor extends AbstractProcessor {
         }
     }
 
-    private void processGenerateVo(TypeElement classElement) {
+    private void processGenerateVos(TypeElement classElement) {
+        // Get all @GenerateVo annotations (handles both single and multiple annotations)
+        GenerateVo[] voAnnotations = classElement.getAnnotationsByType(GenerateVo.class);
+        
+        if (voAnnotations.length == 0) {
+            return; // No VO annotations found
+        }
+        
+        // Validate unique combinations of package and postfix
+        if (!validateUniqueVoCombinations(classElement, voAnnotations)) {
+            return; // Validation failed, error already logged
+        }
+        
+        // Process each VO annotation
+        for (GenerateVo annotation : voAnnotations) {
+            processGenerateVo(classElement, annotation);
+        }
+    }
+
+    private boolean validateUniqueVoCombinations(TypeElement classElement, GenerateVo[] annotations) {
+        Set<String> uniqueCombinations = new HashSet<>();
+        Set<Integer> usedIds = new HashSet<>();
+        
+        for (GenerateVo annotation : annotations) {
+            String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), "VO");
+            String combination = packageName + "." + classElement.getSimpleName() + postfix;
+            
+            if (!uniqueCombinations.add(combination)) {
+                error(classElement, "Duplicate VO configuration would generate the same class: " + combination);
+                return false;
+            }
+            
+            // Validate unique IDs (only if ID is explicitly set)
+            int id = annotation.id();
+            if (id != -1) { // -1 is the default value meaning no ID specified
+                if (!usedIds.add(id)) {
+                    error(classElement, "Duplicate VO ID: " + id + ". Each @GenerateVo annotation must have a unique ID.");
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    private void processGenerateVo(TypeElement classElement, GenerateVo annotation) {
         try {
-            GenerateVo annotation = classElement.getAnnotation(GenerateVo.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
             String postfix = config.validateAndGetPostfix(annotation.postfix(), "VO");
             
@@ -302,12 +348,16 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 }
             }
             
+            // Validate @IgnoreVo annotations for duplicate IDs
+            validateIgnoreVoAnnotations(classElement);
+            
             boolean generateSetter = annotation.setters();
             boolean overrides = annotation.overrides();
 
             // Create and run the Value Object generator
+            int voId = annotation.id();
             VoGenerator generator = new VoGenerator(classElement, packageName, postfix, 
-                                                  ignoredFields, generateSetter, overrides, filer);
+                                                  ignoredFields, generateSetter, overrides, voId, filer);
             generator.generate();
 
             note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
@@ -315,6 +365,27 @@ public class EquilibriumProcessor extends AbstractProcessor {
             error(classElement, "Failed to generate Value Object: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void validateIgnoreVoAnnotations(TypeElement classElement) {
+        // Check all fields for @IgnoreVo annotations and validate their ids arrays
+        classElement.getEnclosedElements().stream()
+            .filter(e -> e.getKind() == ElementKind.FIELD)
+            .map(VariableElement.class::cast)
+            .forEach(field -> {
+                IgnoreVo ignoreVoAnnotation = field.getAnnotation(IgnoreVo.class);
+                if (ignoreVoAnnotation != null) {
+                    int[] ids = ignoreVoAnnotation.ids();
+                    Set<Integer> uniqueIds = new HashSet<>();
+                    for (int id : ids) {
+                        if (!uniqueIds.add(id)) {
+                            messager.printMessage(Diagnostic.Kind.WARNING,
+                                "Duplicate ID " + id + " in @IgnoreVo annotation for field '" + 
+                                field.getSimpleName() + "' - duplicates will be ignored", field);
+                        }
+                    }
+                }
+            });
     }
 
     private void error(Element element, String message) {
