@@ -3,6 +3,7 @@ package io.github.soulcodingmatt.equilibrium.processor;
 import com.google.auto.service.AutoService;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos;
+import io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto;
 import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
 import io.github.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
@@ -14,6 +15,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic;
 import java.util.HashSet;
 import java.util.Set;
@@ -170,6 +172,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
     private boolean validateUniqueDtoCombinations(TypeElement classElement, GenerateDto[] annotations) {
         Set<String> uniqueCombinations = new HashSet<>();
+        Set<Integer> usedIds = new HashSet<>();
         
         for (GenerateDto annotation : annotations) {
             String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
@@ -179,6 +182,15 @@ public class EquilibriumProcessor extends AbstractProcessor {
             if (!uniqueCombinations.add(combination)) {
                 error(classElement, "Duplicate DTO configuration would generate the same class: " + combination);
                 return false;
+            }
+            
+            // Validate unique IDs (only if ID is explicitly set)
+            int id = annotation.id();
+            if (id != -1) { // -1 is the default value meaning no ID specified
+                if (!usedIds.add(id)) {
+                    error(classElement, "Duplicate DTO ID: " + id + ". Each @GenerateDto annotation must have a unique ID.");
+                    return false;
+                }
             }
         }
         
@@ -203,10 +215,14 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 }
             }
             
+            // Validate @IgnoreDto annotations for duplicate IDs
+            validateIgnoreDtoAnnotations(classElement);
+            
             boolean builder = annotation.builder();
 
             // Create and run the DTO generator
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, filer);
+            int dtoId = annotation.id();
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, dtoId, filer);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
@@ -214,6 +230,27 @@ public class EquilibriumProcessor extends AbstractProcessor {
             error(classElement, "Failed to generate DTO: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void validateIgnoreDtoAnnotations(TypeElement classElement) {
+        // Check all fields for @IgnoreDto annotations and validate their ids arrays
+        classElement.getEnclosedElements().stream()
+            .filter(e -> e.getKind() == ElementKind.FIELD)
+            .map(VariableElement.class::cast)
+            .forEach(field -> {
+                IgnoreDto ignoreDtoAnnotation = field.getAnnotation(IgnoreDto.class);
+                if (ignoreDtoAnnotation != null) {
+                    int[] ids = ignoreDtoAnnotation.ids();
+                    Set<Integer> uniqueIds = new HashSet<>();
+                    for (int id : ids) {
+                        if (!uniqueIds.add(id)) {
+                            messager.printMessage(Diagnostic.Kind.WARNING,
+                                "Duplicate ID " + id + " in @IgnoreDto annotation for field '" + 
+                                field.getSimpleName() + "' - duplicates will be ignored", field);
+                        }
+                    }
+                }
+            });
     }
 
     private void processGenerateRecord(TypeElement classElement) {
