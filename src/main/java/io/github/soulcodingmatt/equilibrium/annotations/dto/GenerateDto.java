@@ -28,6 +28,13 @@ public @interface GenerateDto {
     String postfix() default "Dto";
 
     /**
+     * The fields of the base class to ignore. They will not be generated in the DTO.
+     * If this option isn't enough, use @IgnoreDto to exclude further fields.
+     * @return the names of the fields to ignore
+     */
+    String[] ignore() default {};
+
+    /**
      * Flag whether the generated DTO should have Lombok's @SuperBuilder annotation.
      * Use builder = true, if you want to use the Builder Pattern with the generated DTOs.
      * Default is false.

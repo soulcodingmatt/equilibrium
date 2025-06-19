@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,13 +24,15 @@ public class RecordGenerator {
     private final TypeElement classElement;
     private final String packageName;
     private final String postfix;
+    private final Set<String> ignoredFields;
     private final Filer filer;
 
     public RecordGenerator(TypeElement classElement, String packageName, String postfix,
-                       Filer filer) {
+                           Set<String> ignoredFields, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
+        this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
     }
 
@@ -91,6 +94,12 @@ public class RecordGenerator {
         // Exclude fields marked with @IgnoreRecord or @IgnoreAll
         if (field.getAnnotation(IgnoreRecord.class) != null ||
             field.getAnnotation(IgnoreAll.class) != null) {
+            return false;
+        }
+        
+        // Exclude any fields specified in the ignore collection
+        String fieldName = field.getSimpleName().toString();
+        if (ignoredFields.contains(fieldName)) {
             return false;
         }
         
