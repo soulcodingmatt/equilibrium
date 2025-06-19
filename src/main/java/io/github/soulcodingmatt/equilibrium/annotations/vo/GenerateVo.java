@@ -28,12 +28,12 @@ public @interface GenerateVo {
     String postfix() default "Vo";
 
     /**
-     * The field of the base class to ignore. It will not be generated in the Value Object.
+     * The fields of the base class to ignore. They will not be generated in the Value Object.
      * Usually Value Objects don't have an identity, so ID fields are often ignored.
      * If this option isn't enough, use @IgnoreVo to exclude further fields.
-     * @return the name of the field to ignore
+     * @return the names of the fields to ignore
      */
-    String ignore()  default "";
+    String[] ignore() default {};
 
     /**
      * Flags whether a Value Object should have setters or not.
