@@ -28,28 +28,28 @@ public @interface GenerateVo {
     String postfix() default "Vo";
 
     /**
-     * The ID field of the base class. It will not be generated in the Value Object.
-     * Usually Value Objects don't have an identity, ID fields are not mirrored from
-     * the base class. If this option isn't enough, use @IgnoreVo to exclude further fields.
-     * @return the name of the ID field
+     * The field of the base class to ignore. It will not be generated in the Value Object.
+     * Usually Value Objects don't have an identity, so ID fields are often ignored.
+     * If this option isn't enough, use @IgnoreVo to exclude further fields.
+     * @return the name of the field to ignore
      */
-    String id()  default "";
+    String ignore()  default "";
 
     /**
-     * Flags whether a Value Object should have a setter or not.
+     * Flags whether a Value Object should have setters or not.
      * Usually Value Objects DO NOT have setters. But in case you really need your
-     * Value Object to have a setter, you can use this option.
+     * Value Object to have setters, you can use this option.
      * Defaults to {@code false}.
-     * @return
+     * @return {@code true} if setters should be generated; {@code false} otherwise
      */
-    boolean setter() default false;
+    boolean setters() default false;
 
     /**
      * Whether to generate standard method overrides for the value object,
      * including {@code equals()}, {@code hashCode()}, and {@code toString()}.
      * <p>
      * Defaults to {@code true}.
-     * @return {@code true} to include standard overrides; {@code false} otherwise
+     * @return {@code true} if standard overrides should be generated; {@code false} otherwise
      */
     boolean overrides() default true;
 }
