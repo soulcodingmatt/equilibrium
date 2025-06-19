@@ -152,10 +152,24 @@ public class EquilibriumProcessor extends AbstractProcessor {
             GenerateDto annotation = classElement.getAnnotation(GenerateDto.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
             String postfix = config.validateAndGetPostfix(annotation.postfix(), "DTO");
+            
+            // Process ignore field names array and validate each field name
+            Set<String> ignoredFields = new HashSet<>();
+            for (String fieldName : annotation.ignore()) {
+                if (config.isValidFieldName(fieldName)) {
+                    ignoredFields.add(fieldName);
+                } else if (!fieldName.isEmpty()) {
+                    // Log warning for invalid field names but continue processing
+                    messager.printMessage(Diagnostic.Kind.WARNING, 
+                        "Invalid field name in ignore list: '" + fieldName + "' - will be skipped", 
+                        classElement);
+                }
+            }
+            
             boolean builder = annotation.builder();
 
             // Create and run the DTO generator
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, builder, filer);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, filer);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
@@ -170,9 +184,22 @@ public class EquilibriumProcessor extends AbstractProcessor {
             GenerateRecord annotation = classElement.getAnnotation(GenerateRecord.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "Record");
             String postfix = config.validateAndGetPostfix(annotation.postfix(), "Record");
+            
+            // Process ignore field names array and validate each field name
+            Set<String> ignoredFields = new HashSet<>();
+            for (String fieldName : annotation.ignore()) {
+                if (config.isValidFieldName(fieldName)) {
+                    ignoredFields.add(fieldName);
+                } else if (!fieldName.isEmpty()) {
+                    // Log warning for invalid field names but continue processing
+                    messager.printMessage(Diagnostic.Kind.WARNING, 
+                        "Invalid field name in ignore list: '" + fieldName + "' - will be skipped", 
+                        classElement);
+                }
+            }
 
             // Create and run the Record generator
-            RecordGenerator generator = new RecordGenerator(classElement, packageName, postfix, filer);
+            RecordGenerator generator = new RecordGenerator(classElement, packageName, postfix, ignoredFields, filer);
             generator.generate();
 
             note(classElement, "Generated Record class: " + packageName + "." + classElement.getSimpleName() + postfix);

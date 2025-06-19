@@ -26,4 +26,11 @@ public @interface GenerateRecord {
      * @return the postfix for the generated class
      */
     String postfix() default "Record";
+
+    /**
+     * The fields of the base class to ignore. They will not be generated in the Record.
+     * If this option isn't enough, use @IgnoreRecord to exclude further fields.
+     * @return the names of the fields to ignore
+     */
+    String[] ignore() default {};
 }

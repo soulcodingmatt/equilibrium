@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,14 +24,16 @@ public class DtoGenerator {
     private final TypeElement classElement;
     private final String packageName;
     private final String postfix;
+    private final Set<String> ignoredFields;
     private final boolean builder;
     private final Filer filer;
 
     public DtoGenerator(TypeElement classElement, String packageName, String postfix,
-                        boolean builder, Filer filer) {
+                        Set<String> ignoredFields, boolean builder, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
+        this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
         this.builder = builder;
     }
@@ -108,6 +111,12 @@ public class DtoGenerator {
         // Exclude fields marked with @IgnoreDto or @IgnoreAll
         if (field.getAnnotation(IgnoreDto.class) != null ||
             field.getAnnotation(IgnoreAll.class) != null) {
+            return false;
+        }
+        
+        // Exclude any fields specified in the ignore collection
+        String fieldName = field.getSimpleName().toString();
+        if (ignoredFields.contains(fieldName)) {
             return false;
         }
         
