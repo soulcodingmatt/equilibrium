@@ -54,4 +54,13 @@ public @interface GenerateDto {
      * @return
      */
     boolean builder() default false;
+
+    /**
+     * Whether to generate standard method overrides for the DTO,
+     * including {@code equals()}, {@code hashCode()}, and {@code toString()}.
+     * <p>
+     * Defaults to {@code true}.
+     * @return {@code true} if standard overrides should be generated; {@code false} otherwise
+     */
+    boolean overrides() default true;
 } 
