@@ -206,15 +206,15 @@ generated DTOs and customized DTO classes that extend the generated VOs.
 - Default: Defaults to the compiler arguments for VOs. If the compiler arguments aren't
   set either, the default value is "Vo".
 
-`id`
-- Usage: `@GenerateVo(id="idfield")`
+`ignore`
+- Usage: `@GenerateVo(ignore="fieldname")`
 - Default: This parameter is **not** set by default. If it is set, the referenced field will be ignored 
 during the generation of the value object (VO).
 Value objects typically do not have an identity, in contrast to domain classes. 
 Therefore, in most cases, it is desirable to exclude ID fields.
 
-`setter`
-- Usage: `@GenerateVo(setter=true)`
+`setters`
+- Usage: `@GenerateVo(setters=true)`
 - Default: This parameter defaults to false. Value objects (VOs) are typically immutable, meaning all 
 fields are final and there are no setters. This prevents mutation after creation.
 However, if you really need setters for your VO fields (for whatever reason), you can set this parameter 

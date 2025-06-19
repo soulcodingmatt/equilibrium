@@ -25,18 +25,18 @@ public class VoGenerator {
     private final TypeElement classElement;
     private final String packageName;
     private final String postfix;
-    private final String idField;
-    private final boolean generateSetter;
+    private final String ignoredField;
+    private final boolean generateSetters;
     private final boolean standardOverrides;
     private final Filer filer;
 
     public VoGenerator(TypeElement classElement, String packageName, String postfix,
-                      String idField, boolean generateSetter, boolean standardOverrides, Filer filer) {
+                       String ignoredField, boolean generateSetters, boolean standardOverrides, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
-        this.idField = idField;
-        this.generateSetter = generateSetter;
+        this.ignoredField = ignoredField;
+        this.generateSetters = generateSetters;
         this.standardOverrides = standardOverrides;
         this.filer = filer;
     }
@@ -121,8 +121,8 @@ public class VoGenerator {
             return false;
         }
         
-        // Exclude the ID field if specified
-        if (!idField.isEmpty() && field.getSimpleName().toString().equals(idField)) {
+        // Exclude the ignore field if specified
+        if (!ignoredField.isEmpty() && field.getSimpleName().toString().equals(ignoredField)) {
             return false;
         }
         
@@ -160,7 +160,7 @@ public class VoGenerator {
         // Write field with its type and name - fields are final only if setters are disabled
         String type = field.asType().toString();
         String name = field.getSimpleName().toString();
-        writer.write("    private " + (generateSetter ? "" : "final ") + type + " " + name + ";\n\n");
+        writer.write("    private " + (generateSetters ? "" : "final ") + type + " " + name + ";\n\n");
     }
 
     private void writeConstructor(Writer writer, List<VariableElement> fields, String className) throws IOException {
@@ -198,7 +198,7 @@ public class VoGenerator {
         writer.write(STRING_END);
         
         // Setter (only if enabled)
-        if (generateSetter) {
+        if (generateSetters) {
             writer.write("    public void set" + capitalizedName + "(" + type + " " + name + ") {\n");
             writer.write("        this." + name + " = " + name + ";\n");
             writer.write(STRING_END);

@@ -187,13 +187,13 @@ public class EquilibriumProcessor extends AbstractProcessor {
             GenerateVo annotation = classElement.getAnnotation(GenerateVo.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
             String postfix = config.validateAndGetPostfix(annotation.postfix(), "VO");
-            String idField = config.isValidFieldName(annotation.id()) ? annotation.id() : "";
-            boolean generateSetter = annotation.setter();
+            String ignoredField = config.isValidFieldName(annotation.ignore()) ? annotation.ignore() : "";
+            boolean generateSetter = annotation.setters();
             boolean overrides = annotation.overrides();
 
             // Create and run the Value Object generator
             VoGenerator generator = new VoGenerator(classElement, packageName, postfix, 
-                                                  idField, generateSetter, overrides, filer);
+                                                  ignoredField, generateSetter, overrides, filer);
             generator.generate();
 
             note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
