@@ -26,17 +26,19 @@ public class DtoGenerator {
     private final String postfix;
     private final Set<String> ignoredFields;
     private final boolean builder;
+    private final boolean standardOverrides;
     private final Filer filer;
     private final int dtoId;
 
     public DtoGenerator(TypeElement classElement, String packageName, String postfix,
-                        Set<String> ignoredFields, boolean builder, int dtoId, Filer filer) {
+                        Set<String> ignoredFields, boolean builder, boolean standardOverrides, int dtoId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
         this.builder = builder;
+        this.standardOverrides = standardOverrides;
         this.dtoId = dtoId;
     }
 
@@ -58,6 +60,9 @@ public class DtoGenerator {
             if (builder) {
                 writer.write("import lombok.experimental.SuperBuilder;\n");
             }
+            if (standardOverrides) {
+                writer.write("import java.util.Objects;\n");
+            }
             writeImports(writer, fields);
             
             // Write class declaration
@@ -78,6 +83,13 @@ public class DtoGenerator {
             // Write getters and setters
             for (VariableElement field : fields) {
                 writeAccessors(writer, field);
+            }
+            
+            // Write standard method overrides if enabled
+            if (standardOverrides) {
+                writeEquals(writer, fields, dtoClassName);
+                writeHashCode(writer, fields);
+                writeToString(writer, fields);
             }
             
             // Close class
@@ -187,6 +199,63 @@ public class DtoGenerator {
         // Setter
         writer.write("    public void set" + capitalizedName + "(" + type + " " + name + ") {\n");
         writer.write("        this." + name + " = " + name + ";\n");
+        writer.write("    }\n\n");
+    }
+
+    private void writeEquals(Writer writer, List<VariableElement> fields, String className) throws IOException {
+        writer.write("    @Override\n");
+        writer.write("    public boolean equals(Object o) {\n");
+        writer.write("        if (this == o) return true;\n");
+        writer.write("        if (o == null || getClass() != o.getClass()) return false;\n");
+        writer.write("        " + className + " that = (" + className + ") o;\n");
+        
+        // Compare each field
+        for (VariableElement field : fields) {
+            String name = field.getSimpleName().toString();
+            writer.write("        if (!Objects.equals(" + name + ", that." + name + ")) return false;\n");
+        }
+        
+        writer.write("        return true;\n");
+        writer.write("    }\n\n");
+    }
+
+    private void writeHashCode(Writer writer, List<VariableElement> fields) throws IOException {
+        writer.write("    @Override\n");
+        writer.write("    public int hashCode() {\n");
+        writer.write("        return Objects.hash(");
+        
+        // Add all fields to hash
+        boolean first = true;
+        for (VariableElement field : fields) {
+            if (!first) {
+                writer.write(", ");
+            }
+            writer.write(field.getSimpleName().toString());
+            first = false;
+        }
+        
+        writer.write(");\n");
+        writer.write("    }\n\n");
+    }
+
+    private void writeToString(Writer writer, List<VariableElement> fields) throws IOException {
+        writer.write("    @Override\n");
+        writer.write("    public String toString() {\n");
+        writer.write("        return \"" + classElement.getSimpleName() + postfix + "{\" +\n");
+        
+        // Add all fields to string representation
+        boolean first = true;
+        for (VariableElement field : fields) {
+            String name = field.getSimpleName().toString();
+            if (first) {
+                writer.write("            \"" + name + "=\" + " + name);
+                first = false;
+            } else {
+                writer.write(" +\n            \", " + name + "=\" + " + name);
+            }
+        }
+        
+        writer.write(" +\n            \"}\";\n");
         writer.write("    }\n\n");
     }
 }

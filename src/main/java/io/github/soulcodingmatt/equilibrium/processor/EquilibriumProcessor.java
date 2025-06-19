@@ -230,10 +230,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
             }
             
             boolean builder = annotation.builder();
+            boolean overrides = annotation.overrides();
 
             // Create and run the DTO generator
             int dtoId = annotation.id();
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, dtoId, filer);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, overrides, dtoId, filer);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
