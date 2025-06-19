@@ -19,6 +19,14 @@ import java.lang.annotation.Target;
 @Repeatable(GenerateDtos.class)
 public @interface GenerateDto {
     /**
+     * Optional ID for this DTO generation annotation.
+     * Used with @IgnoreDto(ids={...}) to selectively ignore fields for specific DTOs.
+     * When multiple @GenerateDto annotations are used, each must have a unique ID if specified.
+     * @return the ID for this DTO generation
+     */
+    int id() default -1;
+
+    /**
      * The package where the DTO should be generated.
      * If not specified, the global package configuration from pom.xml will be used.
      * @return the target package name

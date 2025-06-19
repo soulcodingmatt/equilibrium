@@ -27,15 +27,17 @@ public class DtoGenerator {
     private final Set<String> ignoredFields;
     private final boolean builder;
     private final Filer filer;
+    private final int dtoId;
 
     public DtoGenerator(TypeElement classElement, String packageName, String postfix,
-                        Set<String> ignoredFields, boolean builder, Filer filer) {
+                        Set<String> ignoredFields, boolean builder, int dtoId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
         this.builder = builder;
+        this.dtoId = dtoId;
     }
 
     public void generate() throws IOException {
@@ -108,10 +110,27 @@ public class DtoGenerator {
     }
 
     private boolean shouldIncludeField(VariableElement field) {
-        // Exclude fields marked with @IgnoreDto or @IgnoreAll
-        if (field.getAnnotation(IgnoreDto.class) != null ||
-            field.getAnnotation(IgnoreAll.class) != null) {
+        // Exclude fields marked with @IgnoreAll
+        if (field.getAnnotation(IgnoreAll.class) != null) {
             return false;
+        }
+        
+        // Handle ID-based @IgnoreDto exclusion
+        IgnoreDto ignoreDtoAnnotation = field.getAnnotation(IgnoreDto.class);
+        if (ignoreDtoAnnotation != null) {
+            int[] ignoredIds = ignoreDtoAnnotation.ids();
+            
+            // If no IDs specified, ignore for all DTOs
+            if (ignoredIds.length == 0) {
+                return false;
+            }
+            
+            // If IDs specified, only ignore if current DTO ID is in the list
+            for (int ignoredId : ignoredIds) {
+                if (ignoredId == dtoId) {
+                    return false;
+                }
+            }
         }
         
         // Exclude any fields specified in the ignore collection
