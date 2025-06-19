@@ -26,14 +26,16 @@ public class RecordGenerator {
     private final String postfix;
     private final Set<String> ignoredFields;
     private final Filer filer;
+    private final int recordId;
 
     public RecordGenerator(TypeElement classElement, String packageName, String postfix,
-                           Set<String> ignoredFields, Filer filer) {
+                           Set<String> ignoredFields, int recordId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
+        this.recordId = recordId;
     }
 
     public void generate() throws IOException {
@@ -91,10 +93,27 @@ public class RecordGenerator {
     }
 
     private boolean shouldIncludeField(VariableElement field) {
-        // Exclude fields marked with @IgnoreRecord or @IgnoreAll
-        if (field.getAnnotation(IgnoreRecord.class) != null ||
-            field.getAnnotation(IgnoreAll.class) != null) {
+        // Exclude fields marked with @IgnoreAll
+        if (field.getAnnotation(IgnoreAll.class) != null) {
             return false;
+        }
+        
+        // Handle ID-based @IgnoreRecord exclusion
+        IgnoreRecord ignoreRecordAnnotation = field.getAnnotation(IgnoreRecord.class);
+        if (ignoreRecordAnnotation != null) {
+            int[] ignoredIds = ignoreRecordAnnotation.ids();
+            
+            // If no IDs specified, ignore for all Records
+            if (ignoredIds.length == 0) {
+                return false;
+            }
+            
+            // If IDs specified, only ignore if current Record ID is in the list
+            for (int ignoredId : ignoredIds) {
+                if (ignoredId == recordId) {
+                    return false;
+                }
+            }
         }
         
         // Exclude any fields specified in the ignore collection

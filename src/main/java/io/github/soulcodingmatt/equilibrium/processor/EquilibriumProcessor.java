@@ -5,6 +5,8 @@ import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto;
 import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
+import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecords;
+import io.github.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVos;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
         "io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos",
         "io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
         "io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
+        "io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecords",
         "io.github.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
         "io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo",
         "io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVos",
@@ -113,6 +116,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateDto.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateDtos.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateRecord.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateRecords.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateVo.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateVos.class));
 
@@ -142,11 +146,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
         // Process multiple DTO annotations
         processGenerateDtos(typeElement);
 
-        // Generate Record if needed
-        GenerateRecord recordAnnotation = typeElement.getAnnotation(GenerateRecord.class);
-        if (recordAnnotation != null) {
-            processGenerateRecord(typeElement);
-        }
+        // Process multiple Record annotations
+        processGenerateRecords(typeElement);
 
         // Process multiple VO annotations
         processGenerateVos(typeElement);
@@ -254,9 +255,54 @@ public class EquilibriumProcessor extends AbstractProcessor {
             });
     }
 
-    private void processGenerateRecord(TypeElement classElement) {
+    private void processGenerateRecords(TypeElement classElement) {
+        // Get all @GenerateRecord annotations (handles both single and multiple annotations)
+        GenerateRecord[] recordAnnotations = classElement.getAnnotationsByType(GenerateRecord.class);
+        
+        if (recordAnnotations.length == 0) {
+            return; // No Record annotations found
+        }
+        
+        // Validate unique combinations of package and postfix
+        if (!validateUniqueRecordCombinations(classElement, recordAnnotations)) {
+            return; // Validation failed, error already logged
+        }
+        
+        // Process each Record annotation
+        for (GenerateRecord annotation : recordAnnotations) {
+            processGenerateRecord(classElement, annotation);
+        }
+    }
+
+    private boolean validateUniqueRecordCombinations(TypeElement classElement, GenerateRecord[] annotations) {
+        Set<String> uniqueCombinations = new HashSet<>();
+        Set<Integer> usedIds = new HashSet<>();
+        
+        for (GenerateRecord annotation : annotations) {
+            String packageName = config.validateAndGetPackage(annotation.pkg(), "Record");
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), "Record");
+            String combination = packageName + "." + classElement.getSimpleName() + postfix;
+            
+            if (!uniqueCombinations.add(combination)) {
+                error(classElement, "Duplicate Record configuration would generate the same class: " + combination);
+                return false;
+            }
+            
+            // Validate unique IDs (only if ID is explicitly set)
+            int id = annotation.id();
+            if (id != -1) { // -1 is the default value meaning no ID specified
+                if (!usedIds.add(id)) {
+                    error(classElement, "Duplicate Record ID: " + id + ". Each @GenerateRecord annotation must have a unique ID.");
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    private void processGenerateRecord(TypeElement classElement, GenerateRecord annotation) {
         try {
-            GenerateRecord annotation = classElement.getAnnotation(GenerateRecord.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "Record");
             String postfix = config.validateAndGetPostfix(annotation.postfix(), "Record");
             
@@ -272,9 +318,13 @@ public class EquilibriumProcessor extends AbstractProcessor {
                         classElement);
                 }
             }
+            
+            // Validate @IgnoreRecord annotations for duplicate IDs
+            validateIgnoreRecordAnnotations(classElement);
 
             // Create and run the Record generator
-            RecordGenerator generator = new RecordGenerator(classElement, packageName, postfix, ignoredFields, filer);
+            int recordId = annotation.id();
+            RecordGenerator generator = new RecordGenerator(classElement, packageName, postfix, ignoredFields, recordId, filer);
             generator.generate();
 
             note(classElement, "Generated Record class: " + packageName + "." + classElement.getSimpleName() + postfix);
@@ -282,6 +332,27 @@ public class EquilibriumProcessor extends AbstractProcessor {
             error(classElement, "Failed to generate Record: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void validateIgnoreRecordAnnotations(TypeElement classElement) {
+        // Check all fields for @IgnoreRecord annotations and validate their ids arrays
+        classElement.getEnclosedElements().stream()
+            .filter(e -> e.getKind() == ElementKind.FIELD)
+            .map(VariableElement.class::cast)
+            .forEach(field -> {
+                IgnoreRecord ignoreRecordAnnotation = field.getAnnotation(IgnoreRecord.class);
+                if (ignoreRecordAnnotation != null) {
+                    int[] ids = ignoreRecordAnnotation.ids();
+                    Set<Integer> uniqueIds = new HashSet<>();
+                    for (int id : ids) {
+                        if (!uniqueIds.add(id)) {
+                            messager.printMessage(Diagnostic.Kind.WARNING,
+                                "Duplicate ID " + id + " in @IgnoreRecord annotation for field '" + 
+                                field.getSimpleName() + "' - duplicates will be ignored", field);
+                        }
+                    }
+                }
+            });
     }
 
     private void processGenerateVos(TypeElement classElement) {
