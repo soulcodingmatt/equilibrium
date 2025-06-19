@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -25,17 +26,17 @@ public class VoGenerator {
     private final TypeElement classElement;
     private final String packageName;
     private final String postfix;
-    private final String ignoredField;
+    private final Set<String> ignoredFields;
     private final boolean generateSetters;
     private final boolean standardOverrides;
     private final Filer filer;
 
     public VoGenerator(TypeElement classElement, String packageName, String postfix,
-                       String ignoredField, boolean generateSetters, boolean standardOverrides, Filer filer) {
+                       Set<String> ignoredFields, boolean generateSetters, boolean standardOverrides, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
-        this.ignoredField = ignoredField;
+        this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.generateSetters = generateSetters;
         this.standardOverrides = standardOverrides;
         this.filer = filer;
@@ -121,8 +122,9 @@ public class VoGenerator {
             return false;
         }
         
-        // Exclude the ignore field if specified
-        if (!ignoredField.isEmpty() && field.getSimpleName().toString().equals(ignoredField)) {
+        // Exclude any fields specified in the ignore collection
+        String fieldName = field.getSimpleName().toString();
+        if (ignoredFields.contains(fieldName)) {
             return false;
         }
         

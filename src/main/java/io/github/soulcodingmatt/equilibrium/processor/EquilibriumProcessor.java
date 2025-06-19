@@ -187,13 +187,26 @@ public class EquilibriumProcessor extends AbstractProcessor {
             GenerateVo annotation = classElement.getAnnotation(GenerateVo.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
             String postfix = config.validateAndGetPostfix(annotation.postfix(), "VO");
-            String ignoredField = config.isValidFieldName(annotation.ignore()) ? annotation.ignore() : "";
+            
+            // Process ignore field names array and validate each field name
+            Set<String> ignoredFields = new HashSet<>();
+            for (String fieldName : annotation.ignore()) {
+                if (config.isValidFieldName(fieldName)) {
+                    ignoredFields.add(fieldName);
+                } else if (!fieldName.isEmpty()) {
+                    // Log warning for invalid field names but continue processing
+                    messager.printMessage(Diagnostic.Kind.WARNING, 
+                        "Invalid field name in ignore list: '" + fieldName + "' - will be skipped", 
+                        classElement);
+                }
+            }
+            
             boolean generateSetter = annotation.setters();
             boolean overrides = annotation.overrides();
 
             // Create and run the Value Object generator
             VoGenerator generator = new VoGenerator(classElement, packageName, postfix, 
-                                                  ignoredField, generateSetter, overrides, filer);
+                                                  ignoredFields, generateSetter, overrides, filer);
             generator.generate();
 
             note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
