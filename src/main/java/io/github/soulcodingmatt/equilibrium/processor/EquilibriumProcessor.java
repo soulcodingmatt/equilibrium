@@ -166,6 +166,18 @@ public class EquilibriumProcessor extends AbstractProcessor {
             return; // Validation failed, error already logged
         }
         
+        // Collect all valid IDs from DTO annotations for orphaned ID validation
+        Set<Integer> validDtoIds = new HashSet<>();
+        for (GenerateDto annotation : dtoAnnotations) {
+            int id = annotation.id();
+            if (id != -1) {
+                validDtoIds.add(id);
+            }
+        }
+        
+        // Validate @IgnoreDto annotations for duplicate IDs and orphaned ID references
+        validateIgnoreDtoAnnotations(classElement, validDtoIds);
+        
         // Process each DTO annotation
         for (GenerateDto annotation : dtoAnnotations) {
             processGenerateDto(classElement, annotation);
@@ -217,9 +229,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 }
             }
             
-            // Validate @IgnoreDto annotations for duplicate IDs
-            validateIgnoreDtoAnnotations(classElement);
-            
             boolean builder = annotation.builder();
 
             // Create and run the DTO generator
@@ -234,7 +243,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         }
     }
 
-    private void validateIgnoreDtoAnnotations(TypeElement classElement) {
+    private void validateIgnoreDtoAnnotations(TypeElement classElement, Set<Integer> validDtoIds) {
         // Check all fields for @IgnoreDto annotations and validate their ids arrays
         classElement.getEnclosedElements().stream()
             .filter(e -> e.getKind() == ElementKind.FIELD)
@@ -249,6 +258,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
                             messager.printMessage(Diagnostic.Kind.WARNING,
                                 "Duplicate ID " + id + " in @IgnoreDto annotation for field '" + 
                                 field.getSimpleName() + "' - duplicates will be ignored", field);
+                        } else if (!validDtoIds.isEmpty() && !validDtoIds.contains(id)) {
+                            // Only check for orphaned IDs if there are actually IDs defined in @GenerateDto annotations
+                            messager.printMessage(Diagnostic.Kind.WARNING,
+                                "ID " + id + " in @IgnoreDto annotation for field '" + 
+                                field.getSimpleName() + "' does not correspond to any @GenerateDto annotation ID", field);
                         }
                     }
                 }
@@ -267,6 +281,18 @@ public class EquilibriumProcessor extends AbstractProcessor {
         if (!validateUniqueRecordCombinations(classElement, recordAnnotations)) {
             return; // Validation failed, error already logged
         }
+        
+        // Collect all valid IDs from Record annotations for orphaned ID validation
+        Set<Integer> validRecordIds = new HashSet<>();
+        for (GenerateRecord annotation : recordAnnotations) {
+            int id = annotation.id();
+            if (id != -1) {
+                validRecordIds.add(id);
+            }
+        }
+        
+        // Validate @IgnoreRecord annotations for duplicate IDs and orphaned ID references
+        validateIgnoreRecordAnnotations(classElement, validRecordIds);
         
         // Process each Record annotation
         for (GenerateRecord annotation : recordAnnotations) {
@@ -319,9 +345,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 }
             }
             
-            // Validate @IgnoreRecord annotations for duplicate IDs
-            validateIgnoreRecordAnnotations(classElement);
-
             // Create and run the Record generator
             int recordId = annotation.id();
             RecordGenerator generator = new RecordGenerator(classElement, packageName, postfix, ignoredFields, recordId, filer);
@@ -334,7 +357,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         }
     }
 
-    private void validateIgnoreRecordAnnotations(TypeElement classElement) {
+    private void validateIgnoreRecordAnnotations(TypeElement classElement, Set<Integer> validRecordIds) {
         // Check all fields for @IgnoreRecord annotations and validate their ids arrays
         classElement.getEnclosedElements().stream()
             .filter(e -> e.getKind() == ElementKind.FIELD)
@@ -349,6 +372,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
                             messager.printMessage(Diagnostic.Kind.WARNING,
                                 "Duplicate ID " + id + " in @IgnoreRecord annotation for field '" + 
                                 field.getSimpleName() + "' - duplicates will be ignored", field);
+                        } else if (!validRecordIds.isEmpty() && !validRecordIds.contains(id)) {
+                            // Only check for orphaned IDs if there are actually IDs defined in @GenerateRecord annotations
+                            messager.printMessage(Diagnostic.Kind.WARNING,
+                                "ID " + id + " in @IgnoreRecord annotation for field '" + 
+                                field.getSimpleName() + "' does not correspond to any @GenerateRecord annotation ID", field);
                         }
                     }
                 }
@@ -367,6 +395,18 @@ public class EquilibriumProcessor extends AbstractProcessor {
         if (!validateUniqueVoCombinations(classElement, voAnnotations)) {
             return; // Validation failed, error already logged
         }
+        
+        // Collect all valid IDs from VO annotations for orphaned ID validation
+        Set<Integer> validVoIds = new HashSet<>();
+        for (GenerateVo annotation : voAnnotations) {
+            int id = annotation.id();
+            if (id != -1) {
+                validVoIds.add(id);
+            }
+        }
+        
+        // Validate @IgnoreVo annotations for duplicate IDs and orphaned ID references
+        validateIgnoreVoAnnotations(classElement, validVoIds);
         
         // Process each VO annotation
         for (GenerateVo annotation : voAnnotations) {
@@ -419,9 +459,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 }
             }
             
-            // Validate @IgnoreVo annotations for duplicate IDs
-            validateIgnoreVoAnnotations(classElement);
-            
             boolean generateSetter = annotation.setters();
             boolean overrides = annotation.overrides();
 
@@ -438,7 +475,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         }
     }
 
-    private void validateIgnoreVoAnnotations(TypeElement classElement) {
+    private void validateIgnoreVoAnnotations(TypeElement classElement, Set<Integer> validVoIds) {
         // Check all fields for @IgnoreVo annotations and validate their ids arrays
         classElement.getEnclosedElements().stream()
             .filter(e -> e.getKind() == ElementKind.FIELD)
@@ -453,6 +490,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
                             messager.printMessage(Diagnostic.Kind.WARNING,
                                 "Duplicate ID " + id + " in @IgnoreVo annotation for field '" + 
                                 field.getSimpleName() + "' - duplicates will be ignored", field);
+                        } else if (!validVoIds.isEmpty() && !validVoIds.contains(id)) {
+                            // Only check for orphaned IDs if there are actually IDs defined in @GenerateVo annotations
+                            messager.printMessage(Diagnostic.Kind.WARNING,
+                                "ID " + id + " in @IgnoreVo annotation for field '" + 
+                                field.getSimpleName() + "' does not correspond to any @GenerateVo annotation ID", field);
                         }
                     }
                 }
