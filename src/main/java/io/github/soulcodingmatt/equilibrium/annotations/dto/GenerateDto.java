@@ -1,6 +1,7 @@
 package io.github.soulcodingmatt.equilibrium.annotations.dto;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -9,9 +10,13 @@ import java.lang.annotation.Target;
  * Annotation to generate a DTO class from the annotated class.
  * The generated class will mirror the structure of the annotated class,
  * excluding any fields marked with @IgnoreDto or @IgnoreAll.
+ * 
+ * This annotation can be used multiple times on the same class to generate
+ * multiple DTOs with different configurations.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
+@Repeatable(GenerateDtos.class)
 public @interface GenerateDto {
     /**
      * The package where the DTO should be generated.

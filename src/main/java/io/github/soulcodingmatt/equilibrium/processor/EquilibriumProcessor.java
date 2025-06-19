@@ -2,6 +2,7 @@ package io.github.soulcodingmatt.equilibrium.processor;
 
 import com.google.auto.service.AutoService;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
+import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos;
 import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
 import io.github.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
@@ -16,11 +17,14 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes({
         "io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
+        "io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos",
         "io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
         "io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
         "io.github.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
@@ -102,6 +106,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private Set<TypeElement> getValidClassElements(RoundEnvironment roundEnv) {
         Set<Element> elements = new HashSet<>();
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateDto.class));
+        elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateDtos.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateRecord.class));
         elements.addAll(roundEnv.getElementsAnnotatedWith(GenerateVo.class));
 
@@ -128,11 +133,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
         }
         processedElements.add(qualifiedName);
 
-        // Generate DTO if needed
-        GenerateDto dtoAnnotation = typeElement.getAnnotation(GenerateDto.class);
-        if (dtoAnnotation != null) {
-            processGenerateDto(typeElement);
-        }
+        // Process multiple DTO annotations
+        processGenerateDtos(typeElement);
 
         // Generate Record if needed
         GenerateRecord recordAnnotation = typeElement.getAnnotation(GenerateRecord.class);
@@ -147,9 +149,44 @@ public class EquilibriumProcessor extends AbstractProcessor {
         }
     }
 
-    private void processGenerateDto(TypeElement classElement) {
+    private void processGenerateDtos(TypeElement classElement) {
+        // Get all @GenerateDto annotations (handles both single and multiple annotations)
+        GenerateDto[] dtoAnnotations = classElement.getAnnotationsByType(GenerateDto.class);
+        
+        if (dtoAnnotations.length == 0) {
+            return; // No DTO annotations found
+        }
+        
+        // Validate unique combinations of package and postfix
+        if (!validateUniqueDtoCombinations(classElement, dtoAnnotations)) {
+            return; // Validation failed, error already logged
+        }
+        
+        // Process each DTO annotation
+        for (GenerateDto annotation : dtoAnnotations) {
+            processGenerateDto(classElement, annotation);
+        }
+    }
+
+    private boolean validateUniqueDtoCombinations(TypeElement classElement, GenerateDto[] annotations) {
+        Set<String> uniqueCombinations = new HashSet<>();
+        
+        for (GenerateDto annotation : annotations) {
+            String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), "DTO");
+            String combination = packageName + "." + classElement.getSimpleName() + postfix;
+            
+            if (!uniqueCombinations.add(combination)) {
+                error(classElement, "Duplicate DTO configuration would generate the same class: " + combination);
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    private void processGenerateDto(TypeElement classElement, GenerateDto annotation) {
         try {
-            GenerateDto annotation = classElement.getAnnotation(GenerateDto.class);
             String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
             String postfix = config.validateAndGetPostfix(annotation.postfix(), "DTO");
             
