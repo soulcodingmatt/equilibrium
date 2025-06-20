@@ -7,24 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Initial CHANGELOG.md documentation
+### Changed
+- Preparing for stable 0.2.0 release
 
-## [0.2.0-SNAPSHOT] - In Development
+## [0.2.0-RC1] - 2025-06-20
 
 ### Added
-- Support for Java 21
-- Enhanced annotation processing with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo`
-- Configurable package names and class postfixes via compiler arguments
-- Field exclusion capabilities with `@IgnoreDto`, `@IgnoreRecord`, `@IgnoreVo`, and `@IgnoreAll` annotations
-- Inheritance support for generated classes
-- Lombok integration with builder pattern support (`@SuperBuilder`)
-- Comprehensive Maven configuration with annotation processor paths
-- IDE integration support (IntelliJ IDEA configuration documented)
-- Value Object generation with customizable features:
-  - Optional setter generation
-  - ID field specification
-  - Method override capabilities
+- Support for multiple annotations of the same type with different parameters
+- Selective field ignoring by ID for `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo`
+- Warning system when ignore ID feature is used with unassigned ID fields
+- Enhanced error messaging and validation
+
+### Changed
+- Made method overrides standard for DTOs and VOs (removed overrides parameters)
+- Improved package path fallback mechanism
+- Refactored codebase to address SonarQube warnings for better code quality
+
+### Fixed
+- Package path resolution now returns current project's package path as fallback
+
+### Technical Improvements
+- Enhanced test coverage with additional test cases
+- Code quality improvements addressing static analysis warnings
+- Better error messaging for developer experience
+- Removed unused imports for cleaner codebase
 
 ### Features
 - **DTO Generation**: Automatic generation of Data Transfer Objects with field preservation and type safety
@@ -54,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - IDE setup instructions for IntelliJ IDEA
 - Lombok integration guidelines
 
+### Notes
+- This release candidate includes significant enhancements to the multiple annotation feature
+- All major features from 0.1.0-RC1 remain stable and are enhanced
+- Please test the new multiple annotation capabilities and provide feedback
+
 ## Project Information
 
 - **Repository**: https://github.com/soulcodingmatt/equilibrium
@@ -64,3 +75,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 **Note**: This project is currently under active development. Features and APIs may change before the first stable release.
+
+## [0.1.0-RC1] - Previous Release
+
+### Added
+- Initial support for Java 21
+- Basic annotation processing with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo`
+- Configurable package names and class postfixes via compiler arguments
+- Field exclusion capabilities with `@IgnoreDto`, `@IgnoreRecord`, `@IgnoreVo`, and `@IgnoreAll` annotations
+- Inheritance support for generated classes
+- Optional Lombok integration with builder pattern support (`@SuperBuilder`)
+- Comprehensive Maven configuration with annotation processor paths
+- IDE integration support (IntelliJ IDEA configuration documented)
+- Value Object generation with customizable features

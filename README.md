@@ -164,6 +164,19 @@ public class User {
 ```
 **Arguments for @GenerateDto**
 
+`id`
+- Usage: `@GenerateDto(id=1)` or `@GenerateDto(id=2)`
+- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier 
+  to this specific @GenerateDto annotation instance. This identifier can then be referenced by @IgnoreDto 
+  annotations to selectively exclude fields from specific DTO generations when multiple DTOs are being 
+  generated from the same source class.
+
+`ignore`
+- Usage: `@GenerateDto(ignore="fieldname")` or `@GenerateDto(ignore={"field1", "field2"})`
+- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded 
+  from the generated DTO. This provides an alternative to using the `@IgnoreDto` field-level annotation.
+  You can specify a single field as a string or multiple fields as an array of strings.
+
 `pkg`
 - Usage: `@GenerateDto(pkg="org.thisisanexample.dto")`
 - Default: Defaults to the compiler arguments for DTOs.
@@ -181,10 +194,23 @@ generated DTOs and customized DTO classes that extend the generated VOs.
 - **Note**: For this feature to work, Project Lombok **must be added** to your project.
 
 ### @GenerateRecord
+
 **Arguments for @GenerateRecord**
 
-`pkg`
+`id`
+- Usage: `@GenerateRecord(id=1)` or `@GenerateRecord(id=2)`
+- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier 
+  to this specific @GenerateRecord annotation instance. This identifier can then be referenced by @IgnoreRecord 
+  annotations to selectively exclude fields from specific Record generations when multiple Records are being 
+  generated from the same source class.
 
+`ignore`
+- Usage: `@GenerateRecord(ignore="fieldname")` or `@GenerateRecord(ignore={"field1", "field2"})`
+- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded 
+  from the generated Record. This provides an alternative to using the `@IgnoreRecord` field-level annotation.
+  You can specify a single field as a string or multiple fields as an array of strings.
+
+`pkg`
 - Usage: `@GenerateRecord(pkg="org.thisisanexample.record")`
 - Default: Defaults to the compiler arguments for Java Records.
 
@@ -196,6 +222,21 @@ generated DTOs and customized DTO classes that extend the generated VOs.
 
 ### @GenerateVo
 **Arguments for @GenerateVo**
+`id`
+- Usage: `@GenerateVo(id=1)` or `@GenerateVo(id=2)`
+- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier 
+  to this specific @GenerateVo annotation instance. This identifier can then be referenced by @IgnoreVo 
+  annotations to selectively exclude fields from specific VO generations when multiple VOs are being 
+  generated from the same source class.
+
+`ignore`
+- Usage: `@GenerateVo(ignore="fieldname")` or `@GenerateVo(ignore={"field1", "field2"})`
+- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded 
+  from the generated VO. This provides an alternative to using the `@IgnoreVo` field-level annotation.
+  You can specify a single field as a string or multiple fields as an array of strings.
+  Value objects typically do not have an identity, in contrast to domain classes.
+  Therefore, in most cases, it is desirable to exclude ID fields.
+
 
 `pkg`
 - Usage: `@GenerateVo(pkg="org.thisisanexample.vo")`
@@ -206,26 +247,12 @@ generated DTOs and customized DTO classes that extend the generated VOs.
 - Default: Defaults to the compiler arguments for VOs. If the compiler arguments aren't
   set either, the default value is "Vo".
 
-`ignore`
-- Usage: `@GenerateVo(ignore="fieldname")`
-- Default: This parameter is **not** set by default. If it is set, the referenced field will be ignored 
-during the generation of the value object (VO).
-Value objects typically do not have an identity, in contrast to domain classes. 
-Therefore, in most cases, it is desirable to exclude ID fields.
-
 `setters`
 - Usage: `@GenerateVo(setters=true)`
 - Default: This parameter defaults to false. Value objects (VOs) are typically immutable, meaning all 
 fields are final and there are no setters. This prevents mutation after creation.
 However, if you really need setters for your VO fields (for whatever reason), you can set this parameter 
 to `true`.
-
-`overrides`
-- Usage: `@GenerateVo(overrides=false)`
-- Default: This parameter defaults to `true`. For value objects, the standard methods `equals()`, `hashCode()`, 
-and `toString()` should be overridden (in fact, this is generally considered good practice). This is handled 
-automatically by Equilibrium, unless this parameter is explicitly set to `false`.
-
 
 ### @IgnoreDto, @IgnoreRecord, @IgnoreVo, @IgnoreAll
 `@IgnoreDto`, `@IgnoreRecord`, and `@IgnoreVo` are field-level annotations that exclude specific fields from 
@@ -234,6 +261,51 @@ more general field-level annotation that excludes fields from all generated clas
 type. These annotations are particularly useful for excluding internal fields, sensitive data, or fields 
 that shouldn't be part of the data transfer or value object representations.
 
+**New `ids` parameter for selective exclusion:**
+- `@IgnoreDto(ids={1, 2})`: Excludes the field only from DTO generations with the specified IDs
+- `@IgnoreRecord(ids={1, 2})`: Excludes the field only from Record generations with the specified IDs  
+- `@IgnoreVo(ids={1, 2})`: Excludes the field only from VO generations with the specified IDs
+
+This allows you to have multiple generations of the same type (e.g., multiple DTOs) from a single source class, 
+and selectively exclude fields from specific generations based on their ID. If no `ids` parameter is specified, 
+the field will be excluded from all generations of that type.
+
+## Multiple Annotations of the Same Type
+
+It is now possible to use multiple instances of `@GenerateDto`, `@GenerateVo`, and `@GenerateRecord` annotations 
+on the same class. This allows you to generate multiple DTOs, VOs, or Records from a single source class with 
+different configurations.
+
+**Important requirement:** Each annotation instance must generate a file with a **unique path**. The path is 
+comprised of the package name and the class name (original class name + postfix). As long as two annotations 
+do not try to create the same filename at the same path, multiple annotations will work correctly.
+
+**Example:**
+```java
+@GenerateDto(id=1, pkg="com.example.dto.api", postfix="ApiDto")
+@GenerateDto(id=2, pkg="com.example.dto.internal", postfix="InternalDto") 
+@GenerateVo(id=1, pkg="com.example.vo", postfix="Vo")
+@GenerateVo(id=2, pkg="com.example.vo", postfix="ValueObject")
+public class User {
+    private String name;
+    private int age;
+    
+    @IgnoreDto(ids={1})  // Only excluded from ApiDto, included in InternalDto
+    private String internalId;
+    
+    @IgnoreVo(ids={2})   // Only excluded from UserValueObject, included in UserVo
+    private String temporaryField;
+}
+```
+
+This will generate:
+- `com.example.dto.api.UserApiDto`
+- `com.example.dto.internal.UserInternalDto`
+- `com.example.vo.UserVo`
+- `com.example.vo.UserValueObject`
+
+**Note:** The generated file names must be syntactically correct and not yield technical errors. Ensure that 
+package names and postfixes follow Java naming conventions.
 
 ## Adding custom fields to generated DTOs
 **TBD**
