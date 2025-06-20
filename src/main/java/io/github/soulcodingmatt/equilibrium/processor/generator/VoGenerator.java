@@ -28,18 +28,16 @@ public class VoGenerator {
     private final String postfix;
     private final Set<String> ignoredFields;
     private final boolean generateSetters;
-    private final boolean standardOverrides;
     private final Filer filer;
     private final int voId;
 
     public VoGenerator(TypeElement classElement, String packageName, String postfix,
-                       Set<String> ignoredFields, boolean generateSetters, boolean standardOverrides, int voId, Filer filer) {
+                       Set<String> ignoredFields, boolean generateSetters, int voId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.generateSetters = generateSetters;
-        this.standardOverrides = standardOverrides;
         this.filer = filer;
         this.voId = voId;
     }
@@ -81,12 +79,10 @@ public class VoGenerator {
                 writeAccessors(writer, field);
             }
             
-            // Write standard method overrides if enabled
-            if (standardOverrides) {
-                writeEquals(writer, fields, voClassName);
-                writeHashCode(writer, fields);
-                writeToString(writer, fields);
-            }
+            // Write standard method overrides (always generated)
+            writeEquals(writer, fields, voClassName);
+            writeHashCode(writer, fields);
+            writeToString(writer, fields);
             
             // Close class
             writer.write("}\n");

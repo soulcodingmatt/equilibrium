@@ -26,19 +26,17 @@ public class DtoGenerator {
     private final String postfix;
     private final Set<String> ignoredFields;
     private final boolean builder;
-    private final boolean standardOverrides;
     private final Filer filer;
     private final int dtoId;
 
     public DtoGenerator(TypeElement classElement, String packageName, String postfix,
-                        Set<String> ignoredFields, boolean builder, boolean standardOverrides, int dtoId, Filer filer) {
+                        Set<String> ignoredFields, boolean builder, int dtoId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.postfix = postfix;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
         this.builder = builder;
-        this.standardOverrides = standardOverrides;
         this.dtoId = dtoId;
     }
 
@@ -60,9 +58,7 @@ public class DtoGenerator {
             if (builder) {
                 writer.write("import lombok.experimental.SuperBuilder;\n");
             }
-            if (standardOverrides) {
-                writer.write("import java.util.Objects;\n");
-            }
+            writer.write("import java.util.Objects;\n");
             writeImports(writer, fields);
             
             // Write class declaration
@@ -85,12 +81,10 @@ public class DtoGenerator {
                 writeAccessors(writer, field);
             }
             
-            // Write standard method overrides if enabled
-            if (standardOverrides) {
-                writeEquals(writer, fields, dtoClassName);
-                writeHashCode(writer, fields);
-                writeToString(writer, fields);
-            }
+            // Write standard method overrides (always generated)
+            writeEquals(writer, fields, dtoClassName);
+            writeHashCode(writer, fields);
+            writeToString(writer, fields);
             
             // Close class
             writer.write("}\n");

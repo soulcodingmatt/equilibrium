@@ -56,13 +56,4 @@ public @interface GenerateVo {
      * @return {@code true} if setters should be generated; {@code false} otherwise
      */
     boolean setters() default false;
-
-    /**
-     * Whether to generate standard method overrides for the value object,
-     * including {@code equals()}, {@code hashCode()}, and {@code toString()}.
-     * <p>
-     * Defaults to {@code true}.
-     * @return {@code true} if standard overrides should be generated; {@code false} otherwise
-     */
-    boolean overrides() default true;
 }

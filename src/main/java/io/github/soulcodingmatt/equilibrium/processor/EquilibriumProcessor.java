@@ -228,11 +228,10 @@ public class EquilibriumProcessor extends AbstractProcessor {
             }
             
             boolean builder = annotation.builder();
-            boolean overrides = annotation.overrides();
 
             // Create and run the DTO generator
             int dtoId = annotation.id();
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, overrides, dtoId, filer);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, dtoId, filer);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
@@ -459,12 +458,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
             }
             
             boolean generateSetter = annotation.setters();
-            boolean overrides = annotation.overrides();
 
             // Create and run the Value Object generator
             int voId = annotation.id();
             VoGenerator generator = new VoGenerator(classElement, packageName, postfix, 
-                                                  ignoredFields, generateSetter, overrides, voId, filer);
+                                                  ignoredFields, generateSetter, voId, filer);
             generator.generate();
 
             note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
