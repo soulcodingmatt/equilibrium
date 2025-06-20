@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DtoGenerator {
+    public static final String STRING_END = "    }\n\n";
+    public static final String OVERRIDE = "    @Override\n";
     private final TypeElement classElement;
     private final String packageName;
     private final String postfix;
@@ -188,16 +190,16 @@ public class DtoGenerator {
         // Getter
         writer.write("    public " + type + " get" + capitalizedName + "() {\n");
         writer.write("        return " + name + ";\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
         
         // Setter
         writer.write("    public void set" + capitalizedName + "(" + type + " " + name + ") {\n");
         writer.write("        this." + name + " = " + name + ";\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 
     private void writeEquals(Writer writer, List<VariableElement> fields, String className) throws IOException {
-        writer.write("    @Override\n");
+        writer.write(OVERRIDE);
         writer.write("    public boolean equals(Object o) {\n");
         writer.write("        if (this == o) return true;\n");
         writer.write("        if (o == null || getClass() != o.getClass()) return false;\n");
@@ -210,11 +212,11 @@ public class DtoGenerator {
         }
         
         writer.write("        return true;\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 
     private void writeHashCode(Writer writer, List<VariableElement> fields) throws IOException {
-        writer.write("    @Override\n");
+        writer.write(OVERRIDE);
         writer.write("    public int hashCode() {\n");
         writer.write("        return Objects.hash(");
         
@@ -229,11 +231,11 @@ public class DtoGenerator {
         }
         
         writer.write(");\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 
     private void writeToString(Writer writer, List<VariableElement> fields) throws IOException {
-        writer.write("    @Override\n");
+        writer.write(OVERRIDE);
         writer.write("    public String toString() {\n");
         writer.write("        return \"" + classElement.getSimpleName() + postfix + "{\" +\n");
         
@@ -250,6 +252,6 @@ public class DtoGenerator {
         }
         
         writer.write(" +\n            \"}\";\n");
-        writer.write("    }\n\n");
+        writer.write(STRING_END);
     }
 }
