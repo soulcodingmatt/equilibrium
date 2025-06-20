@@ -48,6 +48,11 @@ import java.util.stream.Collectors;
         "equilibrium.vo.postfix"
 })
 public class EquilibriumProcessor extends AbstractProcessor {
+    public static final String DUPLICATE_ID = "Duplicate ID ";
+    public static final String DUPLICATES_WILL_BE_IGNORED = "' - duplicates will be ignored";
+    public static final String RECORD = "Record";
+    public static final String INVALID_FIELD_NAME_IN_IGNORE_LIST = "Invalid field name in ignore list: '";
+    public static final String WILL_BE_SKIPPED = "' - will be skipped";
     private final Set<String> processedElements = new HashSet<>();
 
     @Override
@@ -198,12 +203,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
             
             // Validate unique IDs (only if ID is explicitly set)
             int id = annotation.id();
-            if (id != -1) { // -1 is the default value meaning no ID specified
-                if (!usedIds.add(id)) {
+            if (id != -1 && !usedIds.add(id)) {
                     error(classElement, "Duplicate DTO ID: " + id + ". Each @GenerateDto annotation must have a unique ID.");
                     return false;
                 }
-            }
+
         }
         
         return true;
@@ -222,7 +226,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 } else if (!fieldName.isEmpty()) {
                     // Log warning for invalid field names but continue processing
                     messager.printMessage(Diagnostic.Kind.WARNING, 
-                        "Invalid field name in ignore list: '" + fieldName + "' - will be skipped", 
+                        INVALID_FIELD_NAME_IN_IGNORE_LIST + fieldName + WILL_BE_SKIPPED,
                         classElement);
                 }
             }
@@ -254,8 +258,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
                     for (int id : ids) {
                         if (!uniqueIds.add(id)) {
                             messager.printMessage(Diagnostic.Kind.WARNING,
-                                "Duplicate ID " + id + " in @IgnoreDto annotation for field '" + 
-                                field.getSimpleName() + "' - duplicates will be ignored", field);
+                                DUPLICATE_ID + id + " in @IgnoreDto annotation for field '" +
+                                field.getSimpleName() + DUPLICATES_WILL_BE_IGNORED, field);
                         } else if (!validDtoIds.isEmpty() && !validDtoIds.contains(id)) {
                             // Only check for orphaned IDs if there are actually IDs defined in @GenerateDto annotations
                             messager.printMessage(Diagnostic.Kind.WARNING,
@@ -303,8 +307,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
         Set<Integer> usedIds = new HashSet<>();
         
         for (GenerateRecord annotation : annotations) {
-            String packageName = config.validateAndGetPackage(annotation.pkg(), "Record");
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), "Record");
+            String packageName = config.validateAndGetPackage(annotation.pkg(), RECORD);
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), RECORD);
             String combination = packageName + "." + classElement.getSimpleName() + postfix;
             
             if (!uniqueCombinations.add(combination)) {
@@ -314,12 +318,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
             
             // Validate unique IDs (only if ID is explicitly set)
             int id = annotation.id();
-            if (id != -1) { // -1 is the default value meaning no ID specified
-                if (!usedIds.add(id)) {
+            if (id != -1 && !usedIds.add(id)) {
                     error(classElement, "Duplicate Record ID: " + id + ". Each @GenerateRecord annotation must have a unique ID.");
                     return false;
                 }
-            }
+
         }
         
         return true;
@@ -327,8 +330,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
     private void processGenerateRecord(TypeElement classElement, GenerateRecord annotation) {
         try {
-            String packageName = config.validateAndGetPackage(annotation.pkg(), "Record");
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), "Record");
+            String packageName = config.validateAndGetPackage(annotation.pkg(), RECORD);
+            String postfix = config.validateAndGetPostfix(annotation.postfix(), RECORD);
             
             // Process ignore field names array and validate each field name
             Set<String> ignoredFields = new HashSet<>();
@@ -338,7 +341,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 } else if (!fieldName.isEmpty()) {
                     // Log warning for invalid field names but continue processing
                     messager.printMessage(Diagnostic.Kind.WARNING, 
-                        "Invalid field name in ignore list: '" + fieldName + "' - will be skipped", 
+                        INVALID_FIELD_NAME_IN_IGNORE_LIST + fieldName + WILL_BE_SKIPPED,
                         classElement);
                 }
             }
@@ -368,8 +371,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
                     for (int id : ids) {
                         if (!uniqueIds.add(id)) {
                             messager.printMessage(Diagnostic.Kind.WARNING,
-                                "Duplicate ID " + id + " in @IgnoreRecord annotation for field '" + 
-                                field.getSimpleName() + "' - duplicates will be ignored", field);
+                                DUPLICATE_ID + id + " in @IgnoreRecord annotation for field '" +
+                                field.getSimpleName() + DUPLICATES_WILL_BE_IGNORED, field);
                         } else if (!validRecordIds.isEmpty() && !validRecordIds.contains(id)) {
                             // Only check for orphaned IDs if there are actually IDs defined in @GenerateRecord annotations
                             messager.printMessage(Diagnostic.Kind.WARNING,
@@ -428,12 +431,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
             
             // Validate unique IDs (only if ID is explicitly set)
             int id = annotation.id();
-            if (id != -1) { // -1 is the default value meaning no ID specified
-                if (!usedIds.add(id)) {
+            if (id != -1 && !usedIds.add(id)) {
                     error(classElement, "Duplicate VO ID: " + id + ". Each @GenerateVo annotation must have a unique ID.");
                     return false;
                 }
-            }
+
         }
         
         return true;
@@ -452,7 +454,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 } else if (!fieldName.isEmpty()) {
                     // Log warning for invalid field names but continue processing
                     messager.printMessage(Diagnostic.Kind.WARNING, 
-                        "Invalid field name in ignore list: '" + fieldName + "' - will be skipped", 
+                        INVALID_FIELD_NAME_IN_IGNORE_LIST + fieldName + WILL_BE_SKIPPED,
                         classElement);
                 }
             }
@@ -485,8 +487,8 @@ public class EquilibriumProcessor extends AbstractProcessor {
                     for (int id : ids) {
                         if (!uniqueIds.add(id)) {
                             messager.printMessage(Diagnostic.Kind.WARNING,
-                                "Duplicate ID " + id + " in @IgnoreVo annotation for field '" + 
-                                field.getSimpleName() + "' - duplicates will be ignored", field);
+                                DUPLICATE_ID + id + " in @IgnoreVo annotation for field '" +
+                                field.getSimpleName() + DUPLICATES_WILL_BE_IGNORED, field);
                         } else if (!validVoIds.isEmpty() && !validVoIds.contains(id)) {
                             // Only check for orphaned IDs if there are actually IDs defined in @GenerateVo annotations
                             messager.printMessage(Diagnostic.Kind.WARNING,
