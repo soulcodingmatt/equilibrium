@@ -107,8 +107,14 @@ public class EquilibriumProcessor extends AbstractProcessor {
             // We've processed our annotations, so claim them
             return true;
         } catch (Exception e) {
-            error(null, "Failed to process annotations: " + e.getMessage());
-            e.printStackTrace();
+            // Try to get the first valid element for better error context
+            Set<TypeElement> validElements = getValidClassElements(roundEnv);
+            if (!validElements.isEmpty()) {
+                TypeElement contextElement = validElements.iterator().next();
+                error(contextElement, "Failed to process annotations: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
+            } else {
+                error("Failed to process annotations: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
+            }
             // On error, don't claim the annotations so other processors might handle them
             return false;
         }
@@ -240,8 +246,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
             note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
         } catch (Exception e) {
-            error(classElement, "Failed to generate DTO: " + e.getMessage());
-            e.printStackTrace();
+            error(classElement, "Failed to generate DTO: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
         }
     }
 
@@ -353,8 +358,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
             note(classElement, "Generated Record class: " + packageName + "." + classElement.getSimpleName() + postfix);
         } catch (Exception e) {
-            error(classElement, "Failed to generate Record: " + e.getMessage());
-            e.printStackTrace();
+            error(classElement, "Failed to generate Record: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
         }
     }
 
@@ -469,8 +473,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
             note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
         } catch (Exception e) {
-            error(classElement, "Failed to generate Value Object: " + e.getMessage());
-            e.printStackTrace();
+            error(classElement, "Failed to generate Value Object: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
         }
     }
 
@@ -502,6 +505,10 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
     private void error(Element element, String message) {
         messager.printMessage(Diagnostic.Kind.ERROR, message, element);
+    }
+
+    private void error(String message) {
+        messager.printMessage(Diagnostic.Kind.ERROR, message);
     }
 
     private void note(Element element, String message) {
