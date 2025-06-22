@@ -55,7 +55,7 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
             <arg>-Aequilibrium.record.package=com.example.record</arg>
             <arg>-Aequilibrium.record.postfix=Record</arg>
             <arg>-Aequilibrium.vo.package=com.example.vo</arg>
-            <arg>-Aequilibrium.dto.postfix=Vo</arg>
+            <arg>-Aequilibrium.vo.postfix=Vo</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
