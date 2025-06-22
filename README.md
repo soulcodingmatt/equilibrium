@@ -46,12 +46,16 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
         <artifactId>maven-compiler-plugin</artifactId>
         <version><!-- insert latest version here --></version>
         <configuration>
-          <release>${maven.compiler.release}</release>
+          <release><!-- insert your java version number here, e.g. 21 --></release>
           <showWarnings>true</showWarnings>
           <compilerArgs>
             <arg>-Xlint:all</arg>
             <arg>-Aequilibrium.dto.package=com.example.dto</arg>
             <arg>-Aequilibrium.dto.postfix=Dto</arg>
+            <arg>-Aequilibrium.record.package=com.example.record</arg>
+            <arg>-Aequilibrium.record.postfix=Record</arg>
+            <arg>-Aequilibrium.vo.package=com.example.vo</arg>
+            <arg>-Aequilibrium.dto.postfix=Vo</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
