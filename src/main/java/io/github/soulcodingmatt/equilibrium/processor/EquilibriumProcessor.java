@@ -199,8 +199,18 @@ public class EquilibriumProcessor extends AbstractProcessor {
         
         for (GenerateDto annotation : annotations) {
             String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), "DTO");
-            String combination = packageName + "." + classElement.getSimpleName() + postfix;
+            String className;
+            
+            // Check if custom name is provided
+            if (!annotation.name().isEmpty()) {
+                className = annotation.name();
+            } else {
+                // Fall back to postfix-based naming
+                String postfix = config.validateAndGetPostfix("", "DTO");
+                className = classElement.getSimpleName() + postfix;
+            }
+            
+            String combination = packageName + "." + className;
             
             if (!uniqueCombinations.add(combination)) {
                 error(classElement, "Duplicate DTO configuration would generate the same class: " + combination);
@@ -222,7 +232,15 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private void processGenerateDto(TypeElement classElement, GenerateDto annotation) {
         try {
             String packageName = config.validateAndGetPackage(annotation.pkg(), "DTO");
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), "DTO");
+            String className;
+            boolean useCustomName = !annotation.name().isEmpty();
+            
+            if (useCustomName) {
+                className = annotation.name();
+            } else {
+                String postfix = config.validateAndGetPostfix("", "DTO");
+                className = classElement.getSimpleName() + postfix;
+            }
             
             // Process ignore field names array and validate each field name
             Set<String> ignoredFields = new HashSet<>();
@@ -241,10 +259,10 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
             // Create and run the DTO generator
             int dtoId = annotation.id();
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, postfix, ignoredFields, builder, dtoId, filer);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, className, ignoredFields, builder, dtoId, filer);
             generator.generate();
 
-            note(classElement, "Generated DTO class: " + packageName + "." + classElement.getSimpleName() + postfix);
+            note(classElement, "Generated DTO class: " + packageName + "." + className);
         } catch (Exception e) {
             error(classElement, "Failed to generate DTO: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
         }
