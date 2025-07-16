@@ -77,6 +77,9 @@ public class DtoGenerator {
                 writeField(writer, field);
             }
             
+            // Write constructor
+            writeConstructor(writer, fields, dtoClassName);
+            
             // Write getters and setters
             for (VariableElement field : fields) {
                 writeAccessors(writer, field);
@@ -194,6 +197,30 @@ public class DtoGenerator {
         // Setter
         writer.write("    public void set" + capitalizedName + "(" + type + " " + name + ") {\n");
         writer.write("        this." + name + " = " + name + ";\n");
+        writer.write(STRING_END);
+    }
+
+    private void writeConstructor(Writer writer, List<VariableElement> fields, String className) throws IOException {
+        writer.write("    public " + className + "(");
+        
+        // Write constructor parameters
+        boolean first = true;
+        for (VariableElement field : fields) {
+            if (!first) {
+                writer.write(", ");
+            }
+            String type = field.asType().toString();
+            String name = field.getSimpleName().toString();
+            writer.write(type + " " + name);
+            first = false;
+        }
+        writer.write(") {\n");
+        
+        // Write field assignments
+        for (VariableElement field : fields) {
+            String name = field.getSimpleName().toString();
+            writer.write("        this." + name + " = " + name + ";\n");
+        }
         writer.write(STRING_END);
     }
 
