@@ -25,17 +25,17 @@ public class VoGenerator {
     public static final String OVERRIDE = "    @Override\n";
     private final TypeElement classElement;
     private final String packageName;
-    private final String postfix;
+    private final String voClassName;
     private final Set<String> ignoredFields;
     private final boolean generateSetters;
     private final Filer filer;
     private final int voId;
 
-    public VoGenerator(TypeElement classElement, String packageName, String postfix,
+    public VoGenerator(TypeElement classElement, String packageName, String voClassName,
                        Set<String> ignoredFields, boolean generateSetters, int voId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
-        this.postfix = postfix;
+        this.voClassName = voClassName;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.generateSetters = generateSetters;
         this.filer = filer;
@@ -44,7 +44,6 @@ public class VoGenerator {
 
     public void generate() throws IOException {
         String className = classElement.getSimpleName().toString();
-        String voClassName = className + postfix;
         
         // Get all fields that should be included in the Value Object
         List<VariableElement> fields = getIncludedFields();
@@ -261,7 +260,7 @@ public class VoGenerator {
     private void writeToString(Writer writer, List<VariableElement> fields) throws IOException {
         writer.write(OVERRIDE);
         writer.write("    public String toString() {\n");
-        writer.write("        return \"" + classElement.getSimpleName() + postfix + "{\" +\n");
+        writer.write("        return \"" + voClassName + "{\" +\n");
         
         // Add all fields to string representation
         boolean first = true;
