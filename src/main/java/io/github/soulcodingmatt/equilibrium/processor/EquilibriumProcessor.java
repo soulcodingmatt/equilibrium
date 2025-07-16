@@ -461,8 +461,18 @@ public class EquilibriumProcessor extends AbstractProcessor {
         
         for (GenerateVo annotation : annotations) {
             String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), "VO");
-            String combination = packageName + "." + classElement.getSimpleName() + postfix;
+            String className;
+            
+            // Check if custom name is provided
+            if (!annotation.name().isEmpty()) {
+                className = annotation.name();
+            } else {
+                // Fall back to postfix-based naming
+                String postfix = config.validateAndGetPostfix("", "VO");
+                className = classElement.getSimpleName() + postfix;
+            }
+            
+            String combination = packageName + "." + className;
             
             if (!uniqueCombinations.add(combination)) {
                 error(classElement, "Duplicate VO configuration would generate the same class: " + combination);
@@ -484,7 +494,15 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private void processGenerateVo(TypeElement classElement, GenerateVo annotation) {
         try {
             String packageName = config.validateAndGetPackage(annotation.pkg(), "VO");
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), "VO");
+            String className;
+            boolean useCustomName = !annotation.name().isEmpty();
+            
+            if (useCustomName) {
+                className = annotation.name();
+            } else {
+                String postfix = config.validateAndGetPostfix("", "VO");
+                className = classElement.getSimpleName() + postfix;
+            }
             
             // Process ignore field names array and validate each field name
             Set<String> ignoredFields = new HashSet<>();
@@ -503,11 +521,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
             // Create and run the Value Object generator
             int voId = annotation.id();
-            VoGenerator generator = new VoGenerator(classElement, packageName, postfix, 
+            VoGenerator generator = new VoGenerator(classElement, packageName, className, 
                                                   ignoredFields, generateSetter, voId, filer);
             generator.generate();
 
-            note(classElement, "Generated Value Object class: " + packageName + "." + classElement.getSimpleName() + postfix);
+            note(classElement, "Generated Value Object class: " + packageName + "." + className);
         } catch (Exception e) {
             error(classElement, "Failed to generate Value Object: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
         }
