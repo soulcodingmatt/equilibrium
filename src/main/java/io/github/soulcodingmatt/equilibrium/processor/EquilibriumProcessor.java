@@ -331,8 +331,18 @@ public class EquilibriumProcessor extends AbstractProcessor {
         
         for (GenerateRecord annotation : annotations) {
             String packageName = config.validateAndGetPackage(annotation.pkg(), RECORD);
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), RECORD);
-            String combination = packageName + "." + classElement.getSimpleName() + postfix;
+            String className;
+            
+            // Check if custom name is provided
+            if (!annotation.name().isEmpty()) {
+                className = annotation.name();
+            } else {
+                // Fall back to postfix-based naming
+                String postfix = config.validateAndGetPostfix("", RECORD);
+                className = classElement.getSimpleName() + postfix;
+            }
+            
+            String combination = packageName + "." + className;
             
             if (!uniqueCombinations.add(combination)) {
                 error(classElement, "Duplicate Record configuration would generate the same class: " + combination);
@@ -354,7 +364,15 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private void processGenerateRecord(TypeElement classElement, GenerateRecord annotation) {
         try {
             String packageName = config.validateAndGetPackage(annotation.pkg(), RECORD);
-            String postfix = config.validateAndGetPostfix(annotation.postfix(), RECORD);
+            String className;
+            boolean useCustomName = !annotation.name().isEmpty();
+            
+            if (useCustomName) {
+                className = annotation.name();
+            } else {
+                String postfix = config.validateAndGetPostfix("", RECORD);
+                className = classElement.getSimpleName() + postfix;
+            }
             
             // Process ignore field names array and validate each field name
             Set<String> ignoredFields = new HashSet<>();
@@ -371,10 +389,10 @@ public class EquilibriumProcessor extends AbstractProcessor {
             
             // Create and run the Record generator
             int recordId = annotation.id();
-            RecordGenerator generator = new RecordGenerator(classElement, packageName, postfix, ignoredFields, recordId, filer);
+            RecordGenerator generator = new RecordGenerator(classElement, packageName, className, ignoredFields, recordId, filer);
             generator.generate();
 
-            note(classElement, "Generated Record class: " + packageName + "." + classElement.getSimpleName() + postfix);
+            note(classElement, "Generated Record class: " + packageName + "." + className);
         } catch (Exception e) {
             error(classElement, "Failed to generate Record: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
         }

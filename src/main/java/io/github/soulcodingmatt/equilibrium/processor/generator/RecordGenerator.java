@@ -23,16 +23,16 @@ import java.util.stream.Stream;
 public class RecordGenerator {
     private final TypeElement classElement;
     private final String packageName;
-    private final String postfix;
+    private final String recordClassName;
     private final Set<String> ignoredFields;
     private final Filer filer;
     private final int recordId;
 
-    public RecordGenerator(TypeElement classElement, String packageName, String postfix,
+    public RecordGenerator(TypeElement classElement, String packageName, String recordClassName,
                            Set<String> ignoredFields, int recordId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
-        this.postfix = postfix;
+        this.recordClassName = recordClassName;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
         this.recordId = recordId;
@@ -40,7 +40,6 @@ public class RecordGenerator {
 
     public void generate() throws IOException {
         String className = classElement.getSimpleName().toString();
-        String recordClassName = className + postfix;
         
         // Get all fields that should be included in the Record
         List<VariableElement> fields = getIncludedFields();

@@ -34,11 +34,13 @@ public @interface GenerateRecord {
     String pkg() default "";
 
     /**
-     * The postfix to be added to the generated class name.
-     * Default is "Record".
-     * @return the postfix for the generated class
+     * The complete name for the generated Record class.
+     * If specified, this exact name will be used without any postfix.
+     * If not specified, the class name will be constructed using the original class name 
+     * plus a postfix (determined by compiler arguments or the default "Record").
+     * @return the complete name for the generated class
      */
-    String postfix() default "Record";
+    String name() default "";
 
     /**
      * The fields of the base class to ignore. They will not be generated in the Record.
