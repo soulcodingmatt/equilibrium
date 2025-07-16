@@ -25,17 +25,17 @@ public class DtoGenerator {
     public static final String OVERRIDE = "    @Override\n";
     private final TypeElement classElement;
     private final String packageName;
-    private final String postfix;
+    private final String dtoClassName;
     private final Set<String> ignoredFields;
     private final boolean builder;
     private final Filer filer;
     private final int dtoId;
 
-    public DtoGenerator(TypeElement classElement, String packageName, String postfix,
+    public DtoGenerator(TypeElement classElement, String packageName, String dtoClassName,
                         Set<String> ignoredFields, boolean builder, int dtoId, Filer filer) {
         this.classElement = classElement;
         this.packageName = packageName;
-        this.postfix = postfix;
+        this.dtoClassName = dtoClassName;
         this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
         this.filer = filer;
         this.builder = builder;
@@ -44,7 +44,6 @@ public class DtoGenerator {
 
     public void generate() throws IOException {
         String className = classElement.getSimpleName().toString();
-        String dtoClassName = className + postfix;
         
         // Get all fields that should be included in the DTO
         List<VariableElement> fields = getIncludedFields();
@@ -237,7 +236,7 @@ public class DtoGenerator {
     private void writeToString(Writer writer, List<VariableElement> fields) throws IOException {
         writer.write(OVERRIDE);
         writer.write("    public String toString() {\n");
-        writer.write("        return \"" + classElement.getSimpleName() + postfix + "{\" +\n");
+        writer.write("        return \"" + dtoClassName + "{\" +\n");
         
         // Add all fields to string representation
         boolean first = true;
