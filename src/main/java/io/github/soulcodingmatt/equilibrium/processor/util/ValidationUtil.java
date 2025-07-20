@@ -50,6 +50,7 @@ public class ValidationUtil {
         "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", 
         "transient", "try", "void", "volatile", "while"
     );
+    public static final String PACKAGE_NAME = "Package name '";
 
     private ValidationUtil(){
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
@@ -95,22 +96,22 @@ public class ValidationUtil {
         
         // Check for leading/trailing dots or consecutive dots
         if (pkg.startsWith(".") || pkg.endsWith(".")) {
-            return "Package name '" + pkg + "' cannot start or end with a dot";
+            return PACKAGE_NAME + pkg + "' cannot start or end with a dot";
         }
         
         if (pkg.contains("..")) {
-            return "Package name '" + pkg + "' cannot contain consecutive dots";
+            return PACKAGE_NAME + pkg + "' cannot contain consecutive dots";
         }
         
         // Split and validate each part
         String[] parts = pkg.split("\\.");
         for (String part : parts) {
             if (!PACKAGE_PART_PATTERN.matcher(part).matches()) {
-                return "Package name '" + pkg + "' has invalid part '" + part + "'. Each part must start with a letter and contain only letters, numbers, underscores, and hyphens";
+                return PACKAGE_NAME + pkg + "' has invalid part '" + part + "'. Each part must start with a letter and contain only letters, numbers, underscores, and hyphens";
             }
             
             if (JAVA_KEYWORDS.contains(part.toLowerCase())) {
-                return "Package name '" + pkg + "' contains Java reserved keyword '" + part + "'. Reserved keywords cannot be used in package names as they prevent class creation";
+                return PACKAGE_NAME + pkg + "' contains Java reserved keyword '" + part + "'. Reserved keywords cannot be used in package names as they prevent class creation";
             }
         }
         
