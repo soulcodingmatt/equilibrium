@@ -12,19 +12,14 @@ class ValidationUtilTest {
     @ParameterizedTest
     @ValueSource(strings = {
         "com.example",
-        "com.example.package",
-        "com.example.package.subpackage",
         "com.example123",
-        "com.example.package123",
         "Com.Example",  // uppercase allowed
-        "com.Example.Package",  // uppercase allowed
-        "com.example123.package",  // numbers allowed after first letter
-        "com.example-package",  // hyphen allowed
+        "com.example-package",  // hyphen allowed (note: "example-package" is not a keyword)
         "com.example_package",  // underscore allowed
-        "com.example.package-123",  // hyphen allowed
-        "com.example.package_123",  // underscore allowed
-        "com.example-package.sub-package",  // multiple hyphens
-        "com.example_package.sub_package"  // multiple underscores
+        "com.example-123",  // hyphen allowed
+        "com.example_123",  // underscore allowed
+        "com.example-test.sub-test",  // multiple hyphens
+        "com.example_test.sub_test"  // multiple underscores
     })
     void testIsValidPackageName_Valid(String packageName) {
         assertTrue(ValidationUtil.isValidPackageName(packageName));
@@ -41,7 +36,15 @@ class ValidationUtilTest {
         "com.example.",  // trailing dot
         ".com.example",  // leading dot
         "com.example/package",  // slash not allowed
-        "com.example package"  // space not allowed
+        "com.example package",  // space not allowed
+        "com.example.package",  // Java keyword "package"
+        "com.example.package.subpackage",  // Java keyword "package"
+        "com.Example.Package",  // Java keyword "package" (case insensitive)
+        "com.example123.package",  // Java keyword "package"
+        "com.new.example",  // Java keyword "new"
+        "com.example.new",  // Java keyword "new"
+        "com.class.example",  // Java keyword "class"
+        "com.interface.example"  // Java keyword "interface"
     })
     @NullAndEmptySource
     void testIsValidPackageName_Invalid(String packageName) {
@@ -136,30 +139,39 @@ class ValidationUtilTest {
     void testPackageNameValidationRules() {
         // Valid cases
         assertTrue(ValidationUtil.isValidPackageName("com.example"));
-        assertTrue(ValidationUtil.isValidPackageName("com.example.package"));
         assertTrue(ValidationUtil.isValidPackageName("com.example123"));
-        assertTrue(ValidationUtil.isValidPackageName("com.example.package123"));
         assertTrue(ValidationUtil.isValidPackageName("Com.Example"));
-        assertTrue(ValidationUtil.isValidPackageName("com.Example.Package"));
-        assertTrue(ValidationUtil.isValidPackageName("com.example-package"));  // hyphen allowed
-        assertTrue(ValidationUtil.isValidPackageName("com.example_package"));  // underscore allowed
-        assertTrue(ValidationUtil.isValidPackageName("com.example.package-123"));  // hyphen allowed
-        assertTrue(ValidationUtil.isValidPackageName("com.example.package_123"));  // underscore allowed
-        assertTrue(ValidationUtil.isValidPackageName("com.example-package.sub-package"));  // multiple hyphens
-        assertTrue(ValidationUtil.isValidPackageName("com.example_package.sub_package"));  // multiple underscores
+        assertTrue(ValidationUtil.isValidPackageName("com.example-test"));  // hyphen allowed (not a keyword)
+        assertTrue(ValidationUtil.isValidPackageName("com.example_test"));  // underscore allowed (not a keyword)
+        assertTrue(ValidationUtil.isValidPackageName("com.example-123"));  // hyphen allowed
+        assertTrue(ValidationUtil.isValidPackageName("com.example_123"));  // underscore allowed
+        assertTrue(ValidationUtil.isValidPackageName("com.example-test.sub-test"));  // multiple hyphens
+        assertTrue(ValidationUtil.isValidPackageName("com.example_test.sub_test"));  // multiple underscores
 
-        // Invalid cases
+        // Invalid cases - syntax errors
         assertFalse(ValidationUtil.isValidPackageName("123com.example"));  // starts with number
         assertFalse(ValidationUtil.isValidPackageName("com.123example"));  // part starts with number
-        assertFalse(ValidationUtil.isValidPackageName("com.example.123package"));  // part starts with number
+        assertFalse(ValidationUtil.isValidPackageName("com.example.123test"));  // part starts with number
         assertFalse(ValidationUtil.isValidPackageName("com.123.example"));  // part starts with number
         assertFalse(ValidationUtil.isValidPackageName("com.123.456"));  // parts start with numbers
         assertFalse(ValidationUtil.isValidPackageName("com..example"));  // double dot
         assertFalse(ValidationUtil.isValidPackageName("com.example."));  // trailing dot
         assertFalse(ValidationUtil.isValidPackageName(".com.example"));  // leading dot
-        assertFalse(ValidationUtil.isValidPackageName("com.example/package"));  // slash not allowed
-        assertFalse(ValidationUtil.isValidPackageName("com.example package"));  // space not allowed
+        assertFalse(ValidationUtil.isValidPackageName("com.example/test"));  // slash not allowed
+        assertFalse(ValidationUtil.isValidPackageName("com.example test"));  // space not allowed
         assertFalse(ValidationUtil.isValidPackageName(null));  // null
         assertFalse(ValidationUtil.isValidPackageName(""));  // empty
+        
+        // Invalid cases - Java keywords (exact matches only)
+        assertFalse(ValidationUtil.isValidPackageName("com.example.package"));  // "package" is a keyword
+        assertFalse(ValidationUtil.isValidPackageName("com.example.new"));  // "new" is a keyword
+        assertFalse(ValidationUtil.isValidPackageName("com.class.example"));  // "class" is a keyword
+        assertFalse(ValidationUtil.isValidPackageName("com.interface.example"));  // "interface" is a keyword
+        assertFalse(ValidationUtil.isValidPackageName("com.Example.Package"));  // "Package" is a keyword (case insensitive)
+        
+        // Valid cases - keywords with additional characters are allowed
+        assertTrue(ValidationUtil.isValidPackageName("com.example.package123"));  // "package123" is not exactly "package"
+        assertTrue(ValidationUtil.isValidPackageName("com.example.package_test"));  // "package_test" is not exactly "package"
+        assertTrue(ValidationUtil.isValidPackageName("com.example.package-test"));  // "package-test" is not exactly "package"
     }
 } 

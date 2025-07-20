@@ -76,6 +76,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Jakarta Bean Validation -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -194,6 +201,7 @@
             </plugin>
 
             <!-- Sign artifacts with GPG -->
+            <!-- Only needed for deployment -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
@@ -208,6 +216,8 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Only needed for deployment -->
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>

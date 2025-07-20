@@ -1,6 +1,7 @@
 package io.github.soulcodingmatt.equilibrium.processor.util;
 
 import java.util.regex.Pattern;
+import java.util.Set;
 
 /**
  * The ValidationUtil enforces the following technical requirements:
@@ -36,9 +37,21 @@ public class ValidationUtil {
     // Package names must start with a letter, and each part after a dot must also start with a letter
     // Can contain letters, numbers, underscores, and hyphens
     private static final Pattern PACKAGE_PATTERN =
-            Pattern.compile("^[a-zA-Z][a-zA-Z0-9_-]*+(?:\\.[a-zA-Z][a-zA-Z0-9_-]*+)*+$");
+            Pattern.compile("^[a-zA-Z][a-zA-Z0-9_\\-]*(?:\\.[a-zA-Z][a-zA-Z0-9_\\-]*)*$");
 
     private static final Pattern ALPHANUMERIC_PATTERN = Pattern.compile("^[a-zA-Z0-9]+$");
+    
+    // Java reserved keywords that cannot be used in package names
+    // While technically allowed by JLS, they prevent class creation in those packages
+    private static final Set<String> JAVA_KEYWORDS = Set.of(
+        "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", 
+        "class", "const", "continue", "default", "do", "double", "else", "enum", 
+        "extends", "final", "finally", "float", "for", "goto", "if", "implements", 
+        "import", "instanceof", "int", "interface", "long", "native", "new", 
+        "package", "private", "protected", "public", "return", "short", "static", 
+        "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", 
+        "transient", "try", "void", "volatile", "while"
+    );
 
     private ValidationUtil(){
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
@@ -50,7 +63,44 @@ public class ValidationUtil {
      * @return {@code true} if the package name is technically valid, {@code false} otherwise
      */
     public static boolean isValidPackageName(String pkg) {
-        return pkg != null && !pkg.isEmpty() && PACKAGE_PATTERN.matcher(pkg).matches();
+        if (pkg == null || pkg.isEmpty() || !PACKAGE_PATTERN.matcher(pkg).matches()) {
+            return false;
+        }
+        
+        // Check that no part of the package name is a Java reserved keyword
+        String[] parts = pkg.split("\\.");
+        for (String part : parts) {
+            if (JAVA_KEYWORDS.contains(part.toLowerCase())) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Gets a detailed validation error message for an invalid package name.
+     * @param pkg the package name to check
+     * @return detailed error message, or null if package name is valid
+     */
+    public static String getPackageValidationError(String pkg) {
+        if (pkg == null || pkg.isEmpty()) {
+            return "Package name cannot be null or empty";
+        }
+        
+        if (!PACKAGE_PATTERN.matcher(pkg).matches()) {
+            return "Package name '" + pkg + "' has invalid syntax. Package names must start with a letter and contain only letters, numbers, underscores, and hyphens, separated by dots";
+        }
+        
+        // Check for Java reserved keywords
+        String[] parts = pkg.split("\\.");
+        for (String part : parts) {
+            if (JAVA_KEYWORDS.contains(part.toLowerCase())) {
+                return "Package name '" + pkg + "' contains Java reserved keyword '" + part + "'. Reserved keywords cannot be used in package names as they prevent class creation";
+            }
+        }
+        
+        return null; // Package name is valid
     }
 
     /**
