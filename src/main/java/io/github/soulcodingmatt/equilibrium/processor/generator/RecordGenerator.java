@@ -1,24 +1,17 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator;
 
-import io.github.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
-import io.github.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord;
+import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.FieldInclusionConfig;
+import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.GeneratorType;
 
 import javax.annotation.processing.Filer;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RecordGenerator {
     private final TypeElement classElement;
@@ -39,9 +32,11 @@ public class RecordGenerator {
     }
 
     public void generate() throws IOException {
-
+        // Create field inclusion configuration
+        FieldInclusionConfig fieldConfig = new FieldInclusionConfig(GeneratorType.RECORD, ignoredFields, recordId);
+        
         // Get all fields that should be included in the Record
-        List<VariableElement> fields = getIncludedFields();
+        List<VariableElement> fields = GeneratorUtility.getIncludedFields(classElement, fieldConfig);
         
         // Create or update the Record file
         JavaFileObject sourceFile = filer.createSourceFile(packageName + "." + recordClassName, classElement);
@@ -50,7 +45,7 @@ public class RecordGenerator {
             // Write package declaration
             writer.write("package " + packageName + ";\n\n");
             
-            // Write imports
+            // Write imports (records typically don't need Objects import for equals/hashCode/toString)
             writeImports(writer, fields);
             
             // Write record declaration
@@ -61,103 +56,21 @@ public class RecordGenerator {
             
             // Write record with its parameters
             writer.write("public record " + recordClassName + "(");
-            writeRecordParameters(writer, fields);
+            GeneratorUtility.writeRecordParameters(writer, fields, null);
             writer.write(") {}\n");
         }
-    }
-
-    private List<VariableElement> getIncludedFields() {
-        return collectFieldsFromHierarchy(classElement);
-    }
-
-    private List<VariableElement> collectFieldsFromHierarchy(TypeElement element) {
-        List<VariableElement> fields = element.getEnclosedElements().stream()
-            .filter(e -> e.getKind() == ElementKind.FIELD)
-            .map(VariableElement.class::cast)
-            .filter(this::shouldIncludeField)
-            .toList();
-
-        // Get parent class fields
-        TypeMirror superclass = element.getSuperclass();
-        if (superclass.getKind() != TypeKind.NONE && !superclass.toString().equals("java.lang.Object")) {
-            TypeElement superclassElement = (TypeElement) ((DeclaredType) superclass).asElement();
-            fields = Stream.concat(
-                fields.stream(),
-                collectFieldsFromHierarchy(superclassElement).stream()
-            ).toList();
-        }
-
-        return fields;
-    }
-
-    private boolean shouldIncludeField(VariableElement field) {
-        // Exclude fields marked with @IgnoreAll
-        if (field.getAnnotation(IgnoreAll.class) != null) {
-            return false;
-        }
-        
-        // Handle ID-based @IgnoreRecord exclusion
-        IgnoreRecord ignoreRecordAnnotation = field.getAnnotation(IgnoreRecord.class);
-        if (ignoreRecordAnnotation != null) {
-            int[] ignoredIds = ignoreRecordAnnotation.ids();
-            
-            // If no IDs specified, ignore for all Records
-            if (ignoredIds.length == 0) {
-                return false;
-            }
-            
-            // If IDs specified, only ignore if current Record ID is in the list
-            for (int ignoredId : ignoredIds) {
-                if (ignoredId == recordId) {
-                    return false;
-                }
-            }
-        }
-        
-        // Exclude any fields specified in the ignore collection
-        String fieldName = field.getSimpleName().toString();
-        if (ignoredFields.contains(fieldName)) {
-            return false;
-        }
-        
-        // Exclude static and transient fields
-        Set<Modifier> modifiers = field.getModifiers();
-        return !modifiers.contains(Modifier.STATIC) && 
-               !modifiers.contains(Modifier.TRANSIENT);
     }
 
     private void writeImports(Writer writer, List<VariableElement> fields) throws IOException {
         Set<String> imports = fields.stream()
             .map(field -> field.asType().toString())
-            .map(this::extractBaseType)
+            .map(GeneratorUtility::extractBaseType)
             .filter(type -> type.contains("."))
-            .collect(Collectors.toSet());
+            .collect(java.util.stream.Collectors.toSet());
         
         for (String importType : imports) {
             writer.write("import " + importType + ";\n");
         }
         writer.write("\n");
-    }
-
-    private String extractBaseType(String fullType) {
-        // Remove generic type parameters for import statements
-        int genericStart = fullType.indexOf('<');
-        if (genericStart > 0) {
-            return fullType.substring(0, genericStart);
-        }
-        return fullType;
-    }
-
-    private void writeRecordParameters(Writer writer, List<VariableElement> fields) throws IOException {
-        boolean first = true;
-        for (VariableElement field : fields) {
-            if (!first) {
-                writer.write(", ");
-            }
-            String type = field.asType().toString();
-            String name = field.getSimpleName().toString();
-            writer.write(type + " " + name);
-            first = false;
-        }
     }
 }
