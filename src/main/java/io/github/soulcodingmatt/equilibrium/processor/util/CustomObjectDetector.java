@@ -1,10 +1,10 @@
 package io.github.soulcodingmatt.equilibrium.processor.util;
 
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
 import java.util.Set;
 
 /**
@@ -67,6 +67,11 @@ public class CustomObjectDetector {
             DeclaredType declaredType = (DeclaredType) type;
             TypeElement typeElement = (TypeElement) declaredType.asElement();
             String qualifiedName = typeElement.getQualifiedName().toString();
+            
+            // Check if it's an enum - enums should be used directly, not converted to DTOs
+            if (typeElement.getKind() == ElementKind.ENUM) {
+                return false;
+            }
             
             // Check if it's an excluded type
             if (EXCLUDED_TYPES.contains(qualifiedName)) {
