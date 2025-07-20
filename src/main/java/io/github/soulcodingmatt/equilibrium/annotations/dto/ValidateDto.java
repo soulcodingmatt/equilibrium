@@ -2,11 +2,7 @@ package io.github.soulcodingmatt.equilibrium.annotations.dto;
 
 import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Annotation to add Jakarta Bean Validation annotations to the corresponding field
@@ -141,9 +137,7 @@ public @interface ValidateDto {
      * Use the type-safe parameters above when possible.
      * 
      * @return array of validation annotation strings
-     * @deprecated Use type-safe validation parameters instead
      */
-    @Deprecated
     String[] value() default {};
     
     /**

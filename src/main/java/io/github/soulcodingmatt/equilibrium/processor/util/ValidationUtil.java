@@ -1,7 +1,7 @@
 package io.github.soulcodingmatt.equilibrium.processor.util;
 
-import java.util.regex.Pattern;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * The ValidationUtil enforces the following technical requirements:

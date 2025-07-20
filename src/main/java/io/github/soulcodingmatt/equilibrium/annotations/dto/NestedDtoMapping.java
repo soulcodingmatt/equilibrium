@@ -1,10 +1,6 @@
 package io.github.soulcodingmatt.equilibrium.annotations.dto;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Maps a field to different DTO classes for different DTO generation IDs using string-based class names.
