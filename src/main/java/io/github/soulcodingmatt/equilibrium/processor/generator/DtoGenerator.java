@@ -2,27 +2,55 @@ package io.github.soulcodingmatt.equilibrium.processor.generator;
 
 import io.github.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto;
+import io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMapping;
+import io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDto;
+import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
+import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.Digits;
+import io.github.soulcodingmatt.equilibrium.processor.util.CustomObjectDetector;
 
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DtoGenerator {
     public static final String STRING_END = "    }\n\n";
     public static final String OVERRIDE = "    @Override\n";
+    
+    // Registry to track generated DTOs: simpleName -> fullQualifiedName
+    private static final Map<String, String> generatedDtoRegistry = new HashMap<>();
+    
+    /**
+     * Register a generated DTO for import resolution
+     * @param simpleName Simple class name (e.g., "BodyDto")
+     * @param fullQualifiedName Full qualified name (e.g., "com.soulcodingmatt.dto.BodyDto")
+     */
+    public static void registerGeneratedDto(String simpleName, String fullQualifiedName) {
+        generatedDtoRegistry.put(simpleName, fullQualifiedName);
+    }
+    
+    /**
+     * Look up the full qualified name of a generated DTO
+     * @param simpleName Simple class name (e.g., "BodyDto")
+     * @return Full qualified name if found, null otherwise
+     */
+    public static String lookupGeneratedDto(String simpleName) {
+        return generatedDtoRegistry.get(simpleName);
+    }
+    
     private final TypeElement classElement;
     private final String packageName;
     private final String dtoClassName;
@@ -30,9 +58,12 @@ public class DtoGenerator {
     private final boolean builder;
     private final Filer filer;
     private final int dtoId;
+    private final CustomObjectDetector customObjectDetector;
+    private final Messager messager;
 
     public DtoGenerator(TypeElement classElement, String packageName, String dtoClassName,
-                        Set<String> ignoredFields, boolean builder, int dtoId, Filer filer) {
+                        Set<String> ignoredFields, boolean builder, int dtoId, Filer filer,
+                        CustomObjectDetector customObjectDetector, Messager messager) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.dtoClassName = dtoClassName;
@@ -40,11 +71,12 @@ public class DtoGenerator {
         this.filer = filer;
         this.builder = builder;
         this.dtoId = dtoId;
+        this.customObjectDetector = customObjectDetector;
+        this.messager = messager;
     }
 
     public void generate() throws IOException {
-        String className = classElement.getSimpleName().toString();
-        
+
         // Get all fields that should be included in the DTO
         List<VariableElement> fields = getIncludedFields();
         
@@ -156,16 +188,130 @@ public class DtoGenerator {
     }
 
     private void writeImports(Writer writer, List<VariableElement> fields) throws IOException {
-        Set<String> imports = fields.stream()
-            .map(field -> field.asType().toString())
+        Set<String> imports = new HashSet<>();
+        Set<VariableElement> fieldsWithNestedMapping = new HashSet<>();
+        
+        // First pass: collect fields with @NestedMapping and add their DTO imports
+        for (VariableElement field : fields) {
+            NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
+            
+            if (nestedMapping != null) {
+                messager.printMessage(Diagnostic.Kind.NOTE, 
+                    "DEBUG: Found @NestedMapping on field: " + field.getSimpleName());
+                fieldsWithNestedMapping.add(field);
+                
+                String dtoImport = findDtoImportFromSourceClass(nestedMapping);
+                if (dtoImport != null) {
+                    imports.add(dtoImport);
+                    messager.printMessage(Diagnostic.Kind.NOTE, 
+                        "DEBUG: Added DTO import: " + dtoImport);
+                }
+            }
+        }
+        
+        // Second pass: add standard field imports, BUT skip fields that have @NestedMapping
+        Set<String> fieldImports = fields.stream()
+            .filter(field -> !fieldsWithNestedMapping.contains(field))  // Skip @NestedMapping fields
+            .map(field -> field.asType().toString())  // Get original field types
             .map(this::extractBaseType)  // Extract base type without generics
             .filter(type -> type.contains("."))
             .collect(Collectors.toSet());
+        imports.addAll(fieldImports);
         
-        for (String importType : imports) {
+        // Add Jakarta Bean Validation imports if validation annotations are used
+        Set<String> validationImports = getValidationImports(fields);
+        imports.addAll(validationImports);
+        
+        // Filter out invalid imports
+        Set<String> filteredImports = imports.stream()
+            .filter(this::isValidImport)
+            .collect(Collectors.toSet());
+        
+        messager.printMessage(Diagnostic.Kind.NOTE, 
+            "DEBUG: Writing " + filteredImports.size() + " imports: " + filteredImports);
+        
+        for (String importType : filteredImports) {
             writer.write("import " + importType + ";\n");
         }
         writer.write("\n");
+    }
+    
+    /**
+     * Finds the import statement for a DTO class by examining the source class imports.
+     * This avoids TypeMirror resolution issues when the DTO class doesn't exist yet.
+     */
+    private String findDtoImportFromSourceClass(NestedMapping mapping) {
+        messager.printMessage(Diagnostic.Kind.NOTE, 
+            "DEBUG: Starting smart import resolution with DTO registry...");
+            
+        // Get the simple DTO class name from the annotation
+        String dtoSimpleName = getDtoClassSimpleName(mapping);
+        messager.printMessage(Diagnostic.Kind.NOTE, 
+            "DEBUG: DTO simple name: " + dtoSimpleName);
+        
+        // FIRST: Check our generated DTO registry (most reliable!)
+        String registeredDto = lookupGeneratedDto(dtoSimpleName);
+        if (registeredDto != null) {
+            messager.printMessage(Diagnostic.Kind.NOTE, 
+                "DEBUG: Found in registry: " + registeredDto);
+            return registeredDto;
+        }
+        
+        messager.printMessage(Diagnostic.Kind.NOTE, 
+            "DEBUG: Not found in registry, falling back to heuristics...");
+        
+        // FALLBACK: Use heuristic approach for DTOs not generated by us
+        String sourcePackage = classElement.getQualifiedName().toString();
+        int lastDot = sourcePackage.lastIndexOf('.');
+        if (lastDot > 0) {
+            sourcePackage = sourcePackage.substring(0, lastDot);
+        }
+        
+        // Common DTO package patterns - NO hardcoded packages anymore!
+        String[] commonDtoPackages = {
+            sourcePackage + ".dto",
+            sourcePackage.replace(".domain", ".dto"), 
+            sourcePackage.replace(".entity", ".dto"),
+            sourcePackage.replace(".model", ".dto"),
+            sourcePackage
+        };
+        
+        for (String packageName : commonDtoPackages) {
+            String fullName = packageName + "." + dtoSimpleName;
+            messager.printMessage(Diagnostic.Kind.NOTE, 
+                "DEBUG: Trying fallback DTO package: " + fullName);
+            if (packageName.contains("dto")) {
+                messager.printMessage(Diagnostic.Kind.NOTE, 
+                    "DEBUG: Using fallback DTO import: " + fullName);
+                return fullName;
+            }
+        }
+        
+        messager.printMessage(Diagnostic.Kind.WARNING, 
+            "Could not determine DTO import for: " + dtoSimpleName);
+        return null;
+    }
+    
+    /**
+     * Checks if an import type is valid and should be included.
+     */
+    private boolean isValidImport(String type) {
+        // Must contain a dot (package separator)
+        if (!type.contains(".")) {
+            return false;
+        }
+        
+        // Must not contain invalid characters
+        if (type.contains("<") || type.contains(">") || type.contains("?")) {
+            return false;
+        }
+        
+        // Must not be a primitive type or java.lang type
+        if (type.startsWith("java.lang.") && !type.contains("$")) {
+            return false;
+        }
+        
+        return true;
     }
 
     private String extractBaseType(String fullType) {
@@ -176,16 +322,707 @@ public class DtoGenerator {
         }
         return fullType;
     }
+    
+    private Set<String> getValidationImports(List<VariableElement> fields) {
+        Set<String> validationImports = new HashSet<>();
+        
+        for (VariableElement field : fields) {
+            ValidateDto[] validateAnnotations = field.getAnnotationsByType(ValidateDto.class);
+            
+            for (ValidateDto validateAnnotation : validateAnnotations) {
+                if (shouldApplyValidation(validateAnnotation)) {
+                    // Add imports for type-safe validations
+                    addTypeSafeValidationImports(validationImports, validateAnnotation);
+                    
+                    // Add imports for legacy string-based validations
+                    for (String validation : validateAnnotation.value()) {
+                        if (!validation.trim().isEmpty()) {
+                            String annotationClass = extractAnnotationClass(validation);
+                            if (annotationClass != null) {
+                                validationImports.add(annotationClass);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return validationImports;
+    }
+    
+    private void addTypeSafeValidationImports(Set<String> validationImports, ValidateDto validateAnnotation) {
+        // Check which type-safe validations are explicitly configured and add their imports
+        
+        // Simple annotations: Check if explicitly specified (message != empty string default)
+        if (!validateAnnotation.notNull().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.NotNull");
+        }
+        
+        if (!validateAnnotation.notBlank().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.NotBlank");
+        }
+        
+        if (!validateAnnotation.notEmpty().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.NotEmpty");
+        }
+        
+        if (!validateAnnotation.positive().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.Positive");
+        }
+        
+        if (!validateAnnotation.positiveOrZero().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.PositiveOrZero");
+        }
+        
+        if (!validateAnnotation.negative().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.Negative");
+        }
+        
+        if (!validateAnnotation.negativeOrZero().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.NegativeOrZero");
+        }
+        
+        if (!validateAnnotation.past().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.Past");
+        }
+        
+        if (!validateAnnotation.future().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.Future");
+        }
+        
+        if (!validateAnnotation.pastOrPresent().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.PastOrPresent");
+        }
+        
+        if (!validateAnnotation.futureOrPresent().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.FutureOrPresent");
+        }
+        
+        if (!validateAnnotation.email().message().equals("")) {
+            validationImports.add("jakarta.validation.constraints.Email");
+        }
+        
+        // Parameterized annotations: Check if meaningful parameters are provided
+        Size size = validateAnnotation.size();
+        if (size.min() != -1 || size.max() != -1) {
+            validationImports.add("jakarta.validation.constraints.Size");
+        }
+        
+        if (validateAnnotation.min().value() != Long.MIN_VALUE) {
+            validationImports.add("jakarta.validation.constraints.Min");
+        }
+        
+        if (validateAnnotation.max().value() != Long.MAX_VALUE) {
+            validationImports.add("jakarta.validation.constraints.Max");
+        }
+        
+        if (!validateAnnotation.pattern().regexp().isEmpty()) {
+            validationImports.add("jakarta.validation.constraints.Pattern");
+        }
+        
+        Digits digits = validateAnnotation.digits();
+        if (digits.integer() != -1 || digits.fraction() != -1) {
+            validationImports.add("jakarta.validation.constraints.Digits");
+        }
+    }
+    
+    private String extractAnnotationClass(String annotationString) {
+        // Extract annotation class name from annotation string like "@NotNull" or "@Size(min=1, max=100)"
+        String trimmed = annotationString.trim();
+        if (!trimmed.startsWith("@")) {
+            return null;
+        }
+        
+        // Remove @ and get the annotation name
+        String withoutAt = trimmed.substring(1);
+        int parenIndex = withoutAt.indexOf('(');
+        String annotationName = parenIndex > 0 ? withoutAt.substring(0, parenIndex) : withoutAt;
+        
+        // Map common validation annotations to their full package names
+        return getValidationAnnotationImport(annotationName);
+    }
+    
+    private String getValidationAnnotationImport(String annotationName) {
+        // Map common Jakarta Bean Validation annotations to their import paths
+        return switch (annotationName) {
+            case "NotNull" -> "jakarta.validation.constraints.NotNull";
+            case "NotEmpty" -> "jakarta.validation.constraints.NotEmpty";
+            case "NotBlank" -> "jakarta.validation.constraints.NotBlank";
+            case "Size" -> "jakarta.validation.constraints.Size";
+            case "Min" -> "jakarta.validation.constraints.Min";
+            case "Max" -> "jakarta.validation.constraints.Max";
+            case "DecimalMin" -> "jakarta.validation.constraints.DecimalMin";
+            case "DecimalMax" -> "jakarta.validation.constraints.DecimalMax";
+            case "Positive" -> "jakarta.validation.constraints.Positive";
+            case "PositiveOrZero" -> "jakarta.validation.constraints.PositiveOrZero";
+            case "Negative" -> "jakarta.validation.constraints.Negative";
+            case "NegativeOrZero" -> "jakarta.validation.constraints.NegativeOrZero";
+            case "Email" -> "jakarta.validation.constraints.Email";
+            case "Pattern" -> "jakarta.validation.constraints.Pattern";
+            case "Digits" -> "jakarta.validation.constraints.Digits";
+            case "Future" -> "jakarta.validation.constraints.Future";
+            case "FutureOrPresent" -> "jakarta.validation.constraints.FutureOrPresent";
+            case "Past" -> "jakarta.validation.constraints.Past";
+            case "PastOrPresent" -> "jakarta.validation.constraints.PastOrPresent";
+            case "AssertTrue" -> "jakarta.validation.constraints.AssertTrue";
+            case "AssertFalse" -> "jakarta.validation.constraints.AssertFalse";
+            case "Valid" -> "jakarta.validation.Valid";
+            default -> null; // Unknown annotation, skip import
+        };
+    }
+
+    private boolean shouldApplyValidation(ValidateDto validateAnnotation) {
+        int[] validationIds = validateAnnotation.ids();
+        
+        // If no IDs specified, apply validation to all DTOs
+        if (validationIds.length == 0) {
+            return true;
+        }
+        
+        // If IDs specified, only apply if current DTO ID is in the list
+        for (int validationId : validationIds) {
+            if (validationId == dtoId) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    private void writeTypeSafeValidations(Writer writer, ValidateDto validateAnnotation) throws IOException {
+        // Check NotNull validation
+        NotNull notNull = validateAnnotation.notNull();
+        if (!notNull.message().equals("")) {
+            writer.write("    @NotNull");
+            if (!notNull.message().equals("must not be null")) {
+                writer.write("(message = \"" + escapeQuotes(notNull.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check NotBlank validation
+        NotBlank notBlank = validateAnnotation.notBlank();
+        if (!notBlank.message().equals("")) {
+            writer.write("    @NotBlank");
+            if (!notBlank.message().equals("must not be blank")) {
+                writer.write("(message = \"" + escapeQuotes(notBlank.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Size validation
+        Size size = validateAnnotation.size();
+        if (size.min() != -1 || size.max() != -1) {
+            writer.write("    @Size");
+            List<String> params = new ArrayList<>();
+            if (size.min() != -1 && size.min() != 0) {
+                params.add("min = " + size.min());
+            }
+            if (size.max() != -1 && size.max() != Integer.MAX_VALUE) {
+                params.add("max = " + size.max());
+            }
+            if (!size.message().equals("") && !size.message().equals("size must be between {min} and {max}")) {
+                params.add("message = \"" + escapeQuotes(size.message()) + "\"");
+            }
+            if (!params.isEmpty()) {
+                writer.write("(" + String.join(", ", params) + ")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Min validation
+        Min min = validateAnnotation.min();
+        if (min.value() != Long.MIN_VALUE) {
+            writer.write("    @Min");
+            List<String> params = new ArrayList<>();
+            params.add("value = " + min.value());
+            if (!min.message().equals("") && !min.message().equals("must be greater than or equal to {value}")) {
+                params.add("message = \"" + escapeQuotes(min.message()) + "\"");
+            }
+            writer.write("(" + String.join(", ", params) + ")");
+            writer.write("\n");
+        }
+        
+        // Check Max validation
+        Max max = validateAnnotation.max();
+        if (max.value() != Long.MAX_VALUE) {
+            writer.write("    @Max");
+            List<String> params = new ArrayList<>();
+            params.add("value = " + max.value());
+            if (!max.message().equals("") && !max.message().equals("must be less than or equal to {value}")) {
+                params.add("message = \"" + escapeQuotes(max.message()) + "\"");
+            }
+            writer.write("(" + String.join(", ", params) + ")");
+            writer.write("\n");
+        }
+        
+        // Check Email validation
+        Email email = validateAnnotation.email();
+        if (!email.message().equals("")) {
+            writer.write("    @Email");
+            List<String> params = new ArrayList<>();
+            if (!email.regexp().equals(".*")) {
+                params.add("regexp = \"" + escapeQuotes(email.regexp()) + "\"");
+            }
+            if (!email.message().equals("") && !email.message().equals("must be a well-formed email address")) {
+                params.add("message = \"" + escapeQuotes(email.message()) + "\"");
+            }
+            if (!params.isEmpty()) {
+                writer.write("(" + String.join(", ", params) + ")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Pattern validation
+        Pattern pattern = validateAnnotation.pattern();
+        if (!pattern.regexp().isEmpty()) {
+            writer.write("    @Pattern");
+            List<String> params = new ArrayList<>();
+            params.add("regexp = \"" + escapeQuotes(pattern.regexp()) + "\"");
+            if (!pattern.message().equals("") && !pattern.message().equals("must match \"{regexp}\"")) {
+                params.add("message = \"" + escapeQuotes(pattern.message()) + "\"");
+            }
+            writer.write("(" + String.join(", ", params) + ")");
+            writer.write("\n");
+        }
+        
+        // Check NotEmpty validation
+        NotEmpty notEmpty = validateAnnotation.notEmpty();
+        if (!notEmpty.message().equals("")) {
+            writer.write("    @NotEmpty");
+            if (!notEmpty.message().equals("must not be empty")) {
+                writer.write("(message = \"" + escapeQuotes(notEmpty.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Positive validation
+        Positive positive = validateAnnotation.positive();
+        if (!positive.message().equals("")) {
+            writer.write("    @Positive");
+            if (!positive.message().equals("must be greater than 0")) {
+                writer.write("(message = \"" + escapeQuotes(positive.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check PositiveOrZero validation
+        PositiveOrZero positiveOrZero = validateAnnotation.positiveOrZero();
+        if (!positiveOrZero.message().equals("")) {
+            writer.write("    @PositiveOrZero");
+            if (!positiveOrZero.message().equals("must be greater than or equal to 0")) {
+                writer.write("(message = \"" + escapeQuotes(positiveOrZero.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Negative validation
+        Negative negative = validateAnnotation.negative();
+        if (!negative.message().equals("")) {
+            writer.write("    @Negative");
+            if (!negative.message().equals("must be less than 0")) {
+                writer.write("(message = \"" + escapeQuotes(negative.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check NegativeOrZero validation
+        NegativeOrZero negativeOrZero = validateAnnotation.negativeOrZero();
+        if (!negativeOrZero.message().equals("")) {
+            writer.write("    @NegativeOrZero");
+            if (!negativeOrZero.message().equals("must be less than or equal to 0")) {
+                writer.write("(message = \"" + escapeQuotes(negativeOrZero.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Digits validation
+        Digits digits = validateAnnotation.digits();
+        if (digits.integer() != -1 || digits.fraction() != -1) {
+            writer.write("    @Digits");
+            List<String> params = new ArrayList<>();
+            if (digits.integer() != -1) {
+                params.add("integer = " + digits.integer());
+            }
+            if (digits.fraction() != -1) {
+                params.add("fraction = " + digits.fraction());
+            }
+            if (!digits.message().equals("") && !digits.message().equals("numeric value out of bounds (<{integer} digits>.<{fraction} digits> expected)")) {
+                params.add("message = \"" + escapeQuotes(digits.message()) + "\"");
+            }
+            if (!params.isEmpty()) {
+                writer.write("(" + String.join(", ", params) + ")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Past validation
+        Past past = validateAnnotation.past();
+        if (!past.message().equals("")) {
+            writer.write("    @Past");
+            if (!past.message().equals("must be a date in the past")) {
+                writer.write("(message = \"" + escapeQuotes(past.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check Future validation
+        Future future = validateAnnotation.future();
+        if (!future.message().equals("")) {
+            writer.write("    @Future");
+            if (!future.message().equals("must be a date in the future")) {
+                writer.write("(message = \"" + escapeQuotes(future.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check PastOrPresent validation
+        PastOrPresent pastOrPresent = validateAnnotation.pastOrPresent();
+        if (!pastOrPresent.message().equals("")) {
+            writer.write("    @PastOrPresent");
+            if (!pastOrPresent.message().equals("must be a date in the past or in the present")) {
+                writer.write("(message = \"" + escapeQuotes(pastOrPresent.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+        
+        // Check FutureOrPresent validation
+        FutureOrPresent futureOrPresent = validateAnnotation.futureOrPresent();
+        if (!futureOrPresent.message().equals("")) {
+            writer.write("    @FutureOrPresent");
+            if (!futureOrPresent.message().equals("must be a date in the present or in the future")) {
+                writer.write("(message = \"" + escapeQuotes(futureOrPresent.message()) + "\")");
+            }
+            writer.write("\n");
+        }
+    }
+    
+
+    
+    private String escapeQuotes(String text) {
+        return text.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+    
+    /**
+     * Transforms the field type based on @NestedMapping annotations.
+     * Returns simple names for use in field declarations, getters, setters, constructor.
+     */
+    private String getTransformedFieldType(VariableElement field) {
+        TypeMirror fieldType = field.asType();
+        String originalType = fieldType.toString();
+        
+        // Get @NestedMapping annotation for this field
+        NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
+        
+        if (nestedMapping != null) {
+            // Transform the type using the specified DTO class (simple name for declarations)
+            return transformTypeWithMappingSimpleName(fieldType, nestedMapping);
+        }
+        
+        // No mapping found, check if this field contains custom objects and warn
+        checkForUnmappedCustomObjects(field, fieldType);
+        
+        // Return original type if no transformation is needed
+        return originalType;
+    }
+    
+    /**
+     * Transforms the field type based on @NestedMapping annotations.
+     * Returns full qualified names for use in import generation.
+     */
+    private String getTransformedFieldTypeForImports(VariableElement field) {
+        TypeMirror fieldType = field.asType();
+        String originalType = fieldType.toString();
+        
+        // Get @NestedMapping annotation for this field
+        NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
+        
+        if (nestedMapping != null) {
+            // Transform the type using the specified DTO class (full qualified name for imports)
+            return transformTypeWithMapping(fieldType, nestedMapping);
+        }
+        
+        // Return original type if no transformation is needed
+        return originalType;
+    }
+    
+
+    
+    /**
+     * Transforms a field type using the specified DTO mapping.
+     * Returns full qualified names for imports.
+     */
+    private String transformTypeWithMapping(TypeMirror fieldType, NestedMapping mapping) {
+        String dtoClassFullName = getDtoClassFullName(mapping);
+        
+        // Check if this is a collection type
+        TypeMirror elementType = customObjectDetector.getCollectionElementType(fieldType);
+        if (elementType != null) {
+            // Transform collection element type: List<CustomObject> -> List<CustomObjectDto>
+            String originalType = fieldType.toString();
+            String originalElementType = elementType.toString();
+            
+            // Replace the element type with the DTO type (using full qualified name)
+            return originalType.replace(originalElementType, dtoClassFullName);
+        } else {
+            // Direct type transformation: CustomObject -> CustomObjectDto (using full qualified name)
+            return dtoClassFullName;
+        }
+    }
+    
+    /**
+     * Transforms a field type using the specified DTO mapping.
+     * Returns simple names for field declarations.
+     */
+    private String transformTypeWithMappingSimpleName(TypeMirror fieldType, NestedMapping mapping) {
+        String dtoClassSimpleName = getDtoClassSimpleName(mapping);
+        
+        // Check if this is a collection type
+        TypeMirror elementType = customObjectDetector.getCollectionElementType(fieldType);
+        if (elementType != null) {
+            // Transform collection element type: List<CustomObject> -> List<CustomObjectDto>
+            String originalType = fieldType.toString();
+            String originalElementType = elementType.toString();
+            
+            // Extract simple name from original element type for replacement
+            String originalElementSimpleName = originalElementType;
+            int lastDotIndex = originalElementType.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                originalElementSimpleName = originalElementType.substring(lastDotIndex + 1);
+            }
+            
+            // Replace the element simple name with the DTO simple name
+            return originalType.replace(originalElementType, dtoClassSimpleName);
+        } else {
+            // Direct type transformation: CustomObject -> CustomObjectDto (using simple name)
+            return dtoClassSimpleName;
+        }
+    }
+    
+    /**
+     * Safely extracts the simple name of the DTO class from @NestedMapping annotation.
+     * Uses string parsing to avoid TypeMirror resolution issues.
+     */
+    private String getDtoClassSimpleName(NestedMapping mapping) {
+        try {
+            // This will throw MirroredTypeException during annotation processing
+            return mapping.dtoClass().getSimpleName();
+        } catch (MirroredTypeException mte) {
+            // Extract the TypeMirror from the exception
+            TypeMirror typeMirror = mte.getTypeMirror();
+            String typeMirrorString = typeMirror.toString();
+            messager.printMessage(Diagnostic.Kind.NOTE, 
+                "DEBUG: TypeMirror string: " + typeMirrorString);
+            
+            // If TypeMirror resolution failed (ERROR kind), try to extract from string representation
+            if (typeMirror.getKind() == TypeKind.ERROR || typeMirrorString.contains("<any?>")) {
+                messager.printMessage(Diagnostic.Kind.NOTE, 
+                    "DEBUG: TypeMirror resolution failed: " + typeMirrorString + ". Attempting string parsing...");
+                
+                // Try to extract the simple name from strings like "<any?>.FunkyShitDto" or "FunkyShitDto"
+                if (typeMirrorString.contains(".")) {
+                    String simpleName = typeMirrorString.substring(typeMirrorString.lastIndexOf('.') + 1);
+                    // Only proceed if we got a valid class name (not "<any>")
+                    if (!simpleName.contains("<") && !simpleName.contains(">") && !simpleName.isEmpty()) {
+                        messager.printMessage(Diagnostic.Kind.NOTE, 
+                            "DEBUG: Extracted simple name from ERROR TypeMirror: " + simpleName);
+                        return simpleName;
+                    }
+                }
+                
+                // If TypeMirror resolution completely failed (e.g., <any?>.<any>), 
+                // try to extract class name from the annotation source using reflection
+                messager.printMessage(Diagnostic.Kind.NOTE, 
+                    "DEBUG: Complete TypeMirror failure, trying annotation source parsing...");
+                    
+                try {
+                    // Use reflection to get the annotation's toString representation
+                    String annotationString = mapping.toString();
+                    messager.printMessage(Diagnostic.Kind.NOTE, 
+                        "DEBUG: Annotation string: " + annotationString);
+                    
+                    // Extract class name from patterns like "dtoClass=FunkyShitDto.class"
+                    if (annotationString.contains("dtoClass=") && annotationString.contains(".class")) {
+                        int start = annotationString.indexOf("dtoClass=") + "dtoClass=".length();
+                        int end = annotationString.indexOf(".class", start);
+                        if (start > 0 && end > start) {
+                            String classReference = annotationString.substring(start, end);
+                            // Remove any package prefixes to get simple name
+                            if (classReference.contains(".")) {
+                                classReference = classReference.substring(classReference.lastIndexOf('.') + 1);
+                            }
+                            messager.printMessage(Diagnostic.Kind.NOTE, 
+                                "DEBUG: Extracted class name from annotation source: " + classReference);
+                            return classReference;
+                        }
+                    }
+                } catch (Exception e) {
+                    messager.printMessage(Diagnostic.Kind.NOTE, 
+                        "DEBUG: Annotation source parsing failed: " + e.getMessage());
+                }
+                
+                // If we couldn't extract a valid name, this is a real error
+                messager.printMessage(Diagnostic.Kind.ERROR, 
+                    "Cannot resolve DTO class in @NestedMapping annotation. " +
+                    "TypeMirror resolution failed: " + typeMirrorString + ". " +
+                    "Please ensure the referenced DTO class exists and is on the classpath.");
+                throw new IllegalStateException("Cannot resolve DTO class in @NestedMapping: " + typeMirrorString);
+            }
+            
+            // Get the simple name from the TypeMirror (normal case)
+            if (typeMirror.getKind() == TypeKind.DECLARED) {
+                DeclaredType declaredType = (DeclaredType) typeMirror;
+                TypeElement typeElement = (TypeElement) declaredType.asElement();
+                String simpleName = typeElement.getSimpleName().toString();
+                messager.printMessage(Diagnostic.Kind.NOTE, 
+                    "DEBUG: Extracted simple name from DECLARED TypeMirror: " + simpleName);
+                return simpleName;
+            }
+            
+            // Fallback: extract simple name from string representation
+            String fullName = typeMirror.toString();
+            int lastDotIndex = fullName.lastIndexOf('.');
+            String simpleName = lastDotIndex > 0 ? fullName.substring(lastDotIndex + 1) : fullName;
+            messager.printMessage(Diagnostic.Kind.NOTE, 
+                "DEBUG: Fallback simple name extraction: " + simpleName);
+            return simpleName;
+        }
+    }
+    
+    /**
+     * Safely extracts the full qualified name of the DTO class from @NestedMapping annotation.
+     * Used for import generation.
+     */
+    private String getDtoClassFullName(NestedMapping mapping) {
+        try {
+            // This will throw MirroredTypeException during annotation processing
+            return mapping.dtoClass().getName();
+        } catch (MirroredTypeException mte) {
+            // Extract the TypeMirror and get the proper qualified name
+            TypeMirror typeMirror = mte.getTypeMirror();
+            String typeMirrorString = typeMirror.toString();
+            
+            // If TypeMirror resolution failed (ERROR kind), try to extract from string representation
+            if (typeMirror.getKind() == TypeKind.ERROR || typeMirrorString.contains("<any?>")) {
+                messager.printMessage(Diagnostic.Kind.NOTE, 
+                    "DEBUG: Full name TypeMirror resolution failed: " + typeMirrorString + ". Cannot determine import.");
+                
+                // For full qualified names, we cannot reliably extract from <any?>.<any>
+                // Return null to indicate the import cannot be determined
+                return null;
+            }
+            
+            if (typeMirror.getKind() == TypeKind.DECLARED) {
+                DeclaredType declaredType = (DeclaredType) typeMirror;
+                TypeElement typeElement = (TypeElement) declaredType.asElement();
+                String qualifiedName = typeElement.getQualifiedName().toString();
+                
+                // Check if we got a valid qualified name
+                if (qualifiedName.contains(".")) {
+                    return qualifiedName;
+                } else {
+                    // Warn that we couldn't resolve the full qualified name
+                    messager.printMessage(Diagnostic.Kind.WARNING, 
+                        "Could not resolve full qualified name for DTO class in @NestedMapping. " +
+                        "Import may be missing. Resolved to: " + qualifiedName);
+                    return qualifiedName;  // Return it anyway, the filter will exclude it
+                }
+            }
+            
+            // Fallback: use string representation
+            String fallbackName = typeMirror.toString();
+            if (!fallbackName.contains(".")) {
+                messager.printMessage(Diagnostic.Kind.WARNING, 
+                    "Could not resolve full qualified name for DTO class in @NestedMapping: " + fallbackName);
+            }
+            return fallbackName;
+        }
+    }
+    
+    /**
+     * Checks if a field contains unmapped custom objects and generates warnings.
+     */
+    private void checkForUnmappedCustomObjects(VariableElement field, TypeMirror fieldType) {
+        String fieldName = field.getSimpleName().toString();
+        
+        // Check direct custom object
+        if (customObjectDetector.isCustomObject(fieldType)) {
+            String customTypeName = fieldType.toString();
+            String suggestedDtoName = getSuggestedDtoName(customTypeName);
+            
+            String message = String.format(
+                "[%s] Field '%s' uses custom type '%s' without DTO mapping.%n" +
+                "  Consider: @NestedMapping(dtoClass = %s.class)%n" +
+                "  Location: %s.%s",
+                dtoClassName, fieldName, customTypeName, suggestedDtoName,
+                classElement.getQualifiedName(), fieldName
+            );
+            
+            messager.printMessage(Diagnostic.Kind.WARNING, message, field);
+        }
+        
+        // Check collection of custom objects
+        if (customObjectDetector.isCustomObjectCollection(fieldType)) {
+            TypeMirror elementType = customObjectDetector.getCollectionElementType(fieldType);
+            if (elementType != null) {
+                String customTypeName = elementType.toString();
+                String suggestedDtoName = getSuggestedDtoName(customTypeName);
+                
+                String message = String.format(
+                    "[%s] Field '%s' uses collection of custom type '%s' without DTO mapping.%n" +
+                    "  Consider: @NestedMapping(dtoClass = %s.class)%n" +
+                    "  Location: %s.%s",
+                    dtoClassName, fieldName, customTypeName, suggestedDtoName,
+                    classElement.getQualifiedName(), fieldName
+                );
+                
+                messager.printMessage(Diagnostic.Kind.WARNING, message, field);
+            }
+        }
+    }
+    
+    /**
+     * Suggests a DTO name based on the custom type name.
+     */
+    private String getSuggestedDtoName(String customTypeName) {
+        // Extract simple class name from fully qualified name
+        String simpleClassName = customTypeName;
+        int lastDotIndex = customTypeName.lastIndexOf('.');
+        if (lastDotIndex > 0) {
+            simpleClassName = customTypeName.substring(lastDotIndex + 1);
+        }
+        
+        // Suggest DTO name by appending "Dto"
+        return simpleClassName + "Dto";
+    }
 
     private void writeField(Writer writer, VariableElement field) throws IOException {
-        // Write field with its type and name
-        String type = field.asType().toString();
+        // Check for validation annotations (handles both single and multiple ValidateDto annotations)
+        ValidateDto[] validateAnnotations = field.getAnnotationsByType(ValidateDto.class);
+        
+        for (ValidateDto validateAnnotation : validateAnnotations) {
+            if (shouldApplyValidation(validateAnnotation)) {
+                // Write type-safe validation annotations
+                writeTypeSafeValidations(writer, validateAnnotation);
+                
+                // Write legacy string-based validation annotations (for backward compatibility)
+                for (String validation : validateAnnotation.value()) {
+                    if (!validation.trim().isEmpty()) {
+                        writer.write("    " + validation + "\n");
+                    }
+                }
+            }
+        }
+        
+        // Transform field type based on @NestedMapping annotations
+        String transformedType = getTransformedFieldType(field);
         String name = field.getSimpleName().toString();
-        writer.write("    private " + type + " " + name + ";\n\n");
+        writer.write("    private " + transformedType + " " + name + ";\n\n");
     }
 
     private void writeAccessors(Writer writer, VariableElement field) throws IOException {
-        String type = field.asType().toString();
+        // Transform field type based on @NestedMapping annotations
+        String type = getTransformedFieldType(field);
         String name = field.getSimpleName().toString();
         String capitalizedName = name.substring(0, 1).toUpperCase() + name.substring(1);
         
@@ -209,7 +1046,8 @@ public class DtoGenerator {
             if (!first) {
                 writer.write(", ");
             }
-            String type = field.asType().toString();
+            // Transform field type based on @NestedMapping annotations
+            String type = getTransformedFieldType(field);
             String name = field.getSimpleName().toString();
             writer.write(type + " " + name);
             first = false;

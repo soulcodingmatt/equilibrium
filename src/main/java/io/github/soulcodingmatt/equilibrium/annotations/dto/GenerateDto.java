@@ -53,7 +53,7 @@ public @interface GenerateDto {
      * Flag whether the generated DTO should have Lombok's @SuperBuilder annotation.
      * Use builder = true, if you want to use the Builder Pattern with the generated DTOs.
      * Default is false.
-     * @return
+     * @return true if the generated DTO should include @SuperBuilder annotation
      */
     boolean builder() default false;
 } 
