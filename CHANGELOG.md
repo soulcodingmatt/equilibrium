@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### [planned 0.3.0-RC1] 2025-07-18
+- Added common bean validation capabilities to generated DTOs via new annotation @ValidateDto
+
 
 ### 2025-07-17
 - Replaced field "postfix" in generators for DTOs, Records, and VOs. Now uses field "name" to specify arbitrary file 
