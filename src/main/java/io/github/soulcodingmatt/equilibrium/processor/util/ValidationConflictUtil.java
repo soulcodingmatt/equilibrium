@@ -5,7 +5,6 @@ import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
 
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,12 +29,11 @@ public class ValidationConflictUtil {
     public static final String MIN = "': @Min(";
     public static final String MAX = "': @Max(";
     public static final String FIELD = "Field '";
-    private final Types typeUtils;
-    
-    public ValidationConflictUtil(Types typeUtils) {
-        this.typeUtils = typeUtils;
+
+    private ValidationConflictUtil(){
+        throw new AssertionError("Utility class should not be instantiated");
     }
-    
+
     /**
      * Validates all ValidateDto annotations on a field for conflicts and type compatibility.
      * 
@@ -43,7 +41,7 @@ public class ValidationConflictUtil {
      * @param validateDtoAnnotations array of ValidateDto annotations on the field
      * @return list of validation error messages, empty if no conflicts found
      */
-    public List<String> validateField(VariableElement field, ValidateDto[] validateDtoAnnotations) {
+    public static List<String> validateField(VariableElement field, ValidateDto[] validateDtoAnnotations) {
         List<String> errors = new ArrayList<>();
         
         for (ValidateDto validateDto : validateDtoAnnotations) {
@@ -56,7 +54,7 @@ public class ValidationConflictUtil {
     /**
      * Validates a single ValidateDto annotation for conflicts and type compatibility.
      */
-    private List<String> validateSingleAnnotation(VariableElement field, ValidateDto validateDto) {
+    private static List<String> validateSingleAnnotation(VariableElement field, ValidateDto validateDto) {
         List<String> errors = new ArrayList<>();
         TypeMirror fieldType = field.asType();
         String fieldName = field.getSimpleName().toString();
@@ -80,7 +78,7 @@ public class ValidationConflictUtil {
     /**
      * Collects all active validations from a ValidateDto annotation.
      */
-    private List<ValidationInfo> collectActiveValidations(ValidateDto validateDto) {
+    private static List<ValidationInfo> collectActiveValidations(ValidateDto validateDto) {
         List<ValidationInfo> validations = new ArrayList<>();
         
         // Check NotNull
@@ -201,7 +199,7 @@ public class ValidationConflictUtil {
     /**
      * Checks type compatibility between field type and validation annotation.
      */
-    private List<String> checkTypeCompatibility(String fieldName, TypeMirror fieldType, ValidationInfo validation) {
+    private static List<String> checkTypeCompatibility(String fieldName, TypeMirror fieldType, ValidationInfo validation) {
         List<String> errors = new ArrayList<>();
         String typeName = fieldType.toString();
         String validationType = validation.type;
@@ -262,6 +260,8 @@ public class ValidationConflictUtil {
                     errors.add("@" + validationType + " can only be applied to temporal fields (Date, Calendar, LocalDate, LocalDateTime, etc.). Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + validationType);
         }
         
         return errors;
@@ -270,7 +270,7 @@ public class ValidationConflictUtil {
     /**
      * Checks for logical conflicts between validation annotations.
      */
-    private List<String> checkLogicalConflicts(String fieldName, List<ValidationInfo> validations) {
+    private static List<String> checkLogicalConflicts(String fieldName, List<ValidationInfo> validations) {
         List<String> errors = new ArrayList<>();
         
         for (int i = 0; i < validations.size(); i++) {
@@ -291,7 +291,7 @@ public class ValidationConflictUtil {
     /**
      * Checks for conflicts between two specific validation annotations.
      */
-    private String checkPairConflict(String fieldName, ValidationInfo a, ValidationInfo b) {
+    private static String checkPairConflict(String fieldName, ValidationInfo a, ValidationInfo b) {
         String typeA = a.type;
         String typeB = b.type;
         
@@ -409,15 +409,15 @@ public class ValidationConflictUtil {
     }
     
     // Helper methods for type checking
-    private boolean isPrimitiveType(String typeName) {
+    private static boolean isPrimitiveType(String typeName) {
         return Arrays.asList("int", "long", "short", "byte", "float", "double", "boolean", "char").contains(typeName);
     }
     
-    private boolean isStringType(String typeName) {
+    private static boolean isStringType(String typeName) {
         return typeName.equals("java.lang.String") || typeName.equals("String");
     }
     
-    private boolean isNumericType(String typeName) {
+    private static boolean isNumericType(String typeName) {
         return Arrays.asList(
             "int", "long", "short", "byte", "float", "double",
             "java.lang.Integer", "Integer",
@@ -431,7 +431,7 @@ public class ValidationConflictUtil {
         ).contains(typeName);
     }
     
-    private boolean isCollectionType(String typeName) {
+    private static boolean isCollectionType(String typeName) {
         return typeName.contains("java.util.List") || typeName.contains("List") ||
                typeName.contains("java.util.Set") || typeName.contains("Set") ||
                typeName.contains("java.util.Collection") || typeName.contains("Collection") ||
@@ -439,15 +439,15 @@ public class ValidationConflictUtil {
                typeName.contains("java.util.Deque") || typeName.contains("Deque");
     }
     
-    private boolean isMapType(String typeName) {
+    private static boolean isMapType(String typeName) {
         return typeName.contains("java.util.Map") || typeName.contains("Map");
     }
     
-    private boolean isArrayType(String typeName) {
+    private static boolean isArrayType(String typeName) {
         return typeName.contains("[]");
     }
     
-    private boolean isTemporalType(String typeName) {
+    private static boolean isTemporalType(String typeName) {
         return Arrays.asList(
             "java.util.Date", "Date",
             "java.util.Calendar", "Calendar",

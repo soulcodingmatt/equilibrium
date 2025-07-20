@@ -200,9 +200,9 @@ public class DtoGenerator {
             sourcePackage
         };
         
-        for (String packageName : commonDtoPackages) {
-            String fullName = packageName + "." + dtoSimpleName;
-            if (packageName.contains("dto")) {
+        for (String pkgName : commonDtoPackages) {
+            String fullName = pkgName + "." + dtoSimpleName;
+            if (pkgName.contains("dto")) {
                 return fullName;
             }
         }
@@ -634,51 +634,8 @@ public class DtoGenerator {
         // Return original type if no transformation is needed
         return originalType;
     }
-    
-    /**
-     * Transforms the field type based on @NestedMapping annotations.
-     * Returns full qualified names for use in import generation.
-     */
-    private String getTransformedFieldTypeForImports(VariableElement field) {
-        TypeMirror fieldType = field.asType();
-        String originalType = fieldType.toString();
-        
-        // Get @NestedMapping annotation for this field
-        NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
-        
-        if (nestedMapping != null) {
-            // Transform the type using the specified DTO class (full qualified name for imports)
-            return transformTypeWithMapping(fieldType, nestedMapping);
-        }
-        
-        // Return original type if no transformation is needed
-        return originalType;
-    }
-    
 
-    
-    /**
-     * Transforms a field type using the specified DTO mapping.
-     * Returns full qualified names for imports.
-     */
-    private String transformTypeWithMapping(TypeMirror fieldType, NestedMapping mapping) {
-        String dtoClassFullName = getDtoClassFullName(mapping);
-        
-        // Check if this is a collection type
-        TypeMirror elementType = CustomObjectDetector.getCollectionElementType(fieldType);
-        if (elementType != null) {
-            // Transform collection element type: List<CustomObject> -> List<CustomObjectDto>
-            String originalType = fieldType.toString();
-            String originalElementType = elementType.toString();
-            
-            // Replace the element type with the DTO type (using full qualified name)
-            return originalType.replace(originalElementType, dtoClassFullName);
-        } else {
-            // Direct type transformation: CustomObject -> CustomObjectDto (using full qualified name)
-            return dtoClassFullName;
-        }
-    }
-    
+
     /**
      * Transforms a field type using the specified DTO mapping.
      * Returns simple names for field declarations.
@@ -762,62 +719,13 @@ public class DtoGenerator {
             if (typeMirror.getKind() == TypeKind.DECLARED) {
                 DeclaredType declaredType = (DeclaredType) typeMirror;
                 TypeElement typeElement = (TypeElement) declaredType.asElement();
-                String simpleName = typeElement.getSimpleName().toString();
-                return simpleName;
+                return typeElement.getSimpleName().toString();
             }
             
             // Fallback: extract simple name from string representation
             String fullName = typeMirror.toString();
             int lastDotIndex = fullName.lastIndexOf('.');
-            String simpleName = lastDotIndex > 0 ? fullName.substring(lastDotIndex + 1) : fullName;
-            return simpleName;
-        }
-    }
-    
-    /**
-     * Safely extracts the full qualified name of the DTO class from @NestedMapping annotation.
-     * Used for import generation.
-     */
-    private String getDtoClassFullName(NestedMapping mapping) {
-        try {
-            // This will throw MirroredTypeException during annotation processing
-            return mapping.dtoClass().getName();
-        } catch (MirroredTypeException mte) {
-            // Extract the TypeMirror and get the proper qualified name
-            TypeMirror typeMirror = mte.getTypeMirror();
-            String typeMirrorString = typeMirror.toString();
-            
-            // If TypeMirror resolution failed (ERROR kind), try to extract from string representation
-            if (typeMirror.getKind() == TypeKind.ERROR || typeMirrorString.contains("<any?>")) {
-                // For full qualified names, we cannot reliably extract from <any?>.<any>
-                // Return null to indicate the import cannot be determined
-                return null;
-            }
-            
-            if (typeMirror.getKind() == TypeKind.DECLARED) {
-                DeclaredType declaredType = (DeclaredType) typeMirror;
-                TypeElement typeElement = (TypeElement) declaredType.asElement();
-                String qualifiedName = typeElement.getQualifiedName().toString();
-                
-                // Check if we got a valid qualified name
-                if (qualifiedName.contains(".")) {
-                    return qualifiedName;
-                } else {
-                    // Warn that we couldn't resolve the full qualified name
-                    messager.printMessage(Diagnostic.Kind.WARNING, 
-                        "Could not resolve full qualified name for DTO class in @NestedMapping. " +
-                        "Import may be missing. Resolved to: " + qualifiedName);
-                    return qualifiedName;  // Return it anyway, the filter will exclude it
-                }
-            }
-            
-            // Fallback: use string representation
-            String fallbackName = typeMirror.toString();
-            if (!fallbackName.contains(".")) {
-                messager.printMessage(Diagnostic.Kind.WARNING, 
-                    "Could not resolve full qualified name for DTO class in @NestedMapping: " + fallbackName);
-            }
-            return fallbackName;
+            return lastDotIndex > 0 ? fullName.substring(lastDotIndex + 1) : fullName;
         }
     }
     
