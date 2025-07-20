@@ -34,10 +34,8 @@ import java.util.regex.Pattern;
  * </p>
  */
 public class ValidationUtil {
-    // Package names must start with a letter, and each part after a dot must also start with a letter
-    // Can contain letters, numbers, underscores, and hyphens
-    private static final Pattern PACKAGE_PATTERN =
-            Pattern.compile("^[a-zA-Z][a-zA-Z0-9_\\-]*(?:\\.[a-zA-Z][a-zA-Z0-9_\\-]*)*$");
+    // Pattern for validating individual package parts (no nested quantifiers)
+    private static final Pattern PACKAGE_PART_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_\\-]*$");
 
     private static final Pattern ALPHANUMERIC_PATTERN = Pattern.compile("^[a-zA-Z0-9]+$");
     
@@ -63,14 +61,21 @@ public class ValidationUtil {
      * @return {@code true} if the package name is technically valid, {@code false} otherwise
      */
     public static boolean isValidPackageName(String pkg) {
-        if (pkg == null || pkg.isEmpty() || !PACKAGE_PATTERN.matcher(pkg).matches()) {
+        if (pkg == null || pkg.isEmpty()) {
             return false;
         }
         
-        // Check that no part of the package name is a Java reserved keyword
+        // Check for leading/trailing dots or consecutive dots
+        if (pkg.startsWith(".") || pkg.endsWith(".") || pkg.contains("..")) {
+            return false;
+        }
+        
+        // Split and validate each part
         String[] parts = pkg.split("\\.");
         for (String part : parts) {
-            if (JAVA_KEYWORDS.contains(part.toLowerCase())) {
+            // Each part must match the pattern and not be a reserved keyword
+            if (!PACKAGE_PART_PATTERN.matcher(part).matches() || 
+                JAVA_KEYWORDS.contains(part.toLowerCase())) {
                 return false;
             }
         }
@@ -88,13 +93,22 @@ public class ValidationUtil {
             return "Package name cannot be null or empty";
         }
         
-        if (!PACKAGE_PATTERN.matcher(pkg).matches()) {
-            return "Package name '" + pkg + "' has invalid syntax. Package names must start with a letter and contain only letters, numbers, underscores, and hyphens, separated by dots";
+        // Check for leading/trailing dots or consecutive dots
+        if (pkg.startsWith(".") || pkg.endsWith(".")) {
+            return "Package name '" + pkg + "' cannot start or end with a dot";
         }
         
-        // Check for Java reserved keywords
+        if (pkg.contains("..")) {
+            return "Package name '" + pkg + "' cannot contain consecutive dots";
+        }
+        
+        // Split and validate each part
         String[] parts = pkg.split("\\.");
         for (String part : parts) {
+            if (!PACKAGE_PART_PATTERN.matcher(part).matches()) {
+                return "Package name '" + pkg + "' has invalid part '" + part + "'. Each part must start with a letter and contain only letters, numbers, underscores, and hyphens";
+            }
+            
             if (JAVA_KEYWORDS.contains(part.toLowerCase())) {
                 return "Package name '" + pkg + "' contains Java reserved keyword '" + part + "'. Reserved keywords cannot be used in package names as they prevent class creation";
             }
