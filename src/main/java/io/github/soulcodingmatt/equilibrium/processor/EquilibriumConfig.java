@@ -238,32 +238,35 @@ public class EquilibriumConfig {
      * @return the package to use, or throws an exception if none is available
      */
     public String validateAndGetPackage(String annotationPackage, String classType) {
-        // First check if the annotation package is valid
-        if (!annotationPackage.isEmpty()) {
-            if (ValidationUtil.isValidPackageName(annotationPackage)) {
-                return annotationPackage;
+        String resolvedPackage = null;
+        
+        // First check if the annotation package is valid and non-empty
+        if (!annotationPackage.isEmpty() && ValidationUtil.isValidPackageName(annotationPackage)) {
+            resolvedPackage = annotationPackage;
+        } else {
+            // If annotation package is invalid or empty, try global package configuration
+            Optional<String> packageOpt = switch (classType) {
+                case DTO -> getDtoPackage();
+                case RECORD -> getRecordPackage();
+                case VO -> getVoPackage();
+                default -> Optional.empty();
+            };
+
+            if (packageOpt.isPresent()) {
+                resolvedPackage = packageOpt.get();
             } else {
-                // Package name is invalid - throw detailed error
-                String errorMessage = ValidationUtil.getPackageValidationError(annotationPackage);
-                throw new IllegalArgumentException("Invalid package name in @Generate" + classType + " annotation: " + errorMessage);
+                // Finally, fall back to the default package based on project coordinates
+                resolvedPackage = ValidationUtil.getDefaultPackageName(groupId, artifactId, classType);
             }
         }
-
-        // Then check if there's a valid global package configuration
-        Optional<String> packageOpt = switch (classType) {
-            case DTO -> getDtoPackage();
-            case RECORD -> getRecordPackage();
-            case VO -> getVoPackage();
-            default -> Optional.empty();
-        };
-
-        // If there's a valid global package, use it
-        if (packageOpt.isPresent()) {
-            return packageOpt.get();
+        
+        // Validate the final resolved package
+        if (!ValidationUtil.isValidPackageName(resolvedPackage)) {
+            String errorMessage = ValidationUtil.getPackageValidationError(resolvedPackage);
+            throw new IllegalArgumentException("Invalid package name in @Generate" + classType + " annotation: " + errorMessage);
         }
-
-        // Finally, fall back to the default package based on project coordinates
-        return ValidationUtil.getDefaultPackageName(groupId, artifactId, classType);
+        
+        return resolvedPackage;
     }
 
     /**
