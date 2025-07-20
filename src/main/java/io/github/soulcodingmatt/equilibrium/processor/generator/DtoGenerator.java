@@ -1,17 +1,15 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator;
 
-import io.github.soulcodingmatt.equilibrium.annotations.common.IgnoreAll;
-import io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMapping;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDto;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.Digits;
+import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.FieldInclusionConfig;
+import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.GeneratorType;
 import io.github.soulcodingmatt.equilibrium.processor.util.CustomObjectDetector;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
@@ -24,11 +22,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DtoGenerator {
-    public static final String STRING_END = "    }\n\n";
-    public static final String OVERRIDE = "    @Override\n";
 
     // Registry to track generated DTOs: simpleName -> fullQualifiedName
     private static final Map<String, String> generatedDtoRegistry = new HashMap<>();
@@ -129,63 +124,8 @@ public class DtoGenerator {
     }
 
     private List<VariableElement> getIncludedFields() {
-        return collectFieldsFromHierarchy(classElement);
-    }
-
-    private List<VariableElement> collectFieldsFromHierarchy(TypeElement element) {
-        List<VariableElement> fields = element.getEnclosedElements().stream()
-            .filter(e -> e.getKind() == ElementKind.FIELD)
-            .map(VariableElement.class::cast)
-            .filter(this::shouldIncludeField)
-            .toList();
-
-        // Get parent class fields
-        TypeMirror superclass = element.getSuperclass();
-        if (superclass.getKind() != TypeKind.NONE && !superclass.toString().equals("java.lang.Object")) {
-            TypeElement superclassElement = (TypeElement) ((DeclaredType) superclass).asElement();
-            fields = Stream.concat(
-                fields.stream(),
-                collectFieldsFromHierarchy(superclassElement).stream()
-            ).toList();
-        }
-
-        return fields;
-    }
-
-    private boolean shouldIncludeField(VariableElement field) {
-        // Exclude fields marked with @IgnoreAll
-        if (field.getAnnotation(IgnoreAll.class) != null) {
-            return false;
-        }
-        
-        // Handle ID-based @IgnoreDto exclusion
-        IgnoreDto ignoreDtoAnnotation = field.getAnnotation(IgnoreDto.class);
-        if (ignoreDtoAnnotation != null) {
-            int[] ignoredIds = ignoreDtoAnnotation.ids();
-            
-            // If no IDs specified, ignore for all DTOs
-            if (ignoredIds.length == 0) {
-                return false;
-            }
-            
-            // If IDs specified, only ignore if current DTO ID is in the list
-            for (int ignoredId : ignoredIds) {
-                if (ignoredId == dtoId) {
-                    return false;
-                }
-            }
-        }
-        
-        // Exclude any fields specified in the ignore collection
-        String fieldName = field.getSimpleName().toString();
-        if (ignoredFields.contains(fieldName)) {
-            return false;
-        }
-        
-        // Exclude static and transient fields
-        Set<Modifier> modifiers = field.getModifiers();
-        return !modifiers.contains(Modifier.STATIC) && 
-               !modifiers.contains(Modifier.TRANSIENT);
+        FieldInclusionConfig fieldConfig = new FieldInclusionConfig(GeneratorType.DTO, ignoredFields, dtoId);
+        return GeneratorUtility.getIncludedFields(classElement, fieldConfig);
     }
 
     private void writeImports(Writer writer, List<VariableElement> fields) throws IOException {
@@ -214,7 +154,7 @@ public class DtoGenerator {
         Set<String> fieldImports = fields.stream()
             .filter(field -> !fieldsWithNestedMapping.contains(field))  // Skip @NestedMapping fields
             .map(field -> field.asType().toString())  // Get original field types
-            .map(this::extractBaseType)  // Extract base type without generics
+            .map(GeneratorUtility::extractBaseType)  // Extract base type without generics
             .filter(type -> type.contains("."))
             .collect(Collectors.toSet());
         imports.addAll(fieldImports);
@@ -311,14 +251,7 @@ public class DtoGenerator {
         return !type.startsWith("java.lang.") || type.contains("$");
     }
 
-    private String extractBaseType(String fullType) {
-        // Remove generic type parameters for import statements
-        int genericStart = fullType.indexOf('<');
-        if (genericStart > 0) {
-            return fullType.substring(0, genericStart);
-        }
-        return fullType;
-    }
+
     
     private Set<String> getValidationImports(List<VariableElement> fields) {
         Set<String> validationImports = new HashSet<>();
@@ -1019,12 +952,12 @@ public class DtoGenerator {
         // Getter
         writer.write("    public " + type + " get" + capitalizedName + "() {\n");
         writer.write("        return " + name + ";\n");
-        writer.write(STRING_END);
+        writer.write(GeneratorUtility.STRING_END);
         
         // Setter
         writer.write("    public void set" + capitalizedName + "(" + type + " " + name + ") {\n");
         writer.write("        this." + name + " = " + name + ";\n");
-        writer.write(STRING_END);
+        writer.write(GeneratorUtility.STRING_END);
     }
 
     private void writeConstructor(Writer writer, List<VariableElement> fields, String className) throws IOException {
@@ -1049,63 +982,18 @@ public class DtoGenerator {
             String name = field.getSimpleName().toString();
             writer.write("        this." + name + " = " + name + ";\n");
         }
-        writer.write(STRING_END);
+        writer.write(GeneratorUtility.STRING_END);
     }
 
     private void writeEquals(Writer writer, List<VariableElement> fields, String className) throws IOException {
-        writer.write(OVERRIDE);
-        writer.write("    public boolean equals(Object o) {\n");
-        writer.write("        if (this == o) return true;\n");
-        writer.write("        if (o == null || getClass() != o.getClass()) return false;\n");
-        writer.write("        " + className + " that = (" + className + ") o;\n");
-        
-        // Compare each field
-        for (VariableElement field : fields) {
-            String name = field.getSimpleName().toString();
-            writer.write("        if (!Objects.equals(" + name + ", that." + name + ")) return false;\n");
-        }
-        
-        writer.write("        return true;\n");
-        writer.write(STRING_END);
+        GeneratorUtility.writeEquals(writer, fields, className);
     }
 
     private void writeHashCode(Writer writer, List<VariableElement> fields) throws IOException {
-        writer.write(OVERRIDE);
-        writer.write("    public int hashCode() {\n");
-        writer.write("        return Objects.hash(");
-        
-        // Add all fields to hash
-        boolean first = true;
-        for (VariableElement field : fields) {
-            if (!first) {
-                writer.write(", ");
-            }
-            writer.write(field.getSimpleName().toString());
-            first = false;
-        }
-        
-        writer.write(");\n");
-        writer.write(STRING_END);
+        GeneratorUtility.writeHashCode(writer, fields);
     }
 
     private void writeToString(Writer writer, List<VariableElement> fields) throws IOException {
-        writer.write(OVERRIDE);
-        writer.write("    public String toString() {\n");
-        writer.write("        return \"" + dtoClassName + "{\" +\n");
-        
-        // Add all fields to string representation
-        boolean first = true;
-        for (VariableElement field : fields) {
-            String name = field.getSimpleName().toString();
-            if (first) {
-                writer.write("            \"" + name + "=\" + " + name);
-                first = false;
-            } else {
-                writer.write(" +\n            \", " + name + "=\" + " + name);
-            }
-        }
-        
-        writer.write(" +\n            \"}\";\n");
-        writer.write(STRING_END);
+        GeneratorUtility.writeToString(writer, fields, dtoClassName);
     }
 }
