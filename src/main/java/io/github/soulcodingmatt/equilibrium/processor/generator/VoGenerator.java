@@ -43,8 +43,7 @@ public class VoGenerator {
     }
 
     public void generate() throws IOException {
-        String className = classElement.getSimpleName().toString();
-        
+
         // Get all fields that should be included in the Value Object
         List<VariableElement> fields = getIncludedFields();
         

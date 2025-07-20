@@ -39,8 +39,7 @@ public class RecordGenerator {
     }
 
     public void generate() throws IOException {
-        String className = classElement.getSimpleName().toString();
-        
+
         // Get all fields that should be included in the Record
         List<VariableElement> fields = getIncludedFields();
         
