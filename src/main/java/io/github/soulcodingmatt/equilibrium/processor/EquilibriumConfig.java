@@ -239,8 +239,14 @@ public class EquilibriumConfig {
      */
     public String validateAndGetPackage(String annotationPackage, String classType) {
         // First check if the annotation package is valid
-        if (ValidationUtil.isValidPackageName(annotationPackage)) {
-            return annotationPackage;
+        if (!annotationPackage.isEmpty()) {
+            if (ValidationUtil.isValidPackageName(annotationPackage)) {
+                return annotationPackage;
+            } else {
+                // Package name is invalid - throw detailed error
+                String errorMessage = ValidationUtil.getPackageValidationError(annotationPackage);
+                throw new IllegalArgumentException("Invalid package name in @Generate" + classType + " annotation: " + errorMessage);
+            }
         }
 
         // Then check if there's a valid global package configuration
