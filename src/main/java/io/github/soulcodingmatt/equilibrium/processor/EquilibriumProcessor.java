@@ -11,7 +11,6 @@ import io.github.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo;
 import io.github.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.generator.RecordGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
-
 import io.github.soulcodingmatt.equilibrium.processor.util.ValidationConflictUtil;
 
 import javax.annotation.processing.*;
@@ -85,7 +84,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private Filer filer;
     private Messager messager;
     private EquilibriumConfig config;
-    private ValidationConflictUtil validationUtil;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -93,7 +91,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
         config = new EquilibriumConfig(processingEnv);
-        validationUtil = new ValidationConflictUtil(processingEnv.getTypeUtils());
     }
 
     @Override
@@ -120,11 +117,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
         if (hasJakartaValidationAnnotations && !hasEquilibriumAnnotations) {
             // Just claim the Jakarta validation annotations without processing
             return true;
-        }
-
-        // If no relevant annotations are present, don't claim anything
-        if (!hasEquilibriumAnnotations && !hasJakartaValidationAnnotations) {
-            return false;
         }
 
         try {
@@ -669,7 +661,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
                 
                 if (validateDtoAnnotations.length > 0) {
                     // Validate the field
-                    List<String> errors = validationUtil.validateField(field, validateDtoAnnotations);
+                    List<String> errors = ValidationConflictUtil.validateField(field, validateDtoAnnotations);
                     
                     // Report any errors
                     for (String errorMessage : errors) {
@@ -710,8 +702,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
         
         return !hasErrors;
     }
-    
-
 
     private void error(Element element, String message) {
         messager.printMessage(Diagnostic.Kind.ERROR, message, element);

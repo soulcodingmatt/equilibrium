@@ -49,7 +49,11 @@ public class CustomObjectDetector {
         "java.time.Period",
         "java.util.UUID"
     );
-    
+
+    private CustomObjectDetector(){
+        throw new AssertionError("Utility class should not be instantiated");
+    }
+
     /**
      * Determines if a type represents a custom object that should be converted to a DTO.
      * 
