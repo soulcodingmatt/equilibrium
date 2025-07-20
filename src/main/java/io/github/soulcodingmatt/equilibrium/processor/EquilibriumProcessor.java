@@ -11,7 +11,7 @@ import io.github.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo;
 import io.github.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.generator.RecordGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
-import io.github.soulcodingmatt.equilibrium.processor.util.CustomObjectDetector;
+
 import io.github.soulcodingmatt.equilibrium.processor.util.ValidationConflictUtil;
 
 import javax.annotation.processing.*;
@@ -86,7 +86,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private Messager messager;
     private EquilibriumConfig config;
     private ValidationConflictUtil validationUtil;
-    private CustomObjectDetector customObjectDetector;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -95,7 +94,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
         messager = processingEnv.getMessager();
         config = new EquilibriumConfig(processingEnv);
         validationUtil = new ValidationConflictUtil(processingEnv.getTypeUtils());
-        customObjectDetector = new CustomObjectDetector(processingEnv.getTypeUtils());
     }
 
     @Override
@@ -317,7 +315,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
             // Create and run the DTO generator
             int dtoId = annotation.id();
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, className, ignoredFields, builder, dtoId, filer, customObjectDetector, messager);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, className, ignoredFields, builder, dtoId, filer, messager);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + className);

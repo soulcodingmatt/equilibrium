@@ -29,10 +29,13 @@ import java.util.stream.Stream;
 public class DtoGenerator {
     public static final String STRING_END = "    }\n\n";
     public static final String OVERRIDE = "    @Override\n";
-    
+
     // Registry to track generated DTOs: simpleName -> fullQualifiedName
     private static final Map<String, String> generatedDtoRegistry = new HashMap<>();
-    
+    public static final String DTO_CLASS = "dtoClass=";
+    public static final String MESSAGE = "(message = \"";
+    public static final String MESSAGE1 = "message = \"";
+
     /**
      * Register a generated DTO for import resolution
      * @param simpleName Simple class name (e.g., "BodyDto")
@@ -58,12 +61,11 @@ public class DtoGenerator {
     private final boolean builder;
     private final Filer filer;
     private final int dtoId;
-    private final CustomObjectDetector customObjectDetector;
     private final Messager messager;
 
     public DtoGenerator(TypeElement classElement, String packageName, String dtoClassName,
                         Set<String> ignoredFields, boolean builder, int dtoId, Filer filer,
-                        CustomObjectDetector customObjectDetector, Messager messager) {
+                        Messager messager) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.dtoClassName = dtoClassName;
@@ -71,7 +73,6 @@ public class DtoGenerator {
         this.filer = filer;
         this.builder = builder;
         this.dtoId = dtoId;
-        this.customObjectDetector = customObjectDetector;
         this.messager = messager;
     }
 
@@ -307,11 +308,7 @@ public class DtoGenerator {
         }
         
         // Must not be a primitive type or java.lang type
-        if (type.startsWith("java.lang.") && !type.contains("$")) {
-            return false;
-        }
-        
-        return true;
+        return !type.startsWith("java.lang.") || type.contains("$");
     }
 
     private String extractBaseType(String fullType) {
@@ -495,7 +492,7 @@ public class DtoGenerator {
         if (!notNull.message().equals("")) {
             writer.write("    @NotNull");
             if (!notNull.message().equals("must not be null")) {
-                writer.write("(message = \"" + escapeQuotes(notNull.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(notNull.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -505,7 +502,7 @@ public class DtoGenerator {
         if (!notBlank.message().equals("")) {
             writer.write("    @NotBlank");
             if (!notBlank.message().equals("must not be blank")) {
-                writer.write("(message = \"" + escapeQuotes(notBlank.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(notBlank.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -522,7 +519,7 @@ public class DtoGenerator {
                 params.add("max = " + size.max());
             }
             if (!size.message().equals("") && !size.message().equals("size must be between {min} and {max}")) {
-                params.add("message = \"" + escapeQuotes(size.message()) + "\"");
+                params.add(MESSAGE1 + escapeQuotes(size.message()) + "\"");
             }
             if (!params.isEmpty()) {
                 writer.write("(" + String.join(", ", params) + ")");
@@ -537,7 +534,7 @@ public class DtoGenerator {
             List<String> params = new ArrayList<>();
             params.add("value = " + min.value());
             if (!min.message().equals("") && !min.message().equals("must be greater than or equal to {value}")) {
-                params.add("message = \"" + escapeQuotes(min.message()) + "\"");
+                params.add(MESSAGE1 + escapeQuotes(min.message()) + "\"");
             }
             writer.write("(" + String.join(", ", params) + ")");
             writer.write("\n");
@@ -550,7 +547,7 @@ public class DtoGenerator {
             List<String> params = new ArrayList<>();
             params.add("value = " + max.value());
             if (!max.message().equals("") && !max.message().equals("must be less than or equal to {value}")) {
-                params.add("message = \"" + escapeQuotes(max.message()) + "\"");
+                params.add(MESSAGE1 + escapeQuotes(max.message()) + "\"");
             }
             writer.write("(" + String.join(", ", params) + ")");
             writer.write("\n");
@@ -565,7 +562,7 @@ public class DtoGenerator {
                 params.add("regexp = \"" + escapeQuotes(email.regexp()) + "\"");
             }
             if (!email.message().equals("") && !email.message().equals("must be a well-formed email address")) {
-                params.add("message = \"" + escapeQuotes(email.message()) + "\"");
+                params.add(MESSAGE1 + escapeQuotes(email.message()) + "\"");
             }
             if (!params.isEmpty()) {
                 writer.write("(" + String.join(", ", params) + ")");
@@ -580,7 +577,7 @@ public class DtoGenerator {
             List<String> params = new ArrayList<>();
             params.add("regexp = \"" + escapeQuotes(pattern.regexp()) + "\"");
             if (!pattern.message().equals("") && !pattern.message().equals("must match \"{regexp}\"")) {
-                params.add("message = \"" + escapeQuotes(pattern.message()) + "\"");
+                params.add(MESSAGE1 + escapeQuotes(pattern.message()) + "\"");
             }
             writer.write("(" + String.join(", ", params) + ")");
             writer.write("\n");
@@ -591,7 +588,7 @@ public class DtoGenerator {
         if (!notEmpty.message().equals("")) {
             writer.write("    @NotEmpty");
             if (!notEmpty.message().equals("must not be empty")) {
-                writer.write("(message = \"" + escapeQuotes(notEmpty.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(notEmpty.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -601,7 +598,7 @@ public class DtoGenerator {
         if (!positive.message().equals("")) {
             writer.write("    @Positive");
             if (!positive.message().equals("must be greater than 0")) {
-                writer.write("(message = \"" + escapeQuotes(positive.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(positive.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -611,7 +608,7 @@ public class DtoGenerator {
         if (!positiveOrZero.message().equals("")) {
             writer.write("    @PositiveOrZero");
             if (!positiveOrZero.message().equals("must be greater than or equal to 0")) {
-                writer.write("(message = \"" + escapeQuotes(positiveOrZero.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(positiveOrZero.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -621,7 +618,7 @@ public class DtoGenerator {
         if (!negative.message().equals("")) {
             writer.write("    @Negative");
             if (!negative.message().equals("must be less than 0")) {
-                writer.write("(message = \"" + escapeQuotes(negative.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(negative.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -631,7 +628,7 @@ public class DtoGenerator {
         if (!negativeOrZero.message().equals("")) {
             writer.write("    @NegativeOrZero");
             if (!negativeOrZero.message().equals("must be less than or equal to 0")) {
-                writer.write("(message = \"" + escapeQuotes(negativeOrZero.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(negativeOrZero.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -648,7 +645,7 @@ public class DtoGenerator {
                 params.add("fraction = " + digits.fraction());
             }
             if (!digits.message().equals("") && !digits.message().equals("numeric value out of bounds (<{integer} digits>.<{fraction} digits> expected)")) {
-                params.add("message = \"" + escapeQuotes(digits.message()) + "\"");
+                params.add(MESSAGE1 + escapeQuotes(digits.message()) + "\"");
             }
             if (!params.isEmpty()) {
                 writer.write("(" + String.join(", ", params) + ")");
@@ -661,7 +658,7 @@ public class DtoGenerator {
         if (!past.message().equals("")) {
             writer.write("    @Past");
             if (!past.message().equals("must be a date in the past")) {
-                writer.write("(message = \"" + escapeQuotes(past.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(past.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -671,7 +668,7 @@ public class DtoGenerator {
         if (!future.message().equals("")) {
             writer.write("    @Future");
             if (!future.message().equals("must be a date in the future")) {
-                writer.write("(message = \"" + escapeQuotes(future.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(future.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -681,7 +678,7 @@ public class DtoGenerator {
         if (!pastOrPresent.message().equals("")) {
             writer.write("    @PastOrPresent");
             if (!pastOrPresent.message().equals("must be a date in the past or in the present")) {
-                writer.write("(message = \"" + escapeQuotes(pastOrPresent.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(pastOrPresent.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -691,7 +688,7 @@ public class DtoGenerator {
         if (!futureOrPresent.message().equals("")) {
             writer.write("    @FutureOrPresent");
             if (!futureOrPresent.message().equals("must be a date in the present or in the future")) {
-                writer.write("(message = \"" + escapeQuotes(futureOrPresent.message()) + "\")");
+                writer.write(MESSAGE + escapeQuotes(futureOrPresent.message()) + "\")");
             }
             writer.write("\n");
         }
@@ -756,7 +753,7 @@ public class DtoGenerator {
         String dtoClassFullName = getDtoClassFullName(mapping);
         
         // Check if this is a collection type
-        TypeMirror elementType = customObjectDetector.getCollectionElementType(fieldType);
+        TypeMirror elementType = CustomObjectDetector.getCollectionElementType(fieldType);
         if (elementType != null) {
             // Transform collection element type: List<CustomObject> -> List<CustomObjectDto>
             String originalType = fieldType.toString();
@@ -778,18 +775,11 @@ public class DtoGenerator {
         String dtoClassSimpleName = getDtoClassSimpleName(mapping);
         
         // Check if this is a collection type
-        TypeMirror elementType = customObjectDetector.getCollectionElementType(fieldType);
+        TypeMirror elementType = CustomObjectDetector.getCollectionElementType(fieldType);
         if (elementType != null) {
             // Transform collection element type: List<CustomObject> -> List<CustomObjectDto>
             String originalType = fieldType.toString();
             String originalElementType = elementType.toString();
-            
-            // Extract simple name from original element type for replacement
-            String originalElementSimpleName = originalElementType;
-            int lastDotIndex = originalElementType.lastIndexOf('.');
-            if (lastDotIndex > 0) {
-                originalElementSimpleName = originalElementType.substring(lastDotIndex + 1);
-            }
             
             // Replace the element simple name with the DTO simple name
             return originalType.replace(originalElementType, dtoClassSimpleName);
@@ -842,8 +832,8 @@ public class DtoGenerator {
                         "DEBUG: Annotation string: " + annotationString);
                     
                     // Extract class name from patterns like "dtoClass=FunkyShitDto.class"
-                    if (annotationString.contains("dtoClass=") && annotationString.contains(".class")) {
-                        int start = annotationString.indexOf("dtoClass=") + "dtoClass=".length();
+                    if (annotationString.contains(DTO_CLASS) && annotationString.contains(".class")) {
+                        int start = annotationString.indexOf(DTO_CLASS) + DTO_CLASS.length();
                         int end = annotationString.indexOf(".class", start);
                         if (start > 0 && end > start) {
                             String classReference = annotationString.substring(start, end);
@@ -946,7 +936,7 @@ public class DtoGenerator {
         String fieldName = field.getSimpleName().toString();
         
         // Check direct custom object
-        if (customObjectDetector.isCustomObject(fieldType)) {
+        if (CustomObjectDetector.isCustomObject(fieldType)) {
             String customTypeName = fieldType.toString();
             String suggestedDtoName = getSuggestedDtoName(customTypeName);
             
@@ -962,8 +952,8 @@ public class DtoGenerator {
         }
         
         // Check collection of custom objects
-        if (customObjectDetector.isCustomObjectCollection(fieldType)) {
-            TypeMirror elementType = customObjectDetector.getCollectionElementType(fieldType);
+        if (CustomObjectDetector.isCustomObjectCollection(fieldType)) {
+            TypeMirror elementType = CustomObjectDetector.getCollectionElementType(fieldType);
             if (elementType != null) {
                 String customTypeName = elementType.toString();
                 String suggestedDtoName = getSuggestedDtoName(customTypeName);

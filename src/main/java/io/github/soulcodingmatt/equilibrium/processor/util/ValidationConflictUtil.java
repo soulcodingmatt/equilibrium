@@ -15,7 +15,21 @@ import java.util.List;
  * to prevent invalid Jakarta Bean Validation configurations.
  */
 public class ValidationConflictUtil {
-    
+
+    public static final String NEGATIVE_OR_ZERO = "NegativeOrZero";
+    public static final String FUTURE = "Future";
+    public static final String PAST_OR_PRESENT = "PastOrPresent";
+    public static final String POSITIVE = "Positive";
+    public static final String POSITIVE_OR_ZERO = "PositiveOrZero";
+    public static final String NEGATIVE = "Negative";
+    public static final String DIGITS = "Digits";
+    public static final String PAST = "Past";
+    public static final String FUTURE_OR_PRESENT = "FutureOrPresent";
+    public static final String IS_OF_TYPE = "' is of type ";
+    public static final String NOT_EMPTY = "NotEmpty";
+    public static final String MIN = "': @Min(";
+    public static final String MAX = "': @Max(";
+    public static final String FIELD = "Field '";
     private final Types typeUtils;
     
     public ValidationConflictUtil(Types typeUtils) {
@@ -84,7 +98,7 @@ public class ValidationConflictUtil {
         // Check NotEmpty
         NotEmpty notEmpty = validateDto.notEmpty();
         if (!notEmpty.message().isEmpty()) {
-            validations.add(new ValidationInfo("NotEmpty", notEmpty));
+            validations.add(new ValidationInfo(NOT_EMPTY, notEmpty));
         }
         
         // Check Size
@@ -130,55 +144,55 @@ public class ValidationConflictUtil {
         // Check Positive
         Positive positive = validateDto.positive();
         if (!positive.message().isEmpty()) {
-            validations.add(new ValidationInfo("Positive", positive));
+            validations.add(new ValidationInfo(POSITIVE, positive));
         }
         
         // Check PositiveOrZero
         PositiveOrZero positiveOrZero = validateDto.positiveOrZero();
         if (!positiveOrZero.message().isEmpty()) {
-            validations.add(new ValidationInfo("PositiveOrZero", positiveOrZero));
+            validations.add(new ValidationInfo(POSITIVE_OR_ZERO, positiveOrZero));
         }
         
         // Check Negative
         Negative negative = validateDto.negative();
         if (!negative.message().isEmpty()) {
-            validations.add(new ValidationInfo("Negative", negative));
+            validations.add(new ValidationInfo(NEGATIVE, negative));
         }
         
         // Check NegativeOrZero
         NegativeOrZero negativeOrZero = validateDto.negativeOrZero();
         if (!negativeOrZero.message().isEmpty()) {
-            validations.add(new ValidationInfo("NegativeOrZero", negativeOrZero));
+            validations.add(new ValidationInfo(NEGATIVE_OR_ZERO, negativeOrZero));
         }
         
         // Check Digits
         Digits digits = validateDto.digits();
         if (digits.integer() != -1 || digits.fraction() != -1) {
-            validations.add(new ValidationInfo("Digits", digits));
+            validations.add(new ValidationInfo(DIGITS, digits));
         }
         
         // Check Past
         Past past = validateDto.past();
         if (!past.message().isEmpty()) {
-            validations.add(new ValidationInfo("Past", past));
+            validations.add(new ValidationInfo(PAST, past));
         }
         
         // Check Future
         Future future = validateDto.future();
         if (!future.message().isEmpty()) {
-            validations.add(new ValidationInfo("Future", future));
+            validations.add(new ValidationInfo(FUTURE, future));
         }
         
         // Check PastOrPresent
         PastOrPresent pastOrPresent = validateDto.pastOrPresent();
         if (!pastOrPresent.message().isEmpty()) {
-            validations.add(new ValidationInfo("PastOrPresent", pastOrPresent));
+            validations.add(new ValidationInfo(PAST_OR_PRESENT, pastOrPresent));
         }
         
         // Check FutureOrPresent
         FutureOrPresent futureOrPresent = validateDto.futureOrPresent();
         if (!futureOrPresent.message().isEmpty()) {
-            validations.add(new ValidationInfo("FutureOrPresent", futureOrPresent));
+            validations.add(new ValidationInfo(FUTURE_OR_PRESENT, futureOrPresent));
         }
         
         return validations;
@@ -202,20 +216,20 @@ public class ValidationConflictUtil {
                 
             case "NotBlank":
                 if (!isStringType(typeName)) {
-                    errors.add("@NotBlank can only be applied to String fields. Field '" + fieldName + "' is of type " + typeName + ".");
+                    errors.add("@NotBlank can only be applied to String fields. Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 break;
                 
-            case "NotEmpty":
+            case NOT_EMPTY:
                 if (!isStringType(typeName) && !isCollectionType(typeName) && !isMapType(typeName) && !isArrayType(typeName)) {
-                    errors.add("@NotEmpty can only be applied to String, Collection, Map, or array fields. Field '" + fieldName + "' is of type " + typeName + ".");
+                    errors.add("@NotEmpty can only be applied to String, Collection, Map, or array fields. Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 break;
                 
             case "Size":
                 Size size = (Size) validation.annotation;
                 if (!isStringType(typeName) && !isCollectionType(typeName) && !isMapType(typeName) && !isArrayType(typeName)) {
-                    errors.add("@Size can only be applied to String, Collection, Map, or array fields. Field '" + fieldName + "' is of type " + typeName + ".");
+                    errors.add("@Size can only be applied to String, Collection, Map, or array fields. Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 if (size.min() < 0) {
                     errors.add("@Size min value cannot be negative. Field '" + fieldName + "' has min=" + size.min() + ".");
@@ -225,36 +239,27 @@ public class ValidationConflictUtil {
                 }
                 break;
                 
-            case "Min":
-            case "Max":
-            case "Positive":
-            case "PositiveOrZero":
-            case "Negative":
-            case "NegativeOrZero":
+            case "Min", "Max", POSITIVE, POSITIVE_OR_ZERO, NEGATIVE, NEGATIVE_OR_ZERO:
                 if (!isNumericType(typeName)) {
-                    errors.add("@" + validationType + " can only be applied to numeric fields. Field '" + fieldName + "' is of type " + typeName + ".");
+                    errors.add("@" + validationType + " can only be applied to numeric fields. Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 break;
                 
-            case "Email":
-            case "Pattern":
+            case "Email", "Pattern":
                 if (!isStringType(typeName)) {
-                    errors.add("@" + validationType + " can only be applied to String fields. Field '" + fieldName + "' is of type " + typeName + ".");
+                    errors.add("@" + validationType + " can only be applied to String fields. Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 break;
                 
-            case "Digits":
+            case DIGITS:
                 if (!isNumericType(typeName) && !isStringType(typeName)) {
-                    errors.add("@Digits can only be applied to numeric or String fields. Field '" + fieldName + "' is of type " + typeName + ".");
+                    errors.add("@Digits can only be applied to numeric or String fields. Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 break;
                 
-            case "Past":
-            case "Future":
-            case "PastOrPresent":
-            case "FutureOrPresent":
+            case PAST, FUTURE, PAST_OR_PRESENT, FUTURE_OR_PRESENT:
                 if (!isTemporalType(typeName)) {
-                    errors.add("@" + validationType + " can only be applied to temporal fields (Date, Calendar, LocalDate, LocalDateTime, etc.). Field '" + fieldName + "' is of type " + typeName + ".");
+                    errors.add("@" + validationType + " can only be applied to temporal fields (Date, Calendar, LocalDate, LocalDateTime, etc.). Field '" + fieldName + IS_OF_TYPE + typeName + ".");
                 }
                 break;
         }
@@ -291,39 +296,39 @@ public class ValidationConflictUtil {
         String typeB = b.type;
         
         // Direct conflicts from the blacklist table
-        if ((typeA.equals("Positive") && typeB.equals("Negative")) ||
-            (typeA.equals("Negative") && typeB.equals("Positive"))) {
-            return "Field '" + fieldName + "': @Positive and @Negative are contradictory. A value cannot be both > 0 and < 0.";
+        if ((typeA.equals(POSITIVE) && typeB.equals(NEGATIVE)) ||
+            (typeA.equals(NEGATIVE) && typeB.equals(POSITIVE))) {
+            return FIELD + fieldName + "': @Positive and @Negative are contradictory. A value cannot be both > 0 and < 0.";
         }
         
-        if ((typeA.equals("Positive") && typeB.equals("NegativeOrZero")) ||
-            (typeA.equals("NegativeOrZero") && typeB.equals("Positive"))) {
-            return "Field '" + fieldName + "': @Positive and @NegativeOrZero are contradictory. > 0 contradicts ≤ 0.";
+        if ((typeA.equals(POSITIVE) && typeB.equals(NEGATIVE_OR_ZERO)) ||
+            (typeA.equals(NEGATIVE_OR_ZERO) && typeB.equals(POSITIVE))) {
+            return FIELD + fieldName + "': @Positive and @NegativeOrZero are contradictory. > 0 contradicts ≤ 0.";
         }
         
-        if ((typeA.equals("PositiveOrZero") && typeB.equals("Negative")) ||
-            (typeA.equals("Negative") && typeB.equals("PositiveOrZero"))) {
-            return "Field '" + fieldName + "': @PositiveOrZero and @Negative are contradictory. ≥ 0 contradicts < 0.";
+        if ((typeA.equals(POSITIVE_OR_ZERO) && typeB.equals(NEGATIVE)) ||
+            (typeA.equals(NEGATIVE) && typeB.equals(POSITIVE_OR_ZERO))) {
+            return FIELD + fieldName + "': @PositiveOrZero and @Negative are contradictory. ≥ 0 contradicts < 0.";
         }
         
-        if ((typeA.equals("PositiveOrZero") && typeB.equals("NegativeOrZero")) ||
-            (typeA.equals("NegativeOrZero") && typeB.equals("PositiveOrZero"))) {
-            return "Field '" + fieldName + "': @PositiveOrZero and @NegativeOrZero are contradictory. ≥ 0 contradicts ≤ 0 (only 0 would be valid).";
+        if ((typeA.equals(POSITIVE_OR_ZERO) && typeB.equals(NEGATIVE_OR_ZERO)) ||
+            (typeA.equals(NEGATIVE_OR_ZERO) && typeB.equals(POSITIVE_OR_ZERO))) {
+            return FIELD + fieldName + "': @PositiveOrZero and @NegativeOrZero are contradictory. ≥ 0 contradicts ≤ 0 (only 0 would be valid).";
         }
         
-        if ((typeA.equals("Past") && typeB.equals("Future")) ||
-            (typeA.equals("Future") && typeB.equals("Past"))) {
-            return "Field '" + fieldName + "': @Past and @Future are contradictory. A date cannot be in the past and the future.";
+        if ((typeA.equals(PAST) && typeB.equals(FUTURE)) ||
+            (typeA.equals(FUTURE) && typeB.equals(PAST))) {
+            return FIELD + fieldName + "': @Past and @Future are contradictory. A date cannot be in the past and the future.";
         }
         
-        if ((typeA.equals("Past") && typeB.equals("FutureOrPresent")) ||
-            (typeA.equals("FutureOrPresent") && typeB.equals("Past"))) {
-            return "Field '" + fieldName + "': @Past and @FutureOrPresent are contradictory. Past contradicts future or present.";
+        if ((typeA.equals(PAST) && typeB.equals(FUTURE_OR_PRESENT)) ||
+            (typeA.equals(FUTURE_OR_PRESENT) && typeB.equals(PAST))) {
+            return FIELD + fieldName + "': @Past and @FutureOrPresent are contradictory. Past contradicts future or present.";
         }
         
-        if ((typeA.equals("Future") && typeB.equals("PastOrPresent")) ||
-            (typeA.equals("PastOrPresent") && typeB.equals("Future"))) {
-            return "Field '" + fieldName + "': @Future and @PastOrPresent are contradictory. Future contradicts past or present.";
+        if ((typeA.equals(FUTURE) && typeB.equals(PAST_OR_PRESENT)) ||
+            (typeA.equals(PAST_OR_PRESENT) && typeB.equals(FUTURE))) {
+            return FIELD + fieldName + "': @Future and @PastOrPresent are contradictory. Future contradicts past or present.";
         }
         
         // Min/Max value conflicts
@@ -331,80 +336,72 @@ public class ValidationConflictUtil {
             Min min = (Min) a.annotation;
             Max max = (Max) b.annotation;
             if (min.value() > max.value()) {
-                return "Field '" + fieldName + "': @Min(" + min.value() + ") is greater than @Max(" + max.value() + "). Min value must be ≤ max value.";
+                return FIELD + fieldName + MIN + min.value() + ") is greater than @Max(" + max.value() + "). Min value must be ≤ max value.";
             }
         } else if (typeA.equals("Max") && typeB.equals("Min")) {
             Max max = (Max) a.annotation;
             Min min = (Min) b.annotation;
             if (min.value() > max.value()) {
-                return "Field '" + fieldName + "': @Min(" + min.value() + ") is greater than @Max(" + max.value() + "). Min value must be ≤ max value.";
+                return FIELD + fieldName + MIN + min.value() + ") is greater than @Max(" + max.value() + "). Min value must be ≤ max value.";
             }
-        }
-        
-        // Size min/max conflicts
-        if (typeA.equals("Size") && typeB.equals("Size")) {
-            // This shouldn't happen as we only collect one Size annotation per ValidateDto
-            Size sizeA = (Size) a.annotation;
-            Size sizeB = (Size) b.annotation;
-            // Could check if they have conflicting ranges, but this is unlikely
         }
         
         // Min value with Positive/Negative conflicts
-        if (typeA.equals("Min") && typeB.equals("Positive")) {
+        if (typeA.equals("Min") && typeB.equals(POSITIVE)) {
             Min min = (Min) a.annotation;
             if (min.value() <= 0) {
-                return "Field '" + fieldName + "': @Min(" + min.value() + ") allows non-positive values, which contradicts @Positive (> 0).";
+                return FIELD + fieldName + MIN + min.value() + ") allows non-positive values, which contradicts @Positive (> 0).";
             }
-        } else if (typeA.equals("Positive") && typeB.equals("Min")) {
+        } else if (typeA.equals(POSITIVE) && typeB.equals("Min")) {
             Min min = (Min) b.annotation;
             if (min.value() <= 0) {
-                return "Field '" + fieldName + "': @Min(" + min.value() + ") allows non-positive values, which contradicts @Positive (> 0).";
+                return FIELD + fieldName + MIN + min.value() + ") allows non-positive values, which contradicts @Positive (> 0).";
             }
         }
         
-        if (typeA.equals("Min") && typeB.equals("Negative")) {
+        if (typeA.equals("Min") && typeB.equals(NEGATIVE)) {
             Min min = (Min) a.annotation;
             if (min.value() >= 0) {
-                return "Field '" + fieldName + "': @Min(" + min.value() + ") requires non-negative values, which contradicts @Negative (< 0).";
+                return FIELD + fieldName + MIN + min.value() + ") requires non-negative values, which contradicts @Negative (< 0).";
             }
-        } else if (typeA.equals("Negative") && typeB.equals("Min")) {
+        } else if (typeA.equals(NEGATIVE) && typeB.equals("Min")) {
             Min min = (Min) b.annotation;
             if (min.value() >= 0) {
-                return "Field '" + fieldName + "': @Min(" + min.value() + ") requires non-negative values, which contradicts @Negative (< 0).";
+                return FIELD + fieldName + MIN + min.value() + ") requires non-negative values, which contradicts @Negative (< 0).";
             }
         }
         
         // Max value with Positive/Negative conflicts
-        if (typeA.equals("Max") && typeB.equals("Positive")) {
+        if (typeA.equals("Max") && typeB.equals(POSITIVE)) {
             Max max = (Max) a.annotation;
             if (max.value() <= 0) {
-                return "Field '" + fieldName + "': @Max(" + max.value() + ") allows only non-positive values, which contradicts @Positive (> 0).";
+                return FIELD + fieldName + MAX + max.value() + ") allows only non-positive values, which contradicts @Positive (> 0).";
             }
-        } else if (typeA.equals("Positive") && typeB.equals("Max")) {
+        } else if (typeA.equals(POSITIVE) && typeB.equals("Max")) {
             Max max = (Max) b.annotation;
             if (max.value() <= 0) {
-                return "Field '" + fieldName + "': @Max(" + max.value() + ") allows only non-positive values, which contradicts @Positive (> 0).";
+                return FIELD + fieldName + MAX + max.value() + ") allows only non-positive values, which contradicts @Positive (> 0).";
             }
         }
         
-        if (typeA.equals("Max") && typeB.equals("Negative")) {
+        if (typeA.equals("Max") && typeB.equals(NEGATIVE)) {
             Max max = (Max) a.annotation;
             if (max.value() >= 0) {
-                return "Field '" + fieldName + "': @Max(" + max.value() + ") allows non-negative values, which contradicts @Negative (< 0).";
+                return FIELD + fieldName + MAX + max.value() + ") allows non-negative values, which contradicts @Negative (< 0).";
             }
-        } else if (typeA.equals("Negative") && typeB.equals("Max")) {
+        } else if (typeA.equals(NEGATIVE) && typeB.equals("Max")) {
             Max max = (Max) b.annotation;
             if (max.value() >= 0) {
-                return "Field '" + fieldName + "': @Max(" + max.value() + ") allows non-negative values, which contradicts @Negative (< 0).";
+                return FIELD + fieldName + MAX + max.value() + ") allows non-negative values, which contradicts @Negative (< 0).";
             }
         }
         
         // NotEmpty with Size max=0 conflict
-        if ((typeA.equals("NotEmpty") && typeB.equals("Size")) ||
-            (typeA.equals("Size") && typeB.equals("NotEmpty"))) {
+        if ((typeA.equals(NOT_EMPTY) && typeB.equals("Size")) ||
+            (typeA.equals("Size") && typeB.equals(NOT_EMPTY))) {
             Size size = typeA.equals("Size") ? (Size) a.annotation : (Size) b.annotation;
             if (size.max() == 0) {
-                return "Field '" + fieldName + "': @NotEmpty contradicts @Size(max=0). An element cannot be both not empty and have maximum size 0.";
+                return FIELD + fieldName + "': @NotEmpty contradicts @Size(max=0). An element cannot be both not empty and have maximum size 0.";
             }
         }
         

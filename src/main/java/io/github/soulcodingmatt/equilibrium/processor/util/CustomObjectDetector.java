@@ -13,8 +13,6 @@ import java.util.Set;
  */
 public class CustomObjectDetector {
     
-    private final Types typeUtils;
-    
     // JDK and common library packages that should NOT be converted to DTOs
     private static final Set<String> EXCLUDED_PACKAGES = Set.of(
         "java.lang",
@@ -53,21 +51,12 @@ public class CustomObjectDetector {
     );
     
     /**
-     * Creates a new CustomObjectDetector instance.
-     * 
-     * @param typeUtils the Types utility from the annotation processing environment
-     */
-    public CustomObjectDetector(Types typeUtils) {
-        this.typeUtils = typeUtils;
-    }
-    
-    /**
      * Determines if a type represents a custom object that should be converted to a DTO.
      * 
      * @param type the type to check
      * @return true if this is a custom object that needs DTO conversion
      */
-    public boolean isCustomObject(TypeMirror type) {
+    public static boolean isCustomObject(TypeMirror type) {
         // Handle primitive types
         if (type.getKind().isPrimitive()) {
             return false;
@@ -106,7 +95,7 @@ public class CustomObjectDetector {
      * @param collectionType the collection type (List, Set, etc.)
      * @return the element type, or null if not a parameterized collection
      */
-    public TypeMirror getCollectionElementType(TypeMirror collectionType) {
+    public static TypeMirror getCollectionElementType(TypeMirror collectionType) {
         if (collectionType.getKind() == TypeKind.DECLARED) {
             DeclaredType declaredType = (DeclaredType) collectionType;
             
@@ -129,7 +118,7 @@ public class CustomObjectDetector {
     /**
      * Checks if a qualified name represents a collection type.
      */
-    private boolean isCollectionType(String qualifiedName) {
+    private static boolean isCollectionType(String qualifiedName) {
         return qualifiedName.equals("java.util.List") ||
                qualifiedName.equals("java.util.Set") ||
                qualifiedName.equals("java.util.Collection") ||
@@ -146,7 +135,7 @@ public class CustomObjectDetector {
      * @param type the type to check
      * @return true if this is a collection of custom objects
      */
-    public boolean isCustomObjectCollection(TypeMirror type) {
+    public static boolean isCustomObjectCollection(TypeMirror type) {
         TypeMirror elementType = getCollectionElementType(type);
         return elementType != null && isCustomObject(elementType);
     }
