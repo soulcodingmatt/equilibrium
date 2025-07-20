@@ -614,9 +614,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
                     
                     // Pre-register this DTO
                     DtoGenerator.registerGeneratedDto(className, fullQualifiedName);
-                    
-                    messager.printMessage(Diagnostic.Kind.NOTE, 
-                        "DEBUG: Pre-registered DTO: " + className + " -> " + fullQualifiedName);
                         
                 } catch (Exception e) {
                     // Continue with other DTOs if one fails
