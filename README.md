@@ -189,8 +189,8 @@ public class User {
 - Usage: `@GenerateDto(pkg="org.thisisanexample.dto")`
 - Default: Defaults to the compiler arguments for DTOs.
 
-`postfix`
-- Usage: `@GenerateDto(postfix="Dto")`
+`name`
+- Usage: `@GenerateDto(name="MyCustomDto")`
 - Default: Defaults to the compiler arguments for DTOs. If the compiler arguments aren't
   set either, the default value is "Dto".
 
@@ -222,8 +222,8 @@ generated DTOs and customized DTO classes that extend the generated VOs.
 - Usage: `@GenerateRecord(pkg="org.thisisanexample.record")`
 - Default: Defaults to the compiler arguments for Java Records.
 
-`postfix`
-- Usage: `@GenerateRecord(postfix="Record")`
+`name`
+- Usage: `@GenerateRecord(name="MyCustomRecord")`
 - Default: Defaults to the compiler arguments for Java Records. If the compiler arguments aren't
   set either, the default value is "Record".
 
@@ -245,13 +245,12 @@ generated DTOs and customized DTO classes that extend the generated VOs.
   Value objects typically do not have an identity, in contrast to domain classes.
   Therefore, in most cases, it is desirable to exclude ID fields.
 
-
 `pkg`
 - Usage: `@GenerateVo(pkg="org.thisisanexample.vo")`
 - Default: Defaults to the compiler arguments for VOs.
 
-`postfix`
-- Usage: `@GenerateVo(postfix="Vo")`
+`name`
+- Usage: `@GenerateVo(name="MyCustomVo")`
 - Default: Defaults to the compiler arguments for VOs. If the compiler arguments aren't
   set either, the default value is "Vo".
 
@@ -277,6 +276,107 @@ that shouldn't be part of the data transfer or value object representations.
 This allows you to have multiple generations of the same type (e.g., multiple DTOs) from a single source class, 
 and selectively exclude fields from specific generations based on their ID. If no `ids` parameter is specified, 
 the field will be excluded from all generations of that type.
+
+### @ValidateDto
+
+The `@ValidateDto` annotation automatically applies Jakarta Bean Validation constraints to fields in generated DTO classes, providing compile-time type safety for validation rules.
+
+### Key Features
+
+- **Type-safe validation**: Configure validation rules with compile-time checking
+- **Comprehensive coverage**: Supports all standard Jakarta Bean Validation annotations
+- **Selective application**: Target specific DTO generations using the `ids` parameter
+- **Repeatable**: Apply multiple validation rules to the same field
+
+### Available Validation Options
+
+| Parameter | Validation Type | Description |
+|-----------|----------------|-------------|
+| `notNull` | `@NotNull` | Field cannot be null |
+| `notBlank` | `@NotBlank` | String field cannot be null, empty, or whitespace-only |
+| `notEmpty` | `@NotEmpty` | Collection/array/string cannot be null or empty |
+| `size` | `@Size` | Validates size constraints (min/max length) |
+| `min` | `@Min` | Minimum numeric value |
+| `max` | `@Max` | Maximum numeric value |
+| `email` | `@Email` | Valid email format |
+| `pattern` | `@Pattern` | Matches specified regex pattern |
+| `positive` | `@Positive` | Must be positive number |
+| `positiveOrZero` | `@PositiveOrZero` | Must be positive or zero |
+| `negative` | `@Negative` | Must be negative number |
+| `negativeOrZero` | `@NegativeOrZero` | Must be negative or zero |
+| `digits` | `@Digits` | Numeric constraints (integer/fraction digits) |
+| `past` | `@Past` | Date must be in the past |
+| `future` | `@Future` | Date must be in the future |
+| `pastOrPresent` | `@PastOrPresent` | Date must be in the past or present |
+| `futureOrPresent` | `@FutureOrPresent` | Date must be in the future or present |
+
+### Special Parameters
+
+- **`ids`**: Array of `@GenerateDto` IDs to selectively apply validation (applies to all DTOs if not specified)
+
+### Usage Example
+
+```java
+public class User {
+    @ValidateDto(
+        notNull = @NotNull(message = "Name cannot be null"),
+        size = @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
+    )
+    private String name;
+    
+    @ValidateDto(
+        min = @Min(value = 18, message = "Age must be at least 18"),
+        max = @Max(value = 120, message = "Age must be at most 120")
+    )
+    private Integer age;
+    
+    @ValidateDto(
+        email = @Email(message = "Invalid email format"),
+        ids = {1, 2}  // Only apply to DTOs with IDs 1 and 2
+    )
+    private String email;
+}
+```
+
+The validation annotations will be automatically applied to the corresponding fields in the generated DTO classes, ensuring data integrity with minimal boilerplate code.
+
+
+### @NestedMapping
+
+The `@NestedMapping` annotation maps a field to a specific DTO class for all generated DTOs, enabling precise control over nested object transformations.
+
+### Key Features
+
+- **Explicit mapping**: Specify exactly which DTO class to use for nested objects
+- **Global application**: Applied to all generated DTOs for the annotated field
+- **Single use**: Can only be used once per field for consistent mapping
+
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `dtoClass` | `Class<?>` | The DTO class to use for this field in all generated DTOs |
+
+### Usage Example
+
+```java
+public class User {
+    @NestedMapping(dtoClass = VoiceDto.class)
+    private Voice voice;
+    
+    @NestedMapping(dtoClass = AddressDto.class)
+    private Address address;
+    
+    // Other fields...
+}
+```
+
+In this example:
+- The `voice` field will be mapped to `VoiceDto` in all generated DTOs
+- The `address` field will be mapped to `AddressDto` in all generated DTOs
+
+This annotation ensures consistent nested object transformation across all DTO generations for the specified field.
+
 
 ## Multiple Annotations of the Same Type
 
@@ -316,10 +416,25 @@ This will generate:
 package names and postfixes follow Java naming conventions.
 
 ## Adding custom fields to generated DTOs
-**TBD**
+...
+
+```🚧 Work in Progress 🚧```
+
+...
 
 **Note**: The intended way to handle custom fields is to extend the generated DTOs and add them in your own subclass. 
 This is the short explanation for now—more detailed documentation will follow.
+
+## DTO Interface Pattern
+To make your DTO implement specific interfaces like Serializable, Comparable, etc., you can use the
+DTO Interface Pattern...
+
+...
+
+```🚧 Work in Progress 🚧```
+
+...
+
 
 ## Requirements
 
