@@ -628,9 +628,6 @@ public class DtoGenerator {
             return transformTypeWithMappingSimpleName(fieldType, nestedMapping);
         }
         
-        // No mapping found, check if this field contains custom objects and warn
-        checkForUnmappedCustomObjects(field, fieldType);
-        
         // Return original type if no transformation is needed
         return originalType;
     }
@@ -807,6 +804,14 @@ public class DtoGenerator {
         // Transform field type based on @NestedMapping annotations
         String transformedType = getTransformedFieldType(field);
         String name = field.getSimpleName().toString();
+        
+        // Check for unmapped custom objects and warn (only during field declaration)
+        TypeMirror fieldType = field.asType();
+        NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
+        if (nestedMapping == null) {
+            checkForUnmappedCustomObjects(field, fieldType);
+        }
+        
         writer.write("    private " + transformedType + " " + name + ";\n\n");
     }
 
