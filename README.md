@@ -11,7 +11,11 @@ If you find this project useful, consider supporting me ☕
 
 Equilibrium is a Java annotation processor that helps you maintain consistency between your domain classes and their corresponding Data Transfer Objects (DTOs), Java Records, and other value container classes. It automatically generates and updates these classes based on your source classes.
 
-## Latest version
+## Good to Know: Commercial Use
+💡 **Good to know**: You can safely use this annotation processor in **commercial or closed-source projects**, as long as it's only used at **compile time** and not included in your distributed artifacts. The GPL-3.0 license does **not** require you to open source your code in that case.
+
+➡️ This is the **typical use case** of *Project Equilibrium*.
+## Latest Version
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
 
