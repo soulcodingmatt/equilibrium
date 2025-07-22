@@ -16,15 +16,15 @@ _Project Equilibrium_ has to be set in the ```<annotationProcessorPaths>``` sect
 There are six optional compiler arguments for _Project Equilibrium_ that can
 be added to the ```<compilerArgs>``` section of the _Maven Compiler Plugin_:
 
-Define the default package and default psotfix for generated DTO files:
+Define the default package and default postfix for generated DTO files:
 - ```<arg>-Aequilibrium.dto.package=com.soulcodingmatt.dto</arg>```
 - ```<arg>-Aequilibrium.dto.postfix=Dto</arg>```
 
-Define the default package and default psotfix for generated Record files:
+Define the default package and default postfix for generated Record files:
 - ```<arg>-Aequilibrium.record.package=com.soulcodingmatt.record</arg>```
 - ```<arg>-Aequilibrium.record.postfix=Record</arg>```
 
-Define the default package and default psotfix for generated VO files:
+Define the default package and default postfix for generated VO files:
 - ```<arg>-Aequilibrium.vo.package=com.soulcodingmatt.vo</arg>```
 - ```<arg>-Aequilibrium.vo.postfix=Vo</arg>```
 
