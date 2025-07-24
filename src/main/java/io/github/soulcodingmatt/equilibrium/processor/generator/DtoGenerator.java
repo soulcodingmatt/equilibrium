@@ -1,5 +1,6 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator;
 
+import io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefault;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMapping;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDto;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
@@ -159,6 +160,15 @@ public class DtoGenerator {
         Set<String> validationImports = getValidationImports(fields);
         imports.addAll(validationImports);
         
+        // Add Builder.Default import if needed and builder is enabled
+        if (builder && hasBuilderDefaults(fields)) {
+            imports.add("lombok.Builder");
+        }
+        
+        // Add additional imports needed for builder defaults
+        Set<String> builderDefaultImports = getBuilderDefaultImports(fields);
+        imports.addAll(builderDefaultImports);
+        
         // Filter out invalid imports
         Set<String> filteredImports = imports.stream()
             .filter(this::isValidImport)
@@ -228,6 +238,106 @@ public class DtoGenerator {
         
         // Must not be a primitive type or java.lang type
         return !type.startsWith("java.lang.") || type.contains("$");
+    }
+    
+    /**
+     * Checks if any fields have @DtoBuilderDefault annotations or inherited builder defaults.
+     */
+    private boolean hasBuilderDefaults(List<VariableElement> fields) {
+        for (VariableElement field : fields) {
+            // Check for @DtoBuilderDefault annotation
+            if (field.getAnnotation(DtoBuilderDefault.class) != null) {
+                return true;
+            }
+            
+            // Check for existing @Builder.Default annotation if builder is enabled
+            if (builder && hasExistingBuilderDefault(field)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Gets additional imports needed for builder defaults.
+     */
+    private Set<String> getBuilderDefaultImports(List<VariableElement> fields) {
+        Set<String> imports = new HashSet<>();
+        
+        if (!builder) {
+            return imports; // No builder defaults if builder is disabled
+        }
+        
+        for (VariableElement field : fields) {
+            DtoBuilderDefault builderDefault = field.getAnnotation(DtoBuilderDefault.class);
+            if (builderDefault != null) {
+                // Add imports for collection types that use default constructors
+                String fieldType = field.asType().toString();
+                if (isCollectionType(fieldType)) {
+                    addCollectionImports(imports, fieldType);
+                } else if (isOptionalType(fieldType)) {
+                    imports.add("java.util.Optional");
+                }
+                
+                // Add enum imports if auto-detected enum types are used
+                if (isEnumType(field)) {
+                    addEnumImports(imports, field);
+                }
+            }
+        }
+        
+        return imports;
+    }
+    
+    /**
+     * Checks if the field has an existing @Builder.Default annotation.
+     */
+    private boolean hasExistingBuilderDefault(VariableElement field) {
+        // Check if field already has @Builder.Default annotation
+        return field.getAnnotationMirrors().stream()
+            .anyMatch(mirror -> mirror.getAnnotationType().toString().equals("lombok.Builder.Default"));
+    }
+    
+    /**
+     * Checks if the given type is a collection type (List, Set, Map).
+     */
+    private boolean isCollectionType(String fieldType) {
+        String baseType = GeneratorUtility.extractBaseType(fieldType);
+        return baseType.equals("java.util.List") || 
+               baseType.equals("java.util.Set") || 
+               baseType.equals("java.util.Map") ||
+               baseType.equals("List") || 
+               baseType.equals("Set") || 
+               baseType.equals("Map");
+    }
+    
+    /**
+     * Checks if the given type is Optional.
+     */
+    private boolean isOptionalType(String fieldType) {
+        String baseType = GeneratorUtility.extractBaseType(fieldType);
+        return baseType.equals("java.util.Optional") || baseType.equals("Optional");
+    }
+    
+    /**
+     * Adds necessary imports for collection types.
+     */
+    private void addCollectionImports(Set<String> imports, String fieldType) {
+        String baseType = GeneratorUtility.extractBaseType(fieldType);
+        switch (baseType) {
+            case "java.util.List", "List" -> {
+                imports.add("java.util.List");
+                imports.add("java.util.ArrayList");
+            }
+            case "java.util.Set", "Set" -> {
+                imports.add("java.util.Set");
+                imports.add("java.util.HashSet");
+            }
+            case "java.util.Map", "Map" -> {
+                imports.add("java.util.Map");
+                imports.add("java.util.HashMap");
+            }
+        }
     }
 
 
@@ -782,6 +892,232 @@ public class DtoGenerator {
         // Suggest DTO name by appending "Dto"
         return simpleClassName + "Dto";
     }
+    
+    /**
+     * Writes @Builder.Default annotation if applicable.
+     */
+    private void writeBuilderDefaultAnnotation(Writer writer, VariableElement field) throws IOException {
+        if (!builder) {
+            return; // No builder defaults if builder is disabled
+        }
+        
+        // Check for @DtoBuilderDefault annotation
+        DtoBuilderDefault builderDefault = field.getAnnotation(DtoBuilderDefault.class);
+        if (builderDefault != null) {
+            // Validate that field is not final
+            if (field.getModifiers().contains(javax.lang.model.element.Modifier.FINAL)) {
+                messager.printMessage(Diagnostic.Kind.ERROR, 
+                    "@DtoBuilderDefault cannot be applied to final fields: " + field.getSimpleName(), 
+                    field);
+                return;
+            }
+            
+            writer.write("    @Builder.Default\n");
+            return;
+        }
+        
+        // Check for existing @Builder.Default annotation from base class
+        if (hasExistingBuilderDefault(field)) {
+            writer.write("    @Builder.Default\n");
+        }
+    }
+    
+    /**
+     * Gets the field declaration including type, name, and optional default value.
+     */
+    private String getFieldDeclaration(VariableElement field, String transformedType, String name) {
+        if (!builder) {
+            return transformedType + " " + name; // No defaults if builder is disabled
+        }
+        
+        // Check for @DtoBuilderDefault annotation
+        DtoBuilderDefault builderDefault = field.getAnnotation(DtoBuilderDefault.class);
+        if (builderDefault != null) {
+            String defaultValue = getBuilderDefaultValue(field, builderDefault);
+            if (defaultValue != null && !defaultValue.isEmpty()) {
+                return transformedType + " " + name + " = " + defaultValue;
+            }
+        }
+        
+        // Check for existing builder default from base class
+        if (hasExistingBuilderDefault(field)) {
+            String existingDefault = getExistingBuilderDefaultValue(field);
+            if (existingDefault != null && !existingDefault.isEmpty()) {
+                return transformedType + " " + name + " = " + existingDefault;
+            }
+        }
+        
+        return transformedType + " " + name;
+    }
+    
+    /**
+     * Gets the default value for a field with @DtoBuilderDefault annotation.
+     */
+    private String getBuilderDefaultValue(VariableElement field, DtoBuilderDefault builderDefault) {
+        String fieldType = field.asType().toString();
+        String annotationValue = builderDefault.value();
+        
+        // If explicit value is provided, process it based on field type
+        if (!annotationValue.isEmpty()) {
+            return processAnnotationValue(field, fieldType, annotationValue);
+        }
+        
+        // Special handling for collections and Optional
+        if (isCollectionType(fieldType)) {
+            return getCollectionDefaultValue(fieldType);
+        } else if (isOptionalType(fieldType)) {
+            return "Optional.empty()";
+        }
+        
+        // For other types, require explicit value
+        messager.printMessage(Diagnostic.Kind.ERROR, 
+            "@DtoBuilderDefault requires a value for non-collection, non-Optional field: " + field.getSimpleName(), 
+            field);
+        return null;
+    }
+    
+    /**
+     * Processes the annotation value based on the field type.
+     * Handles String auto-quoting and enum auto-detection with validation.
+     */
+    private String processAnnotationValue(VariableElement field, String fieldType, String annotationValue) {
+        // Check if this is an enum field (auto-detect from field type)
+        if (isEnumType(field)) {
+            return processEnumValue(field, annotationValue);
+        }
+        
+        // Check if this is a String field
+        if (isStringType(fieldType)) {
+            // If the value already has quotes (escaped or not), use it as-is
+            if (annotationValue.startsWith("\"") && annotationValue.endsWith("\"")) {
+                return annotationValue; // Already properly quoted
+            }
+            if (annotationValue.startsWith("\\\"") && annotationValue.endsWith("\\\"")) {
+                return annotationValue; // Already escaped and quoted
+            }
+            
+            // Auto-add quotes for String fields
+            return "\"" + escapeQuotes(annotationValue) + "\"";
+        }
+        
+        // For other types, use the value as-is
+        return annotationValue;
+    }
+    
+    /**
+     * Checks if a field is of enum type.
+     */
+    private boolean isEnumType(VariableElement field) {
+        return field.asType().getKind() == javax.lang.model.type.TypeKind.DECLARED &&
+               ((javax.lang.model.type.DeclaredType) field.asType()).asElement().getKind() == javax.lang.model.element.ElementKind.ENUM;
+    }
+    
+    /**
+     * Processes enum values with auto-detection and validation.
+     */
+    private String processEnumValue(VariableElement field, String annotationValue) {
+        String fieldName = field.getSimpleName().toString();
+        javax.lang.model.type.DeclaredType declaredType = (javax.lang.model.type.DeclaredType) field.asType();
+        javax.lang.model.element.TypeElement enumElement = (javax.lang.model.element.TypeElement) declaredType.asElement();
+        String enumClassName = enumElement.getQualifiedName().toString();
+        String enumSimpleName = enumElement.getSimpleName().toString();
+        
+        // Support both simple constant names ("ACTIVE") and qualified names ("Status.ACTIVE")
+        String constantName;
+        String specifiedEnumName = null;
+        
+        if (annotationValue.contains(".")) {
+            // Qualified reference like "Status.ACTIVE"
+            String[] parts = annotationValue.split("\\.");
+            if (parts.length != 2) {
+                messager.printMessage(Diagnostic.Kind.ERROR, 
+                    "@DtoBuilderDefault: Invalid enum reference format '" + annotationValue + 
+                    "'. Expected 'EnumName.CONSTANT' or 'CONSTANT' for field: " + fieldName, field);
+                return null;
+            }
+            specifiedEnumName = parts[0];
+            constantName = parts[1];
+            
+            // Validate that the specified enum name matches the field type
+            if (!specifiedEnumName.equals(enumSimpleName) && !specifiedEnumName.equals(enumClassName)) {
+                messager.printMessage(Diagnostic.Kind.ERROR, 
+                    "@DtoBuilderDefault: Enum reference '" + specifiedEnumName + 
+                    "' does not match field type '" + enumClassName + "' for field: " + fieldName, field);
+                return null;
+            }
+        } else {
+            // Simple constant name like "ACTIVE"
+            constantName = annotationValue;
+        }
+        
+        // Validate that the constant exists in the enum
+        boolean constantExists = false;
+        for (javax.lang.model.element.Element enclosedElement : enumElement.getEnclosedElements()) {
+            if (enclosedElement.getKind() == javax.lang.model.element.ElementKind.ENUM_CONSTANT &&
+                enclosedElement.getSimpleName().toString().equals(constantName)) {
+                constantExists = true;
+                break;
+            }
+        }
+        
+        if (!constantExists) {
+            messager.printMessage(Diagnostic.Kind.ERROR, 
+                "@DtoBuilderDefault: Enum constant '" + constantName + 
+                "' does not exist in enum " + enumClassName + " for field: " + fieldName, field);
+            return null;
+        }
+        
+        // Generate the proper enum reference
+        return enumSimpleName + "." + constantName;
+    }
+    
+    /**
+     * Adds necessary imports for enum types used in builder defaults.
+     */
+    private void addEnumImports(Set<String> imports, VariableElement field) {
+        if (isEnumType(field)) {
+            javax.lang.model.type.DeclaredType declaredType = (javax.lang.model.type.DeclaredType) field.asType();
+            javax.lang.model.element.TypeElement enumElement = (javax.lang.model.element.TypeElement) declaredType.asElement();
+            String enumClassName = enumElement.getQualifiedName().toString();
+            
+            // Add import if it's not in java.lang package
+            if (enumClassName.contains(".") && !enumClassName.startsWith("java.lang.")) {
+                imports.add(enumClassName);
+            }
+        }
+    }
+    
+    /**
+     * Checks if the given type is a String type.
+     */
+    private boolean isStringType(String fieldType) {
+        String baseType = GeneratorUtility.extractBaseType(fieldType);
+        return baseType.equals("java.lang.String") || baseType.equals("String");
+    }
+    
+    /**
+     * Gets the appropriate default value for collection types.
+     */
+    private String getCollectionDefaultValue(String fieldType) {
+        String baseType = GeneratorUtility.extractBaseType(fieldType);
+        return switch (baseType) {
+            case "java.util.List", "List" -> "new ArrayList<>()";
+            case "java.util.Set", "Set" -> "new HashSet<>()";
+            case "java.util.Map", "Map" -> "new HashMap<>()";
+            default -> null;
+        };
+    }
+    
+    /**
+     * Gets the existing default value from a field that already has @Builder.Default.
+     * This is a simplified implementation - in practice, you might need more sophisticated parsing.
+     */
+    private String getExistingBuilderDefaultValue(VariableElement field) {
+        // This is a placeholder - extracting existing default values from source code
+        // would require parsing the field initializer, which is complex in annotation processing.
+        // For now, return null to indicate no default value extraction.
+        return null;
+    }
 
     private void writeField(Writer writer, VariableElement field) throws IOException {
         // Check for validation annotations (handles both single and multiple ValidateDto annotations)
@@ -801,6 +1137,9 @@ public class DtoGenerator {
             }
         }
         
+        // Write builder default annotations if builder is enabled
+        writeBuilderDefaultAnnotation(writer, field);
+        
         // Transform field type based on @NestedMapping annotations
         String transformedType = getTransformedFieldType(field);
         String name = field.getSimpleName().toString();
@@ -812,7 +1151,9 @@ public class DtoGenerator {
             checkForUnmappedCustomObjects(field, fieldType);
         }
         
-        writer.write("    private " + transformedType + " " + name + ";\n\n");
+        // Write field declaration with optional default value
+        String fieldDeclaration = getFieldDeclaration(field, transformedType, name);
+        writer.write("    private " + fieldDeclaration + ";\n\n");
     }
 
     private void writeAccessors(Writer writer, VariableElement field) throws IOException {
