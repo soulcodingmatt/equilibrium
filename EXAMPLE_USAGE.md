@@ -141,6 +141,113 @@ private Map<String, Object> metadata;  // defaults to new HashMap<>()
 private Optional<String> description;  // defaults to Optional.empty()
 ```
 
+## Using existing @Builder.Default on the base class (safe carry-over)
+
+When you use `@GenerateDto(builder = true)`, the processor will mirror an existing Lombok `@Builder.Default` from the base class and, for a safe subset of initializer forms, it will copy the initializer into the DTO.
+
+### What is automatically carried over
+- Literals: numbers (including negatives), booleans, chars, strings, null
+- Enum constants: emitted as `EnumSimpleName.CONSTANT`
+- No-arg constructors: `new ArrayList<>()`, `new HashSet<>()`, `new HashMap<>()`
+- Empties: `Optional.empty()`, `Collections.emptyList()`, `Collections.emptySet()`, `Collections.emptyMap()`
+
+The processor also auto-adds required imports (e.g., `List`, `ArrayList`, `Optional`, `Collections`).
+
+### Example (base → generated DTO)
+Base class:
+```java
+public class User {
+    @Builder.Default
+    private int height = -10;
+
+    @Builder.Default
+    private java.util.List<String> tags = new java.util.ArrayList<>();
+
+    @Builder.Default
+    private Status status = Status.ACTIVE;
+
+    @Builder.Default
+    private java.util.Optional<String> note = java.util.Optional.empty();
+
+    @Builder.Default
+    private java.util.Map<String, Integer> scores = new java.util.HashMap<>();
+}
+```
+
+Generated DTO (excerpt):
+```java
+@SuperBuilder
+public class UserDto {
+    @Builder.Default
+    private int height = -10;
+
+    @Builder.Default
+    private List<String> tags = new ArrayList<>();
+
+    @Builder.Default
+    private Status status = Status.ACTIVE;
+
+    @Builder.Default
+    private Optional<String> note = Optional.empty();
+
+    @Builder.Default
+    private Map<String, Integer> scores = new HashMap<>();
+}
+```
+
+### Not carried over (use `@DtoBuilderDefault` instead)
+- Method calls beyond the whitelisted empties: `Optional.of(...)`, `List/Set/Map.of(...)`, `BigDecimal.valueOf(...)`, `LocalDate.of(...)`, `UUID.fromString(...)`, etc.
+- Constructors other than the allowed no-arg `ArrayList/HashSet/HashMap`, or any constructor with arguments
+- Static non-enum constants: `BigDecimal.TEN`, `Duration.ZERO`, `Math.PI`, etc.
+- Arrays and collections with contents: `new int[]{...}`, `Arrays.asList(...)`, unmodifiable wrappers
+- Expressions: arithmetic/concatenation, ternaries, casts, chains, lambdas, method references
+
+For these cases, specify the initializer via `@DtoBuilderDefault` (type-specific parameters or `value()` escape hatch).
+
+## Opting out of inherited defaults (inherit = false)
+
+You can prevent a base-class `@Builder.Default` initializer from being used in the DTO by attaching `@DtoBuilderDefault(inherit = false)` to the same field in the base class.
+
+Base class:
+```java
+@GenerateDto(builder = true)
+public class User {
+    // Base default you do NOT want in the DTO
+    @Builder.Default
+    @DtoBuilderDefault(inherit = false)
+    private int height = -10;
+}
+```
+
+Generated DTO (excerpt):
+```java
+@SuperBuilder
+public class UserDto {
+    // No @Builder.Default and no initializer
+    private int height;
+}
+```
+
+You can also override the inherited default with an explicit one:
+```java
+@GenerateDto(builder = true)
+public class User {
+    @Builder.Default
+    // Provide a new default for the DTO instead of inheriting the base one
+    @DtoBuilderDefault(intValue = 5)
+    private int height = -10;
+}
+```
+
+Generated DTO (excerpt):
+```java
+@SuperBuilder
+public class UserDto {
+    @Builder.Default
+    private int height = 5;
+}
+```
+
 ## Error Handling
 
 The annotation processor provides clear error messages:
