@@ -19,9 +19,11 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+
 import com.sun.source.tree.*;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
@@ -57,25 +59,31 @@ public class DtoGenerator {
     public static final String INTEGER = "Integer";
     public static final String JAVA_LANG_INTEGER = "java.lang.Integer";
     public static final String INTEGER_STRING = "int";
+    public static final String JAVA_UTIL_OPTIONAL = "java.util.Optional";
+    public static final String JAVA_UTIL_LIST = "java.util.List";
+    public static final String JAVA_UTIL_SET = "java.util.Set";
+    public static final String JAVA_UTIL_MAP = "java.util.Map";
 
     /**
      * Register a generated DTO for import resolution
-     * @param simpleName Simple class name (e.g., "BodyDto")
+     *
+     * @param simpleName        Simple class name (e.g., "BodyDto")
      * @param fullQualifiedName Full qualified name (e.g., "com.soulcodingmatt.dto.BodyDto")
      */
     public static void registerGeneratedDto(String simpleName, String fullQualifiedName) {
         generatedDtoRegistry.put(simpleName, fullQualifiedName);
     }
-    
+
     /**
      * Look up the full qualified name of a generated DTO
+     *
      * @param simpleName Simple class name (e.g., "BodyDto")
      * @return Full qualified name if found, null otherwise
      */
     public static String lookupGeneratedDto(String simpleName) {
         return generatedDtoRegistry.get(simpleName);
     }
-    
+
     private final TypeElement classElement;
     private final String packageName;
     private final String dtoClassName;
@@ -108,21 +116,21 @@ public class DtoGenerator {
         List<VariableElement> fields = getIncludedFields();
         // Pre-scan for safe inherited builder defaults to collect initializers and imports
         preScanInheritedBuilderDefaults(fields);
-        
+
         // Create or update the DTO file
         JavaFileObject sourceFile = filer.createSourceFile(packageName + "." + dtoClassName, classElement);
-        
+
         try (Writer writer = sourceFile.openWriter()) {
             // Write package declaration
             writer.write("package " + packageName + ";\n\n");
-            
+
             // Write imports
             if (builder) {
                 writer.write("import lombok.experimental.SuperBuilder;\n");
             }
             writer.write("import java.util.Objects;\n");
             writeImports(writer, fields);
-            
+
             // Write class declaration
             writer.write("/**\n");
             writer.write(" * DTO for {@link " + classElement.getQualifiedName() + "}\n");
@@ -132,25 +140,25 @@ public class DtoGenerator {
                 writer.write("@SuperBuilder\n");
             }
             writer.write("public class " + dtoClassName + " {\n\n");
-            
+
             // Write fields
             for (VariableElement field : fields) {
                 writeField(writer, field);
             }
-            
+
             // Write constructor
             writeConstructor(writer, fields, dtoClassName);
-            
+
             // Write getters and setters
             for (VariableElement field : fields) {
                 writeAccessors(writer, field);
             }
-            
+
             // Write standard method overrides (always generated)
             writeEquals(writer, fields, dtoClassName);
             writeHashCode(writer, fields);
             writeToString(writer, fields);
-            
+
             // Close class
             writer.write("}\n");
         }
@@ -164,56 +172,56 @@ public class DtoGenerator {
     private void writeImports(Writer writer, List<VariableElement> fields) throws IOException {
         Set<String> imports = new HashSet<>();
         Set<VariableElement> fieldsWithNestedMapping = new HashSet<>();
-        
+
         // First pass: collect fields with @NestedMapping and add their DTO imports
         for (VariableElement field : fields) {
             NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
-            
+
             if (nestedMapping != null) {
                 fieldsWithNestedMapping.add(field);
-                
+
                 String dtoImport = findDtoImportFromSourceClass(nestedMapping);
                 if (dtoImport != null) {
                     imports.add(dtoImport);
                 }
             }
         }
-        
+
         // Second pass: add standard field imports, BUT skip fields that have @NestedMapping
         Set<String> fieldImports = fields.stream()
-            .filter(field -> !fieldsWithNestedMapping.contains(field))  // Skip @NestedMapping fields
-            .map(field -> field.asType().toString())  // Get original field types
-            .map(GeneratorUtility::extractBaseType)  // Extract base type without generics
-            .filter(type -> type.contains("."))
-            .collect(Collectors.toSet());
+                .filter(field -> !fieldsWithNestedMapping.contains(field))  // Skip @NestedMapping fields
+                .map(field -> field.asType().toString())  // Get original field types
+                .map(GeneratorUtility::extractBaseType)  // Extract base type without generics
+                .filter(type -> type.contains("."))
+                .collect(Collectors.toSet());
         imports.addAll(fieldImports);
-        
+
         // Add Jakarta Bean Validation imports if validation annotations are used
         Set<String> validationImports = getValidationImports(fields);
         imports.addAll(validationImports);
-        
+
         // Add Builder.Default import if needed and builder is enabled
         if (builder && hasBuilderDefaults(fields)) {
             imports.add("lombok.Builder");
         }
-        
+
         // Add additional imports needed for builder defaults
         Set<String> builderDefaultImports = getBuilderDefaultImports(fields);
         imports.addAll(builderDefaultImports);
         // Add imports needed due to inherited builder defaults we copied
         imports.addAll(extraImportsForInheritedDefaults);
-        
+
         // Filter out invalid imports
         Set<String> filteredImports = imports.stream()
-            .filter(this::isValidImport)
-            .collect(Collectors.toSet());
-        
+                .filter(this::isValidImport)
+                .collect(Collectors.toSet());
+
         for (String importType : filteredImports) {
             writer.write("import " + importType + ";\n");
         }
         writer.write("\n");
     }
-    
+
     /**
      * Finds the import statement for a DTO class by examining the source class imports.
      * This avoids TypeMirror resolution issues when the DTO class doesn't exist yet.
@@ -221,41 +229,41 @@ public class DtoGenerator {
     private String findDtoImportFromSourceClass(NestedMapping mapping) {
         // Get the simple DTO class name from the annotation
         String dtoSimpleName = getDtoClassSimpleName(mapping);
-        
+
         // FIRST: Check our generated DTO registry (most reliable!)
         String registeredDto = lookupGeneratedDto(dtoSimpleName);
         if (registeredDto != null) {
             return registeredDto;
         }
-        
+
         // FALLBACK: Use heuristic approach for DTOs not generated by us
         String sourcePackage = classElement.getQualifiedName().toString();
         int lastDot = sourcePackage.lastIndexOf('.');
         if (lastDot > 0) {
             sourcePackage = sourcePackage.substring(0, lastDot);
         }
-        
+
         // Common DTO package patterns - NO hardcoded packages anymore!
         String[] commonDtoPackages = {
-            sourcePackage + ".dto",
-            sourcePackage.replace(".domain", ".dto"), 
-            sourcePackage.replace(".entity", ".dto"),
-            sourcePackage.replace(".model", ".dto"),
-            sourcePackage
+                sourcePackage + ".dto",
+                sourcePackage.replace(".domain", ".dto"),
+                sourcePackage.replace(".entity", ".dto"),
+                sourcePackage.replace(".model", ".dto"),
+                sourcePackage
         };
-        
+
         for (String pkgName : commonDtoPackages) {
             String fullName = pkgName + "." + dtoSimpleName;
             if (pkgName.contains("dto")) {
                 return fullName;
             }
         }
-        
-        messager.printMessage(Diagnostic.Kind.WARNING, 
-            "Could not determine DTO import for: " + dtoSimpleName);
+
+        messager.printMessage(Diagnostic.Kind.WARNING,
+                "Could not determine DTO import for: " + dtoSimpleName);
         return null;
     }
-    
+
     /**
      * Checks if an import type is valid and should be included.
      */
@@ -264,16 +272,16 @@ public class DtoGenerator {
         if (!type.contains(".")) {
             return false;
         }
-        
+
         // Must not contain invalid characters
         if (type.contains("<") || type.contains(">") || type.contains("?")) {
             return false;
         }
-        
+
         // Must not be a primitive type or java.lang type
         return !type.startsWith("java.lang.") || type.contains("$");
     }
-    
+
     /**
      * Checks if any fields have @DtoBuilderDefault annotations or inherited builder defaults.
      */
@@ -283,7 +291,7 @@ public class DtoGenerator {
             if (field.getAnnotation(DtoBuilderDefault.class) != null) {
                 return true;
             }
-            
+
             // Check for existing @Builder.Default annotation if builder is enabled
             if (builder && hasExistingBuilderDefault(field)) {
                 return true;
@@ -291,17 +299,17 @@ public class DtoGenerator {
         }
         return false;
     }
-    
+
     /**
      * Gets additional imports needed for builder defaults.
      */
     private Set<String> getBuilderDefaultImports(List<VariableElement> fields) {
         Set<String> imports = new HashSet<>();
-        
+
         if (!builder) {
             return imports; // No builder defaults if builder is disabled
         }
-        
+
         for (VariableElement field : fields) {
             DtoBuilderDefault builderDefault = field.getAnnotation(DtoBuilderDefault.class);
             if (builderDefault != null) {
@@ -310,83 +318,82 @@ public class DtoGenerator {
                 if (isCollectionType(fieldType)) {
                     addCollectionImports(imports, fieldType);
                 } else if (isOptionalType(fieldType)) {
-                    imports.add("java.util.Optional");
+                    imports.add(JAVA_UTIL_OPTIONAL);
                 }
-                
+
                 // Add enum imports if auto-detected enum types are used
                 if (isEnumType(field)) {
                     addEnumImports(imports, field);
                 }
             }
         }
-        
+
         return imports;
     }
-    
+
     /**
      * Checks if the field has an existing @Builder.Default annotation.
      */
     private boolean hasExistingBuilderDefault(VariableElement field) {
         // Check if field already has @Builder.Default annotation
         return field.getAnnotationMirrors().stream()
-            .anyMatch(mirror -> mirror.getAnnotationType().toString().equals("lombok.Builder.Default"));
+                .anyMatch(mirror -> mirror.getAnnotationType().toString().equals("lombok.Builder.Default"));
     }
-    
+
     /**
      * Checks if the given type is a collection type (List, Set, Map).
      */
     private boolean isCollectionType(String fieldType) {
         String baseType = GeneratorUtility.extractBaseType(fieldType);
-        return baseType.equals("java.util.List") || 
-               baseType.equals("java.util.Set") || 
-               baseType.equals("java.util.Map") ||
-               baseType.equals("List") || 
-               baseType.equals("Set") || 
-               baseType.equals("Map");
+        return baseType.equals(JAVA_UTIL_LIST) ||
+                baseType.equals(JAVA_UTIL_SET) ||
+                baseType.equals(JAVA_UTIL_MAP) ||
+                baseType.equals("List") ||
+                baseType.equals("Set") ||
+                baseType.equals("Map");
     }
-    
+
     /**
      * Checks if the given type is Optional.
      */
     private boolean isOptionalType(String fieldType) {
         String baseType = GeneratorUtility.extractBaseType(fieldType);
-        return baseType.equals("java.util.Optional") || baseType.equals("Optional");
+        return baseType.equals(JAVA_UTIL_OPTIONAL) || baseType.equals("Optional");
     }
-    
+
     /**
      * Adds necessary imports for collection types.
      */
     private void addCollectionImports(Set<String> imports, String fieldType) {
         String baseType = GeneratorUtility.extractBaseType(fieldType);
         switch (baseType) {
-            case "java.util.List", "List" -> {
-                imports.add("java.util.List");
+            case JAVA_UTIL_LIST, "List" -> {
+                imports.add(JAVA_UTIL_LIST);
                 imports.add("java.util.ArrayList");
             }
-            case "java.util.Set", "Set" -> {
-                imports.add("java.util.Set");
+            case JAVA_UTIL_SET, "Set" -> {
+                imports.add(JAVA_UTIL_SET);
                 imports.add("java.util.HashSet");
             }
-            case "java.util.Map", "Map" -> {
-                imports.add("java.util.Map");
+            case JAVA_UTIL_MAP, "Map" -> {
+                imports.add(JAVA_UTIL_MAP);
                 imports.add("java.util.HashMap");
             }
         }
     }
 
 
-    
     private Set<String> getValidationImports(List<VariableElement> fields) {
         Set<String> validationImports = new HashSet<>();
-        
+
         for (VariableElement field : fields) {
             ValidateDto[] validateAnnotations = field.getAnnotationsByType(ValidateDto.class);
-            
+
             for (ValidateDto validateAnnotation : validateAnnotations) {
                 if (shouldApplyValidation(validateAnnotation)) {
                     // Add imports for type-safe validations
                     addTypeSafeValidationImports(validationImports, validateAnnotation);
-                    
+
                     // Add imports for legacy string-based validations
                     for (String validation : validateAnnotation.value()) {
                         if (!validation.trim().isEmpty()) {
@@ -399,102 +406,102 @@ public class DtoGenerator {
                 }
             }
         }
-        
+
         return validationImports;
     }
-    
+
     private void addTypeSafeValidationImports(Set<String> validationImports, ValidateDto validateAnnotation) {
         // Check which type-safe validations are explicitly configured and add their imports
-        
+
         // Simple annotations: Check if explicitly specified (message != empty string default)
         if (!validateAnnotation.notNull().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.NotNull");
         }
-        
+
         if (!validateAnnotation.notBlank().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.NotBlank");
         }
-        
+
         if (!validateAnnotation.notEmpty().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.NotEmpty");
         }
-        
+
         if (!validateAnnotation.positive().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.Positive");
         }
-        
+
         if (!validateAnnotation.positiveOrZero().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.PositiveOrZero");
         }
-        
+
         if (!validateAnnotation.negative().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.Negative");
         }
-        
+
         if (!validateAnnotation.negativeOrZero().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.NegativeOrZero");
         }
-        
+
         if (!validateAnnotation.past().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.Past");
         }
-        
+
         if (!validateAnnotation.future().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.Future");
         }
-        
+
         if (!validateAnnotation.pastOrPresent().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.PastOrPresent");
         }
-        
+
         if (!validateAnnotation.futureOrPresent().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.FutureOrPresent");
         }
-        
+
         if (!validateAnnotation.email().message().equals("")) {
             validationImports.add("jakarta.validation.constraints.Email");
         }
-        
+
         // Parameterized annotations: Check if meaningful parameters are provided
         Size size = validateAnnotation.size();
         if (size.min() != -1 || size.max() != -1) {
             validationImports.add("jakarta.validation.constraints.Size");
         }
-        
+
         if (validateAnnotation.min().value() != Long.MIN_VALUE) {
             validationImports.add("jakarta.validation.constraints.Min");
         }
-        
+
         if (validateAnnotation.max().value() != Long.MAX_VALUE) {
             validationImports.add("jakarta.validation.constraints.Max");
         }
-        
+
         if (!validateAnnotation.pattern().regexp().isEmpty()) {
             validationImports.add("jakarta.validation.constraints.Pattern");
         }
-        
+
         Digits digits = validateAnnotation.digits();
         if (digits.integer() != -1 || digits.fraction() != -1) {
             validationImports.add("jakarta.validation.constraints.Digits");
         }
     }
-    
+
     private String extractAnnotationClass(String annotationString) {
         // Extract annotation class name from annotation string like "@NotNull" or "@Size(min=1, max=100)"
         String trimmed = annotationString.trim();
         if (!trimmed.startsWith("@")) {
             return null;
         }
-        
+
         // Remove @ and get the annotation name
         String withoutAt = trimmed.substring(1);
         int parenIndex = withoutAt.indexOf('(');
         String annotationName = parenIndex > 0 ? withoutAt.substring(0, parenIndex) : withoutAt;
-        
+
         // Map common validation annotations to their full package names
         return getValidationAnnotationImport(annotationName);
     }
-    
+
     private String getValidationAnnotationImport(String annotationName) {
         // Map common Jakarta Bean Validation annotations to their import paths
         return switch (annotationName) {
@@ -526,22 +533,22 @@ public class DtoGenerator {
 
     private boolean shouldApplyValidation(ValidateDto validateAnnotation) {
         int[] validationIds = validateAnnotation.ids();
-        
+
         // If no IDs specified, apply validation to all DTOs
         if (validationIds.length == 0) {
             return true;
         }
-        
+
         // If IDs specified, only apply if current DTO ID is in the list
         for (int validationId : validationIds) {
             if (validationId == dtoId) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     private void writeTypeSafeValidations(Writer writer, ValidateDto validateAnnotation) throws IOException {
         // Check NotNull validation
         NotNull notNull = validateAnnotation.notNull();
@@ -552,7 +559,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check NotBlank validation
         NotBlank notBlank = validateAnnotation.notBlank();
         if (!notBlank.message().equals("")) {
@@ -562,7 +569,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Size validation
         Size size = validateAnnotation.size();
         if (size.min() != -1 || size.max() != -1) {
@@ -582,7 +589,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Min validation
         Min min = validateAnnotation.min();
         if (min.value() != Long.MIN_VALUE) {
@@ -595,7 +602,7 @@ public class DtoGenerator {
             writer.write("(" + String.join(", ", params) + ")");
             writer.write("\n");
         }
-        
+
         // Check Max validation
         Max max = validateAnnotation.max();
         if (max.value() != Long.MAX_VALUE) {
@@ -608,7 +615,7 @@ public class DtoGenerator {
             writer.write("(" + String.join(", ", params) + ")");
             writer.write("\n");
         }
-        
+
         // Check Email validation
         Email email = validateAnnotation.email();
         if (!email.message().equals("")) {
@@ -625,7 +632,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Pattern validation
         Pattern pattern = validateAnnotation.pattern();
         if (!pattern.regexp().isEmpty()) {
@@ -638,7 +645,7 @@ public class DtoGenerator {
             writer.write("(" + String.join(", ", params) + ")");
             writer.write("\n");
         }
-        
+
         // Check NotEmpty validation
         NotEmpty notEmpty = validateAnnotation.notEmpty();
         if (!notEmpty.message().equals("")) {
@@ -648,7 +655,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Positive validation
         Positive positive = validateAnnotation.positive();
         if (!positive.message().equals("")) {
@@ -658,7 +665,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check PositiveOrZero validation
         PositiveOrZero positiveOrZero = validateAnnotation.positiveOrZero();
         if (!positiveOrZero.message().equals("")) {
@@ -668,7 +675,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Negative validation
         Negative negative = validateAnnotation.negative();
         if (!negative.message().equals("")) {
@@ -678,7 +685,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check NegativeOrZero validation
         NegativeOrZero negativeOrZero = validateAnnotation.negativeOrZero();
         if (!negativeOrZero.message().equals("")) {
@@ -688,7 +695,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Digits validation
         Digits digits = validateAnnotation.digits();
         if (digits.integer() != -1 || digits.fraction() != -1) {
@@ -708,7 +715,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Past validation
         Past past = validateAnnotation.past();
         if (!past.message().equals("")) {
@@ -718,7 +725,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check Future validation
         Future future = validateAnnotation.future();
         if (!future.message().equals("")) {
@@ -728,7 +735,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check PastOrPresent validation
         PastOrPresent pastOrPresent = validateAnnotation.pastOrPresent();
         if (!pastOrPresent.message().equals("")) {
@@ -738,7 +745,7 @@ public class DtoGenerator {
             }
             writer.write("\n");
         }
-        
+
         // Check FutureOrPresent validation
         FutureOrPresent futureOrPresent = validateAnnotation.futureOrPresent();
         if (!futureOrPresent.message().equals("")) {
@@ -749,13 +756,12 @@ public class DtoGenerator {
             writer.write("\n");
         }
     }
-    
 
-    
+
     private String escapeQuotes(String text) {
         return text.replace("\\", "\\\\").replace("\"", "\\\"");
     }
-    
+
     /**
      * Transforms the field type based on @NestedMapping annotations.
      * Returns simple names for use in field declarations, getters, setters, constructor.
@@ -763,15 +769,15 @@ public class DtoGenerator {
     private String getTransformedFieldType(VariableElement field) {
         TypeMirror fieldType = field.asType();
         String originalType = fieldType.toString();
-        
+
         // Get @NestedMapping annotation for this field
         NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
-        
+
         if (nestedMapping != null) {
             // Transform the type using the specified DTO class (simple name for declarations)
             return transformTypeWithMappingSimpleName(fieldType, nestedMapping);
         }
-        
+
         // Return original type if no transformation is needed
         return originalType;
     }
@@ -783,14 +789,14 @@ public class DtoGenerator {
      */
     private String transformTypeWithMappingSimpleName(TypeMirror fieldType, NestedMapping mapping) {
         String dtoClassSimpleName = getDtoClassSimpleName(mapping);
-        
+
         // Check if this is a collection type
         TypeMirror elementType = CustomObjectDetector.getCollectionElementType(fieldType);
         if (elementType != null) {
             // Transform collection element type: List<CustomObject> -> List<CustomObjectDto>
             String originalType = fieldType.toString();
             String originalElementType = elementType.toString();
-            
+
             // Replace the element simple name with the DTO simple name
             return originalType.replace(originalElementType, dtoClassSimpleName);
         } else {
@@ -798,7 +804,7 @@ public class DtoGenerator {
             return dtoClassSimpleName;
         }
     }
-    
+
     /**
      * Safely extracts the simple name of the DTO class from @NestedMapping annotation.
      * Uses string parsing to avoid TypeMirror resolution issues.
@@ -811,10 +817,10 @@ public class DtoGenerator {
             // Extract the TypeMirror from the exception
             TypeMirror typeMirror = mte.getTypeMirror();
             String typeMirrorString = typeMirror.toString();
-            
+
             // If TypeMirror resolution failed (ERROR kind), try to extract from string representation
             if (typeMirror.getKind() == TypeKind.ERROR || typeMirrorString.contains("<any?>")) {
-                
+
                 // Try to extract the simple name from strings like "<any?>.FunkyShitDto" or "FunkyShitDto"
                 if (typeMirrorString.contains(".")) {
                     String simpleName = typeMirrorString.substring(typeMirrorString.lastIndexOf('.') + 1);
@@ -823,14 +829,14 @@ public class DtoGenerator {
                         return simpleName;
                     }
                 }
-                
+
                 // If TypeMirror resolution completely failed (e.g., <any?>.<any>), 
                 // try to extract class name from the annotation source using reflection
-                    
+
                 try {
                     // Use reflection to get the annotation's toString representation
                     String annotationString = mapping.toString();
-                    
+
                     // Extract class name from patterns like "dtoClass=FunkyShitDto.class"
                     if (annotationString.contains(DTO_CLASS) && annotationString.contains(".class")) {
                         int start = annotationString.indexOf(DTO_CLASS) + DTO_CLASS.length();
@@ -847,71 +853,71 @@ public class DtoGenerator {
                 } catch (Exception e) {
                     // Annotation source parsing failed, continue to error
                 }
-                
+
                 // If we couldn't extract a valid name, this is a real error
-                messager.printMessage(Diagnostic.Kind.ERROR, 
-                    "Cannot resolve DTO class in @NestedMapping annotation. " +
-                    "TypeMirror resolution failed: " + typeMirrorString + ". " +
-                    "Please ensure the referenced DTO class exists and is on the classpath.");
+                messager.printMessage(Diagnostic.Kind.ERROR,
+                        "Cannot resolve DTO class in @NestedMapping annotation. " +
+                                "TypeMirror resolution failed: " + typeMirrorString + ". " +
+                                "Please ensure the referenced DTO class exists and is on the classpath.");
                 throw new IllegalStateException("Cannot resolve DTO class in @NestedMapping: " + typeMirrorString);
             }
-            
+
             // Get the simple name from the TypeMirror (normal case)
             if (typeMirror.getKind() == TypeKind.DECLARED) {
                 DeclaredType declaredType = (DeclaredType) typeMirror;
                 TypeElement typeElement = (TypeElement) declaredType.asElement();
                 return typeElement.getSimpleName().toString();
             }
-            
+
             // Fallback: extract simple name from string representation
             String fullName = typeMirror.toString();
             int lastDotIndex = fullName.lastIndexOf('.');
             return lastDotIndex > 0 ? fullName.substring(lastDotIndex + 1) : fullName;
         }
     }
-    
+
     /**
      * Checks if a field contains unmapped custom objects and generates warnings.
      */
     private void checkForUnmappedCustomObjects(VariableElement field, TypeMirror fieldType) {
         String fieldName = field.getSimpleName().toString();
-        
+
         // Check direct custom object
         if (CustomObjectDetector.isCustomObject(fieldType)) {
             String customTypeName = fieldType.toString();
             String suggestedDtoName = getSuggestedDtoName(customTypeName);
-            
+
             String message = String.format(
-                "[%s] Field '%s' uses custom type '%s' without DTO mapping.%n" +
-                "  Consider: @NestedMapping(dtoClass = %s.class)%n" +
-                "  Location: %s.%s",
-                dtoClassName, fieldName, customTypeName, suggestedDtoName,
-                classElement.getQualifiedName(), fieldName
+                    "[%s] Field '%s' uses custom type '%s' without DTO mapping.%n" +
+                            "  Consider: @NestedMapping(dtoClass = %s.class)%n" +
+                            "  Location: %s.%s",
+                    dtoClassName, fieldName, customTypeName, suggestedDtoName,
+                    classElement.getQualifiedName(), fieldName
             );
-            
+
             messager.printMessage(Diagnostic.Kind.WARNING, message, field);
         }
-        
+
         // Check collection of custom objects
         if (CustomObjectDetector.isCustomObjectCollection(fieldType)) {
             TypeMirror elementType = CustomObjectDetector.getCollectionElementType(fieldType);
             if (elementType != null) {
                 String customTypeName = elementType.toString();
                 String suggestedDtoName = getSuggestedDtoName(customTypeName);
-                
+
                 String message = String.format(
-                    "[%s] Field '%s' uses collection of custom type '%s' without DTO mapping.%n" +
-                    "  Consider: @NestedMapping(dtoClass = %s.class)%n" +
-                    "  Location: %s.%s",
-                    dtoClassName, fieldName, customTypeName, suggestedDtoName,
-                    classElement.getQualifiedName(), fieldName
+                        "[%s] Field '%s' uses collection of custom type '%s' without DTO mapping.%n" +
+                                "  Consider: @NestedMapping(dtoClass = %s.class)%n" +
+                                "  Location: %s.%s",
+                        dtoClassName, fieldName, customTypeName, suggestedDtoName,
+                        classElement.getQualifiedName(), fieldName
                 );
-                
+
                 messager.printMessage(Diagnostic.Kind.WARNING, message, field);
             }
         }
     }
-    
+
     /**
      * Suggests a DTO name based on the custom type name.
      */
@@ -922,11 +928,11 @@ public class DtoGenerator {
         if (lastDotIndex > 0) {
             simpleClassName = customTypeName.substring(lastDotIndex + 1);
         }
-        
+
         // Suggest DTO name by appending "Dto"
         return simpleClassName + "Dto";
     }
-    
+
     /**
      * Writes @Builder.Default annotation if applicable.
      */
@@ -934,15 +940,15 @@ public class DtoGenerator {
         if (!builder) {
             return; // No builder defaults if builder is disabled
         }
-        
+
         // Check for @DtoBuilderDefault annotation
         DtoBuilderDefault builderDefault = field.getAnnotation(DtoBuilderDefault.class);
         if (builderDefault != null) {
             // Validate that field is not final
             if (field.getModifiers().contains(javax.lang.model.element.Modifier.FINAL)) {
-                messager.printMessage(Diagnostic.Kind.ERROR, 
-                    "@DtoBuilderDefault cannot be applied to final fields: " + field.getSimpleName(), 
-                    field);
+                messager.printMessage(Diagnostic.Kind.ERROR,
+                        "@DtoBuilderDefault cannot be applied to final fields: " + field.getSimpleName(),
+                        field);
                 return;
             }
             // Emit @Builder.Default only if we'll have an initializer (explicit or inherited when allowed)
@@ -955,14 +961,12 @@ public class DtoGenerator {
         }
 
         // Check for existing @Builder.Default annotation from base class
-        if (hasExistingBuilderDefault(field)) {
-            // Only emit if we actually copied a safe initializer
-            if (inheritedDefaultInitializers.containsKey(field)) {
-                writer.write("    @Builder.Default\n");
-            }
+        // Only emit if we actually copied a safe initializer
+        if (hasExistingBuilderDefault(field) && inheritedDefaultInitializers.containsKey(field)) {
+            writer.write("    @Builder.Default\n");
         }
     }
-    
+
     /**
      * Gets the field declaration including type, name, and optional default value.
      */
@@ -970,7 +974,7 @@ public class DtoGenerator {
         if (!builder) {
             return transformedType + " " + name; // No defaults if builder is disabled
         }
-        
+
         // Check for @DtoBuilderDefault annotation
         DtoBuilderDefault builderDefault = field.getAnnotation(DtoBuilderDefault.class);
         if (builderDefault != null) {
@@ -979,7 +983,7 @@ public class DtoGenerator {
                 return transformedType + " " + name + " = " + defaultValue;
             }
         }
-        
+
         // Check for existing builder default from base class (only if allowed)
         if ((builderDefault == null || builderDefault.inherit()) && hasExistingBuilderDefault(field)) {
             String existingDefault = getExistingBuilderDefaultValue(field);
@@ -987,22 +991,22 @@ public class DtoGenerator {
                 return transformedType + " " + name + " = " + existingDefault;
             }
         }
-        
+
         return transformedType + " " + name;
     }
-    
+
     /**
      * Gets the default value for a field with @DtoBuilderDefault annotation.
      */
     private String getBuilderDefaultValue(VariableElement field, DtoBuilderDefault builderDefault) {
         String fieldType = field.asType().toString();
-        
+
         // Check for type-specific parameters first (new approach)
         String typeSpecificValue = getTypeSpecificValue(field, builderDefault);
         if (typeSpecificValue != null) {
             return typeSpecificValue;
         }
-        
+
         // If inherit=false, do not fall back to inherited default
         if (!builderDefault.inherit()) {
             // No explicit value and inheritance disabled: do not provide a default
@@ -1014,21 +1018,21 @@ public class DtoGenerator {
         if (!annotationValue.isEmpty()) {
             return processAnnotationValue(field, fieldType, annotationValue);
         }
-        
+
         // Special handling for collections and Optional
         if (isCollectionType(fieldType)) {
             return getCollectionDefaultValue(fieldType);
         } else if (isOptionalType(fieldType)) {
             return "Optional.empty()";
         }
-        
+
         // For other types, require explicit value
-        messager.printMessage(Diagnostic.Kind.ERROR, 
-            "@DtoBuilderDefault requires a value for non-collection, non-Optional field: " + field.getSimpleName(), 
-            field);
+        messager.printMessage(Diagnostic.Kind.ERROR,
+                "@DtoBuilderDefault requires a value for non-collection, non-Optional field: " + field.getSimpleName(),
+                field);
         return null;
     }
-    
+
     /**
      * Gets the default value from type-specific parameters in the annotation.
      */
@@ -1038,99 +1042,92 @@ public class DtoGenerator {
         // Check for primitive and wrapper types
         if (isPrimitiveType(fieldType) || isWrapperType(fieldType)) {
             // Integer types
-            if (fieldType.equals(INTEGER_STRING) || fieldType.equals(JAVA_LANG_INTEGER) || fieldType.equals(INTEGER)) {
-                if (builderDefault.intValue() != Integer.MIN_VALUE) {
-                    return String.valueOf(builderDefault.intValue());
-                }
+            boolean isIntegerType = fieldType.equals(INTEGER_STRING) || fieldType.equals(JAVA_LANG_INTEGER) || fieldType.equals(INTEGER);
+            if (isIntegerType && builderDefault.intValue() != Integer.MIN_VALUE) {
+                return String.valueOf(builderDefault.intValue());
             }
-            
+
             // Long types
-            if (fieldType.equals(LONG_STRING) || fieldType.equals(JAVA_LANG_LONG) || fieldType.equals(LONG)) {
-                if (builderDefault.longValue() != Long.MIN_VALUE) {
-                    return String.valueOf(builderDefault.longValue()) + "L";
-                }
+
+            boolean isLongType = fieldType.equals(LONG_STRING) || fieldType.equals(JAVA_LANG_LONG) || fieldType.equals(LONG);
+            if (isLongType && builderDefault.longValue() != Long.MIN_VALUE) {
+                return builderDefault.longValue() + "L";
             }
-            
+
             // Short types
-            if (fieldType.equals(SHORT_STRING) || fieldType.equals(JAVA_LANG_SHORT) || fieldType.equals(SHORT)) {
-                if (builderDefault.shortValue() != Short.MIN_VALUE) {
-                    return String.valueOf(builderDefault.shortValue());
-                }
+            boolean isShortType = fieldType.equals(SHORT_STRING) || fieldType.equals(JAVA_LANG_SHORT) || fieldType.equals(SHORT);
+            if (isShortType && builderDefault.shortValue() != Short.MIN_VALUE) {
+                return String.valueOf(builderDefault.shortValue());
             }
-            
+
             // Byte types
-            if (fieldType.equals(BYTE_STRING) || fieldType.equals(JAVA_LANG_BYTE) || fieldType.equals(BYTE)) {
-                if (builderDefault.byteValue() != Byte.MIN_VALUE) {
-                    return String.valueOf(builderDefault.byteValue());
-                }
+            boolean isByteType = fieldType.equals(BYTE_STRING) || fieldType.equals(JAVA_LANG_BYTE) || fieldType.equals(BYTE);
+            if (isByteType && builderDefault.byteValue() != Byte.MIN_VALUE) {
+                return String.valueOf(builderDefault.byteValue());
             }
-            
+
             // Float types
-            if (fieldType.equals(FLOAT_STRING) || fieldType.equals(JAVA_LANG_FLOAT) || fieldType.equals(FLOAT)) {
-                if (builderDefault.floatValue() != Float.MIN_VALUE) {
-                    return builderDefault.floatValue() + "f";
-                }
+            boolean isFloatType = fieldType.equals(FLOAT_STRING) || fieldType.equals(JAVA_LANG_FLOAT) || fieldType.equals(FLOAT);
+
+            if (isFloatType && builderDefault.floatValue() != Float.MIN_VALUE) {
+                return builderDefault.floatValue() + "f";
             }
-            
+
             // Double types
-            if (fieldType.equals(DOUBLE_STRING) || fieldType.equals(JAVA_LANG_DOUBLE) || fieldType.equals(DOUBLE)) {
-                if (builderDefault.doubleValue() != Double.MIN_VALUE) {
-                    return String.valueOf(builderDefault.doubleValue());
-                }
+
+            boolean isDoubleType = fieldType.equals(DOUBLE_STRING) || fieldType.equals(JAVA_LANG_DOUBLE) || fieldType.equals(DOUBLE);
+
+            if (isDoubleType && builderDefault.doubleValue() != Double.MIN_VALUE) {
+                return String.valueOf(builderDefault.doubleValue());
             }
-            
+
             // Boolean types - we need to check if any boolean parameter is explicitly set
-            if (fieldType.equals(BOOLEAN_STRING) || fieldType.equals(JAVA_LANG_BOOLEAN) || fieldType.equals(BOOLEAN)) {
-                // Check if booleanValue is explicitly set (we can't distinguish default false from explicit false)
-                // So we'll check if any other parameter is set to determine if booleanValue was intended
-                if (hasAnyOtherParameterSet(builderDefault)) {
-                    return String.valueOf(builderDefault.booleanValue());
-                }
+            boolean isBooleanType = fieldType.equals(BOOLEAN_STRING) || fieldType.equals(JAVA_LANG_BOOLEAN) || fieldType.equals(BOOLEAN);
+
+            // Check if booleanValue is explicitly set (we can't distinguish default false from explicit false)
+            // So we'll check if any other parameter is set to determine if booleanValue was intended
+            if (isBooleanType && hasAnyOtherParameterSet(builderDefault)) {
+                return String.valueOf(builderDefault.booleanValue());
             }
-            
+
             // Character types
-            if (fieldType.equals("char") || fieldType.equals(JAVA_LANG_CHARACTER) || fieldType.equals(CHARACTER)) {
-                if (builderDefault.charValue() != '\0') {
-                    return "'" + builderDefault.charValue() + "'";
-                }
+            boolean isCharacterType = fieldType.equals("char") || fieldType.equals(JAVA_LANG_CHARACTER) || fieldType.equals(CHARACTER);
+            if (isCharacterType && builderDefault.charValue() != '\0') {
+                return "'" + builderDefault.charValue() + "'";
             }
         }
-        
+
         // String type
-        if (isStringType(fieldType)) {
-            if (!builderDefault.stringValue().isEmpty()) {
-                return processStringValue(builderDefault.stringValue());
-            }
+        if (isStringType(fieldType) && !builderDefault.stringValue().isEmpty()) {
+            return processStringValue(builderDefault.stringValue());
         }
-        
+
         // Enum type
-        if (isEnumType(field)) {
-            // Check for enumValue parameter (treat it like value parameter but with validation)
-            if (!builderDefault.enumValue().isEmpty()) {
-                return processEnumValue(field, builderDefault.enumValue());
-            }
+        // Check for enumValue parameter (treat it like value parameter but with validation)
+        if (isEnumType(field) && !builderDefault.enumValue().isEmpty()) {
+            return processEnumValue(field, builderDefault.enumValue());
         }
-        
+
         return null; // No type-specific value found
     }
-    
+
     /**
      * Checks if any parameter other than booleanValue is set in the annotation.
      * This helps determine if booleanValue was explicitly set.
      */
     private boolean hasAnyOtherParameterSet(DtoBuilderDefault builderDefault) {
         return !builderDefault.stringValue().isEmpty() ||
-               builderDefault.intValue() != Integer.MIN_VALUE ||
-               builderDefault.longValue() != Long.MIN_VALUE ||
-               builderDefault.shortValue() != Short.MIN_VALUE ||
-               builderDefault.byteValue() != Byte.MIN_VALUE ||
-               builderDefault.floatValue() != Float.MIN_VALUE ||
-               builderDefault.doubleValue() != Double.MIN_VALUE ||
-               builderDefault.charValue() != '\0' ||
-               !builderDefault.enumValue().isEmpty() ||
-               !builderDefault.value().isEmpty();
+                builderDefault.intValue() != Integer.MIN_VALUE ||
+                builderDefault.longValue() != Long.MIN_VALUE ||
+                builderDefault.shortValue() != Short.MIN_VALUE ||
+                builderDefault.byteValue() != Byte.MIN_VALUE ||
+                builderDefault.floatValue() != Float.MIN_VALUE ||
+                builderDefault.doubleValue() != Double.MIN_VALUE ||
+                builderDefault.charValue() != '\0' ||
+                !builderDefault.enumValue().isEmpty() ||
+                !builderDefault.value().isEmpty();
     }
-    
+
     /**
      * Processes the annotation value based on the field type.
      * Handles String auto-quoting, enum auto-detection with validation,
@@ -1141,26 +1138,26 @@ public class DtoGenerator {
         if (isEnumType(field)) {
             return processEnumValue(field, annotationValue);
         }
-        
+
         // Check if this is a String field
         if (isStringType(fieldType)) {
             return processStringValue(annotationValue);
         }
-        
+
         // Handle primitive types with improved conversion
         if (isPrimitiveType(fieldType)) {
             return processPrimitiveValue(field, fieldType, annotationValue);
         }
-        
+
         // Handle wrapper types
         if (isWrapperType(fieldType)) {
             return processWrapperValue(field, fieldType, annotationValue);
         }
-        
+
         // For other types, use the value as-is
         return annotationValue;
     }
-    
+
     /**
      * Processes String values with smart quoting.
      */
@@ -1172,17 +1169,17 @@ public class DtoGenerator {
         if (annotationValue.startsWith("\\\"") && annotationValue.endsWith("\\\"")) {
             return annotationValue; // Already escaped and quoted
         }
-        
+
         // Auto-add quotes for String fields
         return "\"" + escapeQuotes(annotationValue) + "\"";
     }
-    
+
     /**
      * Processes primitive type values with validation.
      */
     private String processPrimitiveValue(VariableElement field, String fieldType, String annotationValue) {
         String fieldName = field.getSimpleName().toString();
-        
+
         try {
             switch (fieldType) {
                 case INTEGER_STRING -> {
@@ -1226,26 +1223,26 @@ public class DtoGenerator {
                     }
                 }
                 default -> {
-                    messager.printMessage(Diagnostic.Kind.WARNING, 
-                        "@DtoBuilderDefault: Unsupported primitive type '" + fieldType + 
-                        "' for field: " + fieldName + ". Using value as-is.", field);
+                    messager.printMessage(Diagnostic.Kind.WARNING,
+                            "@DtoBuilderDefault: Unsupported primitive type '" + fieldType +
+                                    "' for field: " + fieldName + ". Using value as-is.", field);
                     return annotationValue;
                 }
             }
         } catch (NumberFormatException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, 
-                "@DtoBuilderDefault: Invalid value '" + annotationValue + 
-                "' for primitive type '" + fieldType + "' field: " + fieldName, field);
+            messager.printMessage(Diagnostic.Kind.ERROR,
+                    "@DtoBuilderDefault: Invalid value '" + annotationValue +
+                            "' for primitive type '" + fieldType + "' field: " + fieldName, field);
             return null;
         }
     }
-    
+
     /**
      * Processes wrapper type values with validation.
      */
     private String processWrapperValue(VariableElement field, String fieldType, String annotationValue) {
         String fieldName = field.getSimpleName().toString();
-        
+
         try {
             switch (fieldType) {
                 case JAVA_LANG_INTEGER, INTEGER -> {
@@ -1294,9 +1291,9 @@ public class DtoGenerator {
                 }
             }
         } catch (NumberFormatException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, 
-                "@DtoBuilderDefault: Invalid value '" + annotationValue + 
-                "' for wrapper type '" + fieldType + "' field: " + fieldName, field);
+            messager.printMessage(Diagnostic.Kind.ERROR,
+                    "@DtoBuilderDefault: Invalid value '" + annotationValue +
+                            "' for wrapper type '" + fieldType + "' field: " + fieldName, field);
             return null;
         }
     }
@@ -1304,28 +1301,28 @@ public class DtoGenerator {
     private boolean hasExplicitDtoDefault(VariableElement field, DtoBuilderDefault builderDefault) {
         // Returns true if any explicit parameter provides a value
         return !builderDefault.stringValue().isEmpty() ||
-               builderDefault.intValue() != Integer.MIN_VALUE ||
-               builderDefault.longValue() != Long.MIN_VALUE ||
-               builderDefault.shortValue() != Short.MIN_VALUE ||
-               builderDefault.byteValue() != Byte.MIN_VALUE ||
-               builderDefault.floatValue() != Float.MIN_VALUE ||
-               builderDefault.doubleValue() != Double.MIN_VALUE ||
-               builderDefault.charValue() != '\0' ||
-               !builderDefault.enumValue().isEmpty() ||
-               !builderDefault.value().isEmpty() ||
-               // Collections/Optional: using annotation with no parameters implies default for those types
-               isCollectionType(field.asType().toString()) ||
-               isOptionalType(field.asType().toString());
+                builderDefault.intValue() != Integer.MIN_VALUE ||
+                builderDefault.longValue() != Long.MIN_VALUE ||
+                builderDefault.shortValue() != Short.MIN_VALUE ||
+                builderDefault.byteValue() != Byte.MIN_VALUE ||
+                builderDefault.floatValue() != Float.MIN_VALUE ||
+                builderDefault.doubleValue() != Double.MIN_VALUE ||
+                builderDefault.charValue() != '\0' ||
+                !builderDefault.enumValue().isEmpty() ||
+                !builderDefault.value().isEmpty() ||
+                // Collections/Optional: using annotation with no parameters implies default for those types
+                isCollectionType(field.asType().toString()) ||
+                isOptionalType(field.asType().toString());
     }
-    
+
     /**
      * Checks if the given type is a primitive type.
      */
     private boolean isPrimitiveType(String fieldType) {
         return Arrays.asList(INTEGER_STRING, LONG_STRING, SHORT_STRING, BYTE_STRING, FLOAT_STRING, DOUBLE_STRING, BOOLEAN_STRING, "char")
-                    .contains(fieldType);
+                .contains(fieldType);
     }
-    
+
     /**
      * Checks if the given type is a wrapper type.
      */
@@ -1341,15 +1338,15 @@ public class DtoGenerator {
                 JAVA_LANG_CHARACTER, CHARACTER
         ).contains(fieldType);
     }
-    
+
     /**
      * Checks if a field is of enum type.
      */
     private boolean isEnumType(VariableElement field) {
         return field.asType().getKind() == javax.lang.model.type.TypeKind.DECLARED &&
-               ((javax.lang.model.type.DeclaredType) field.asType()).asElement().getKind() == javax.lang.model.element.ElementKind.ENUM;
+                ((javax.lang.model.type.DeclaredType) field.asType()).asElement().getKind() == javax.lang.model.element.ElementKind.ENUM;
     }
-    
+
     /**
      * Processes enum values with auto-detection and validation.
      */
@@ -1359,56 +1356,56 @@ public class DtoGenerator {
         javax.lang.model.element.TypeElement enumElement = (javax.lang.model.element.TypeElement) declaredType.asElement();
         String enumClassName = enumElement.getQualifiedName().toString();
         String enumSimpleName = enumElement.getSimpleName().toString();
-        
+
         // Support both simple constant names ("ACTIVE") and qualified names ("Status.ACTIVE")
         String constantName;
         String specifiedEnumName = null;
-        
+
         if (annotationValue.contains(".")) {
             // Qualified reference like "Status.ACTIVE"
             String[] parts = annotationValue.split("\\.");
             if (parts.length != 2) {
-                messager.printMessage(Diagnostic.Kind.ERROR, 
-                    "@DtoBuilderDefault: Invalid enum reference format '" + annotationValue + 
-                    "'. Expected 'EnumName.CONSTANT' or 'CONSTANT' for field: " + fieldName, field);
+                messager.printMessage(Diagnostic.Kind.ERROR,
+                        "@DtoBuilderDefault: Invalid enum reference format '" + annotationValue +
+                                "'. Expected 'EnumName.CONSTANT' or 'CONSTANT' for field: " + fieldName, field);
                 return null;
             }
             specifiedEnumName = parts[0];
             constantName = parts[1];
-            
+
             // Validate that the specified enum name matches the field type
             if (!specifiedEnumName.equals(enumSimpleName) && !specifiedEnumName.equals(enumClassName)) {
-                messager.printMessage(Diagnostic.Kind.ERROR, 
-                    "@DtoBuilderDefault: Enum reference '" + specifiedEnumName + 
-                    "' does not match field type '" + enumClassName + "' for field: " + fieldName, field);
+                messager.printMessage(Diagnostic.Kind.ERROR,
+                        "@DtoBuilderDefault: Enum reference '" + specifiedEnumName +
+                                "' does not match field type '" + enumClassName + "' for field: " + fieldName, field);
                 return null;
             }
         } else {
             // Simple constant name like "ACTIVE"
             constantName = annotationValue;
         }
-        
+
         // Validate that the constant exists in the enum
         boolean constantExists = false;
         for (javax.lang.model.element.Element enclosedElement : enumElement.getEnclosedElements()) {
             if (enclosedElement.getKind() == javax.lang.model.element.ElementKind.ENUM_CONSTANT &&
-                enclosedElement.getSimpleName().toString().equals(constantName)) {
+                    enclosedElement.getSimpleName().toString().equals(constantName)) {
                 constantExists = true;
                 break;
             }
         }
-        
+
         if (!constantExists) {
-            messager.printMessage(Diagnostic.Kind.ERROR, 
-                "@DtoBuilderDefault: Enum constant '" + constantName + 
-                "' does not exist in enum " + enumClassName + " for field: " + fieldName, field);
+            messager.printMessage(Diagnostic.Kind.ERROR,
+                    "@DtoBuilderDefault: Enum constant '" + constantName +
+                            "' does not exist in enum " + enumClassName + " for field: " + fieldName, field);
             return null;
         }
-        
+
         // Generate the proper enum reference
         return enumSimpleName + "." + constantName;
     }
-    
+
 
     /**
      * Adds necessary imports for enum types used in builder defaults.
@@ -1418,14 +1415,14 @@ public class DtoGenerator {
             javax.lang.model.type.DeclaredType declaredType = (javax.lang.model.type.DeclaredType) field.asType();
             javax.lang.model.element.TypeElement enumElement = (javax.lang.model.element.TypeElement) declaredType.asElement();
             String enumClassName = enumElement.getQualifiedName().toString();
-            
+
             // Add import if it's not in java.lang package
             if (enumClassName.contains(".") && !enumClassName.startsWith("java.lang.")) {
                 imports.add(enumClassName);
             }
         }
     }
-    
+
     /**
      * Checks if the given type is a String type.
      */
@@ -1433,20 +1430,20 @@ public class DtoGenerator {
         String baseType = GeneratorUtility.extractBaseType(fieldType);
         return baseType.equals("java.lang.String") || baseType.equals("String");
     }
-    
+
     /**
      * Gets the appropriate default value for collection types.
      */
     private String getCollectionDefaultValue(String fieldType) {
         String baseType = GeneratorUtility.extractBaseType(fieldType);
         return switch (baseType) {
-            case "java.util.List", "List" -> "new ArrayList<>()";
-            case "java.util.Set", "Set" -> "new HashSet<>()";
-            case "java.util.Map", "Map" -> "new HashMap<>()";
+            case JAVA_UTIL_LIST, "List" -> "new ArrayList<>()";
+            case JAVA_UTIL_SET, "Set" -> "new HashSet<>()";
+            case JAVA_UTIL_MAP, "Map" -> "new HashMap<>()";
             default -> null;
         };
     }
-    
+
     /**
      * Gets the existing default value from a field that already has @Builder.Default.
      * Uses a pre-scanned map populated from the AST when possible.
@@ -1464,22 +1461,20 @@ public class DtoGenerator {
 
         for (VariableElement field : fields) {
             DtoBuilderDefault override = field.getAnnotation(DtoBuilderDefault.class);
-            if (override != null && !override.inherit()) {
-                continue; // explicitly do not inherit this default
-            }
-            if (!hasExistingBuilderDefault(field)) {
-                continue;
-            }
-            String init = extractInitializerSource(field);
-            if (init == null || init.isEmpty()) {
-                continue;
-            }
-            String safe = coerceSafeInitializer(field, init);
-            if (safe != null && !safe.isEmpty()) {
-                inheritedDefaultInitializers.put(field, safe);
+            boolean inheritable = (override == null) || override.inherit();
+
+            if (inheritable && hasExistingBuilderDefault(field)) {
+                String init = extractInitializerSource(field);
+                if (init != null && !init.isEmpty()) {
+                    String safe = coerceSafeInitializer(field, init);
+                    if (safe != null && !safe.isEmpty()) {
+                        inheritedDefaultInitializers.put(field, safe);
+                    }
+                }
             }
         }
     }
+
 
     private String extractInitializerSource(VariableElement field) {
         try {
@@ -1518,9 +1513,9 @@ public class DtoGenerator {
 
             // 1) Literal kinds
             if (kind == Tree.Kind.INT_LITERAL || kind == Tree.Kind.LONG_LITERAL ||
-                kind == Tree.Kind.FLOAT_LITERAL || kind == Tree.Kind.DOUBLE_LITERAL ||
-                kind == Tree.Kind.BOOLEAN_LITERAL || kind == Tree.Kind.CHAR_LITERAL ||
-                kind == Tree.Kind.STRING_LITERAL || kind == Tree.Kind.NULL_LITERAL) {
+                    kind == Tree.Kind.FLOAT_LITERAL || kind == Tree.Kind.DOUBLE_LITERAL ||
+                    kind == Tree.Kind.BOOLEAN_LITERAL || kind == Tree.Kind.CHAR_LITERAL ||
+                    kind == Tree.Kind.STRING_LITERAL || kind == Tree.Kind.NULL_LITERAL) {
                 return initializerText;
             }
 
@@ -1552,13 +1547,13 @@ public class DtoGenerator {
                 if (typeName.endsWith("ArrayList") || typeName.endsWith("HashSet") || typeName.endsWith("HashMap")) {
                     // add necessary imports for impl classes
                     if (typeName.endsWith("ArrayList")) {
-                        extraImportsForInheritedDefaults.add("java.util.List");
+                        extraImportsForInheritedDefaults.add(JAVA_UTIL_LIST);
                         extraImportsForInheritedDefaults.add("java.util.ArrayList");
                     } else if (typeName.endsWith("HashSet")) {
-                        extraImportsForInheritedDefaults.add("java.util.Set");
+                        extraImportsForInheritedDefaults.add(JAVA_UTIL_SET);
                         extraImportsForInheritedDefaults.add("java.util.HashSet");
                     } else if (typeName.endsWith("HashMap")) {
-                        extraImportsForInheritedDefaults.add("java.util.Map");
+                        extraImportsForInheritedDefaults.add(JAVA_UTIL_MAP);
                         extraImportsForInheritedDefaults.add("java.util.HashMap");
                     }
                     return initializerText;
@@ -1577,7 +1572,7 @@ public class DtoGenerator {
                     return null;
                 }
                 if (select.endsWith("Optional.empty")) {
-                    extraImportsForInheritedDefaults.add("java.util.Optional");
+                    extraImportsForInheritedDefaults.add(JAVA_UTIL_OPTIONAL);
                     return initializerText + ""; // as-is
                 }
                 if (select.endsWith("Collections.emptyList") || select.endsWith("Collections.emptySet") || select.endsWith("Collections.emptyMap")) {
@@ -1621,12 +1616,12 @@ public class DtoGenerator {
     private void writeField(Writer writer, VariableElement field) throws IOException {
         // Check for validation annotations (handles both single and multiple ValidateDto annotations)
         ValidateDto[] validateAnnotations = field.getAnnotationsByType(ValidateDto.class);
-        
+
         for (ValidateDto validateAnnotation : validateAnnotations) {
             if (shouldApplyValidation(validateAnnotation)) {
                 // Write type-safe validation annotations
                 writeTypeSafeValidations(writer, validateAnnotation);
-                
+
                 // Write legacy string-based validation annotations (for backward compatibility)
                 for (String validation : validateAnnotation.value()) {
                     if (!validation.trim().isEmpty()) {
@@ -1635,21 +1630,21 @@ public class DtoGenerator {
                 }
             }
         }
-        
+
         // Write builder default annotations if builder is enabled
         writeBuilderDefaultAnnotation(writer, field);
-        
+
         // Transform field type based on @NestedMapping annotations
         String transformedType = getTransformedFieldType(field);
         String name = field.getSimpleName().toString();
-        
+
         // Check for unmapped custom objects and warn (only during field declaration)
         TypeMirror fieldType = field.asType();
         NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
         if (nestedMapping == null) {
             checkForUnmappedCustomObjects(field, fieldType);
         }
-        
+
         // Write field declaration with optional default value
         String fieldDeclaration = getFieldDeclaration(field, transformedType, name);
         writer.write("    private " + fieldDeclaration + ";\n\n");
@@ -1660,12 +1655,12 @@ public class DtoGenerator {
         String type = getTransformedFieldType(field);
         String name = field.getSimpleName().toString();
         String capitalizedName = name.substring(0, 1).toUpperCase() + name.substring(1);
-        
+
         // Getter
         writer.write("    public " + type + " get" + capitalizedName + "() {\n");
         writer.write("        return " + name + ";\n");
         writer.write(GeneratorUtility.STRING_END);
-        
+
         // Setter
         writer.write("    public void set" + capitalizedName + "(" + type + " " + name + ") {\n");
         writer.write("        this." + name + " = " + name + ";\n");
@@ -1674,7 +1669,7 @@ public class DtoGenerator {
 
     private void writeConstructor(Writer writer, List<VariableElement> fields, String className) throws IOException {
         writer.write("    public " + className + "(");
-        
+
         // Write constructor parameters
         boolean first = true;
         for (VariableElement field : fields) {
@@ -1688,7 +1683,7 @@ public class DtoGenerator {
             first = false;
         }
         writer.write(") {\n");
-        
+
         // Write field assignments
         for (VariableElement field : fields) {
             String name = field.getSimpleName().toString();
