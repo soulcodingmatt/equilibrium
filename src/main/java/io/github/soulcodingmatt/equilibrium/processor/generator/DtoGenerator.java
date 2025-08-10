@@ -955,9 +955,15 @@ public class DtoGenerator {
      */
     private String getBuilderDefaultValue(VariableElement field, DtoBuilderDefault builderDefault) {
         String fieldType = field.asType().toString();
-        String annotationValue = builderDefault.value();
         
-        // If explicit value is provided, process it based on field type
+        // Check for type-specific parameters first (new approach)
+        String typeSpecificValue = getTypeSpecificValue(field, builderDefault);
+        if (typeSpecificValue != null) {
+            return typeSpecificValue;
+        }
+        
+        // Fallback to legacy string value parameter
+        String annotationValue = builderDefault.value();
         if (!annotationValue.isEmpty()) {
             return processAnnotationValue(field, fieldType, annotationValue);
         }
@@ -977,8 +983,112 @@ public class DtoGenerator {
     }
     
     /**
+     * Gets the default value from type-specific parameters in the annotation.
+     */
+    private String getTypeSpecificValue(VariableElement field, DtoBuilderDefault builderDefault) {
+        String fieldType = field.asType().toString();
+        String fieldName = field.getSimpleName().toString();
+        
+        // Check for primitive and wrapper types
+        if (isPrimitiveType(fieldType) || isWrapperType(fieldType)) {
+            // Integer types
+            if (fieldType.equals("int") || fieldType.equals("java.lang.Integer") || fieldType.equals("Integer")) {
+                if (builderDefault.intValue() != Integer.MIN_VALUE) {
+                    return String.valueOf(builderDefault.intValue());
+                }
+            }
+            
+            // Long types
+            if (fieldType.equals("long") || fieldType.equals("java.lang.Long") || fieldType.equals("Long")) {
+                if (builderDefault.longValue() != Long.MIN_VALUE) {
+                    return String.valueOf(builderDefault.longValue()) + "L";
+                }
+            }
+            
+            // Short types
+            if (fieldType.equals("short") || fieldType.equals("java.lang.Short") || fieldType.equals("Short")) {
+                if (builderDefault.shortValue() != Short.MIN_VALUE) {
+                    return String.valueOf(builderDefault.shortValue());
+                }
+            }
+            
+            // Byte types
+            if (fieldType.equals("byte") || fieldType.equals("java.lang.Byte") || fieldType.equals("Byte")) {
+                if (builderDefault.byteValue() != Byte.MIN_VALUE) {
+                    return String.valueOf(builderDefault.byteValue());
+                }
+            }
+            
+            // Float types
+            if (fieldType.equals("float") || fieldType.equals("java.lang.Float") || fieldType.equals("Float")) {
+                if (builderDefault.floatValue() != Float.MIN_VALUE) {
+                    return String.valueOf(builderDefault.floatValue()) + "f";
+                }
+            }
+            
+            // Double types
+            if (fieldType.equals("double") || fieldType.equals("java.lang.Double") || fieldType.equals("Double")) {
+                if (builderDefault.doubleValue() != Double.MIN_VALUE) {
+                    return String.valueOf(builderDefault.doubleValue());
+                }
+            }
+            
+            // Boolean types - we need to check if any boolean parameter is explicitly set
+            if (fieldType.equals("boolean") || fieldType.equals("java.lang.Boolean") || fieldType.equals("Boolean")) {
+                // Check if booleanValue is explicitly set (we can't distinguish default false from explicit false)
+                // So we'll check if any other parameter is set to determine if booleanValue was intended
+                if (hasAnyOtherParameterSet(builderDefault)) {
+                    return String.valueOf(builderDefault.booleanValue());
+                }
+            }
+            
+            // Character types
+            if (fieldType.equals("char") || fieldType.equals("java.lang.Character") || fieldType.equals("Character")) {
+                if (builderDefault.charValue() != '\0') {
+                    return "'" + builderDefault.charValue() + "'";
+                }
+            }
+        }
+        
+        // String type
+        if (isStringType(fieldType)) {
+            if (!builderDefault.stringValue().isEmpty()) {
+                return processStringValue(builderDefault.stringValue());
+            }
+        }
+        
+        // Enum type
+        if (isEnumType(field)) {
+            // Check for enumValue parameter (treat it like value parameter but with validation)
+            if (!builderDefault.enumValue().isEmpty()) {
+                return processEnumValue(field, builderDefault.enumValue());
+            }
+        }
+        
+        return null; // No type-specific value found
+    }
+    
+    /**
+     * Checks if any parameter other than booleanValue is set in the annotation.
+     * This helps determine if booleanValue was explicitly set.
+     */
+    private boolean hasAnyOtherParameterSet(DtoBuilderDefault builderDefault) {
+        return !builderDefault.stringValue().isEmpty() ||
+               builderDefault.intValue() != Integer.MIN_VALUE ||
+               builderDefault.longValue() != Long.MIN_VALUE ||
+               builderDefault.shortValue() != Short.MIN_VALUE ||
+               builderDefault.byteValue() != Byte.MIN_VALUE ||
+               builderDefault.floatValue() != Float.MIN_VALUE ||
+               builderDefault.doubleValue() != Double.MIN_VALUE ||
+               builderDefault.charValue() != '\0' ||
+               !builderDefault.enumValue().isEmpty() ||
+               !builderDefault.value().isEmpty();
+    }
+    
+    /**
      * Processes the annotation value based on the field type.
-     * Handles String auto-quoting and enum auto-detection with validation.
+     * Handles String auto-quoting, enum auto-detection with validation,
+     * and improved type conversion for primitive types.
      */
     private String processAnnotationValue(VariableElement field, String fieldType, String annotationValue) {
         // Check if this is an enum field (auto-detect from field type)
@@ -988,20 +1098,185 @@ public class DtoGenerator {
         
         // Check if this is a String field
         if (isStringType(fieldType)) {
-            // If the value already has quotes (escaped or not), use it as-is
-            if (annotationValue.startsWith("\"") && annotationValue.endsWith("\"")) {
-                return annotationValue; // Already properly quoted
-            }
-            if (annotationValue.startsWith("\\\"") && annotationValue.endsWith("\\\"")) {
-                return annotationValue; // Already escaped and quoted
-            }
-            
-            // Auto-add quotes for String fields
-            return "\"" + escapeQuotes(annotationValue) + "\"";
+            return processStringValue(annotationValue);
+        }
+        
+        // Handle primitive types with improved conversion
+        if (isPrimitiveType(fieldType)) {
+            return processPrimitiveValue(field, fieldType, annotationValue);
+        }
+        
+        // Handle wrapper types
+        if (isWrapperType(fieldType)) {
+            return processWrapperValue(field, fieldType, annotationValue);
         }
         
         // For other types, use the value as-is
         return annotationValue;
+    }
+    
+    /**
+     * Processes String values with smart quoting.
+     */
+    private String processStringValue(String annotationValue) {
+        // If the value already has quotes (escaped or not), use it as-is
+        if (annotationValue.startsWith("\"") && annotationValue.endsWith("\"")) {
+            return annotationValue; // Already properly quoted
+        }
+        if (annotationValue.startsWith("\\\"") && annotationValue.endsWith("\\\"")) {
+            return annotationValue; // Already escaped and quoted
+        }
+        
+        // Auto-add quotes for String fields
+        return "\"" + escapeQuotes(annotationValue) + "\"";
+    }
+    
+    /**
+     * Processes primitive type values with validation.
+     */
+    private String processPrimitiveValue(VariableElement field, String fieldType, String annotationValue) {
+        String fieldName = field.getSimpleName().toString();
+        
+        try {
+            switch (fieldType) {
+                case "int" -> {
+                    Integer.parseInt(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "long" -> {
+                    Long.parseLong(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "short" -> {
+                    Short.parseShort(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "byte" -> {
+                    Byte.parseByte(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "float" -> {
+                    Float.parseFloat(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "double" -> {
+                    Double.parseDouble(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "boolean" -> {
+                    String trimmed = annotationValue.trim();
+                    if (!trimmed.equals("true") && !trimmed.equals("false")) {
+                        throw new NumberFormatException("Invalid boolean value");
+                    }
+                    return trimmed;
+                }
+                case "char" -> {
+                    if (annotationValue.length() == 1) {
+                        return "'" + annotationValue + "'";
+                    } else if (annotationValue.startsWith("'") && annotationValue.endsWith("'")) {
+                        return annotationValue; // Already quoted
+                    } else {
+                        throw new NumberFormatException("Invalid char value");
+                    }
+                }
+                default -> {
+                    messager.printMessage(Diagnostic.Kind.WARNING, 
+                        "@DtoBuilderDefault: Unsupported primitive type '" + fieldType + 
+                        "' for field: " + fieldName + ". Using value as-is.", field);
+                    return annotationValue;
+                }
+            }
+        } catch (NumberFormatException e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, 
+                "@DtoBuilderDefault: Invalid value '" + annotationValue + 
+                "' for primitive type '" + fieldType + "' field: " + fieldName, field);
+            return null;
+        }
+    }
+    
+    /**
+     * Processes wrapper type values with validation.
+     */
+    private String processWrapperValue(VariableElement field, String fieldType, String annotationValue) {
+        String fieldName = field.getSimpleName().toString();
+        
+        try {
+            switch (fieldType) {
+                case "java.lang.Integer", "Integer" -> {
+                    Integer.parseInt(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "java.lang.Long", "Long" -> {
+                    Long.parseLong(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "java.lang.Short", "Short" -> {
+                    Short.parseShort(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "java.lang.Byte", "Byte" -> {
+                    Byte.parseByte(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "java.lang.Float", "Float" -> {
+                    Float.parseFloat(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "java.lang.Double", "Double" -> {
+                    Double.parseDouble(annotationValue.trim());
+                    return annotationValue.trim();
+                }
+                case "java.lang.Boolean", "Boolean" -> {
+                    String trimmed = annotationValue.trim();
+                    if (!trimmed.equals("true") && !trimmed.equals("false")) {
+                        throw new NumberFormatException("Invalid boolean value");
+                    }
+                    return trimmed;
+                }
+                case "java.lang.Character", "Character" -> {
+                    if (annotationValue.length() == 1) {
+                        return "'" + annotationValue + "'";
+                    } else if (annotationValue.startsWith("'") && annotationValue.endsWith("'")) {
+                        return annotationValue; // Already quoted
+                    } else {
+                        throw new NumberFormatException("Invalid char value");
+                    }
+                }
+                default -> {
+                    // For other wrapper types, use as-is
+                    return annotationValue;
+                }
+            }
+        } catch (NumberFormatException e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, 
+                "@DtoBuilderDefault: Invalid value '" + annotationValue + 
+                "' for wrapper type '" + fieldType + "' field: " + fieldName, field);
+            return null;
+        }
+    }
+    
+    /**
+     * Checks if the given type is a primitive type.
+     */
+    private boolean isPrimitiveType(String fieldType) {
+        return Arrays.asList("int", "long", "short", "byte", "float", "double", "boolean", "char")
+                    .contains(fieldType);
+    }
+    
+    /**
+     * Checks if the given type is a wrapper type.
+     */
+    private boolean isWrapperType(String fieldType) {
+        return Arrays.asList(
+            "java.lang.Integer", "Integer",
+            "java.lang.Long", "Long", 
+            "java.lang.Short", "Short",
+            "java.lang.Byte", "Byte",
+            "java.lang.Float", "Float",
+            "java.lang.Double", "Double",
+            "java.lang.Boolean", "Boolean",
+            "java.lang.Character", "Character"
+        ).contains(fieldType);
     }
     
     /**
@@ -1069,6 +1344,62 @@ public class DtoGenerator {
         
         // Generate the proper enum reference
         return enumSimpleName + "." + constantName;
+    }
+    
+    /**
+     * Processes enum values with auto-detection and validation.
+     */
+    private String processEnumValueFromString(VariableElement field, String enumClassName) {
+        String fieldName = field.getSimpleName().toString();
+        
+        try {
+            // Get the enum class name
+            String enumSimpleName = enumClassName;
+            
+            // Get the first enum constant (this is a limitation - we can't specify which constant)
+            // In practice, users should use enumConstant parameter for specific constants
+            Class<?> enumClass = Class.forName(enumClassName);
+            if (enumClass != null && Enum.class.isAssignableFrom(enumClass)) {
+                @SuppressWarnings("unchecked")
+                Class<? extends Enum<?>> typedEnumClass = (Class<? extends Enum<?>>) enumClass;
+                Enum<?>[] constants = typedEnumClass.getEnumConstants();
+                if (constants.length > 0) {
+                    String constantName = constants[0].name();
+                    return enumSimpleName + "." + constantName;
+                } else {
+                    messager.printMessage(Diagnostic.Kind.ERROR, 
+                        "@DtoBuilderDefault: Enum class " + enumSimpleName + " has no constants for field: " + fieldName, 
+                        field);
+                    return null;
+                }
+            } else {
+                messager.printMessage(Diagnostic.Kind.ERROR, 
+                    "@DtoBuilderDefault: Class " + enumClassName + " is not an enum for field: " + fieldName, 
+                    field);
+                return null;
+            }
+        } catch (Exception e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, 
+                "@DtoBuilderDefault: Error processing enum value for field: " + fieldName + ". Error: " + e.getMessage(), 
+                field);
+            return null;
+        }
+    }
+    
+    /**
+     * Extracts the enum constant name from a toEnumString helper method call.
+     * For example, from "toEnumString(Status.ACTIVE)" it extracts "Status.ACTIVE".
+     */
+    private String extractEnumConstantFromHelper(String enumValue) {
+        int start = enumValue.indexOf("(");
+        int end = enumValue.indexOf(")");
+        if (start != -1 && end != -1 && end > start) {
+            String enumString = enumValue.substring(start + 1, end);
+            if (enumString.contains(".")) {
+                return enumString;
+            }
+        }
+        return null;
     }
     
     /**
