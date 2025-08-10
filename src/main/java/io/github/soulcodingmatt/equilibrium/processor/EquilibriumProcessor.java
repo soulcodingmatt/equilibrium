@@ -14,6 +14,7 @@ import io.github.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.util.ValidationConflictUtil;
 
 import javax.annotation.processing.*;
+import com.sun.source.util.Trees;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -85,6 +86,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
     private Filer filer;
     private Messager messager;
     private EquilibriumConfig config;
+    private Trees trees;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -92,6 +94,11 @@ public class EquilibriumProcessor extends AbstractProcessor {
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
         config = new EquilibriumConfig(processingEnv);
+        try {
+            trees = Trees.instance(processingEnv);
+        } catch (IllegalArgumentException ex) {
+            trees = null; // Trees may be unavailable in some environments
+        }
     }
 
     @Override
@@ -308,7 +315,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
             // Create and run the DTO generator
             int dtoId = annotation.id();
-            DtoGenerator generator = new DtoGenerator(classElement, packageName, className, ignoredFields, builder, dtoId, filer, messager);
+            DtoGenerator generator = new DtoGenerator(classElement, packageName, className, ignoredFields, builder, dtoId, filer, messager, trees);
             generator.generate();
 
             note(classElement, "Generated DTO class: " + packageName + "." + className);

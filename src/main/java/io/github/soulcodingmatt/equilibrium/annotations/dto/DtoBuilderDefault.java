@@ -54,6 +54,17 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.SOURCE)
 public @interface DtoBuilderDefault {
     /**
+     * Controls whether an existing Lombok {@code @Builder.Default} initializer on the base field
+     * should be inherited into the generated DTO.
+     *
+     * <p>If set to {@code false}, the processor will NOT carry over the base-class default for this field.
+     * If no other parameters are specified to provide an explicit default, the generated DTO field will have
+     * no builder default initializer and will not receive a {@code @Builder.Default} annotation.</p>
+     *
+     * <p>Default is {@code true} for backward compatibility.</p>
+     */
+    boolean inherit() default true;
+    /**
      * String default value (quotes added automatically).
      * Use for String fields or when you need string literals.
      * 

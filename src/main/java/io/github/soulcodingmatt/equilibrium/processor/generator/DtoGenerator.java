@@ -19,6 +19,9 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import com.sun.source.tree.*;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.Trees;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
@@ -31,6 +34,29 @@ public class DtoGenerator {
     public static final String DTO_CLASS = "dtoClass=";
     public static final String MESSAGE = "(message = \"";
     public static final String MESSAGE1 = "message = \"";
+    public static final String CHARACTER = "Character";
+    public static final String JAVA_LANG_CHARACTER = "java.lang.Character";
+    public static final String BOOLEAN = "Boolean";
+    public static final String JAVA_LANG_BOOLEAN = "java.lang.Boolean";
+    public static final String BOOLEAN_STRING = "boolean";
+    public static final String DOUBLE = "Double";
+    public static final String JAVA_LANG_DOUBLE = "java.lang.Double";
+    public static final String DOUBLE_STRING = "double";
+    public static final String FLOAT = "Float";
+    public static final String JAVA_LANG_FLOAT = "java.lang.Float";
+    public static final String FLOAT_STRING = "float";
+    public static final String BYTE = "Byte";
+    public static final String JAVA_LANG_BYTE = "java.lang.Byte";
+    public static final String BYTE_STRING = "byte";
+    public static final String SHORT = "Short";
+    public static final String JAVA_LANG_SHORT = "java.lang.Short";
+    public static final String SHORT_STRING = "short";
+    public static final String LONG = "Long";
+    public static final String JAVA_LANG_LONG = "java.lang.Long";
+    public static final String LONG_STRING = "long";
+    public static final String INTEGER = "Integer";
+    public static final String JAVA_LANG_INTEGER = "java.lang.Integer";
+    public static final String INTEGER_STRING = "int";
 
     /**
      * Register a generated DTO for import resolution
@@ -58,10 +84,13 @@ public class DtoGenerator {
     private final Filer filer;
     private final int dtoId;
     private final Messager messager;
+    private final Trees trees;
+    private final Map<VariableElement, String> inheritedDefaultInitializers = new HashMap<>();
+    private final Set<String> extraImportsForInheritedDefaults = new HashSet<>();
 
     public DtoGenerator(TypeElement classElement, String packageName, String dtoClassName,
                         Set<String> ignoredFields, boolean builder, int dtoId, Filer filer,
-                        Messager messager) {
+                        Messager messager, Trees trees) {
         this.classElement = classElement;
         this.packageName = packageName;
         this.dtoClassName = dtoClassName;
@@ -70,12 +99,15 @@ public class DtoGenerator {
         this.builder = builder;
         this.dtoId = dtoId;
         this.messager = messager;
+        this.trees = trees;
     }
 
     public void generate() throws IOException {
 
         // Get all fields that should be included in the DTO
         List<VariableElement> fields = getIncludedFields();
+        // Pre-scan for safe inherited builder defaults to collect initializers and imports
+        preScanInheritedBuilderDefaults(fields);
         
         // Create or update the DTO file
         JavaFileObject sourceFile = filer.createSourceFile(packageName + "." + dtoClassName, classElement);
@@ -168,6 +200,8 @@ public class DtoGenerator {
         // Add additional imports needed for builder defaults
         Set<String> builderDefaultImports = getBuilderDefaultImports(fields);
         imports.addAll(builderDefaultImports);
+        // Add imports needed due to inherited builder defaults we copied
+        imports.addAll(extraImportsForInheritedDefaults);
         
         // Filter out invalid imports
         Set<String> filteredImports = imports.stream()
@@ -911,14 +945,21 @@ public class DtoGenerator {
                     field);
                 return;
             }
-            
-            writer.write("    @Builder.Default\n");
+            // Emit @Builder.Default only if we'll have an initializer (explicit or inherited when allowed)
+            boolean willInherit = builderDefault.inherit() && inheritedDefaultInitializers.containsKey(field);
+            boolean hasExplicit = hasExplicitDtoDefault(field, builderDefault);
+            if (hasExplicit || willInherit) {
+                writer.write("    @Builder.Default\n");
+            }
             return;
         }
-        
+
         // Check for existing @Builder.Default annotation from base class
         if (hasExistingBuilderDefault(field)) {
-            writer.write("    @Builder.Default\n");
+            // Only emit if we actually copied a safe initializer
+            if (inheritedDefaultInitializers.containsKey(field)) {
+                writer.write("    @Builder.Default\n");
+            }
         }
     }
     
@@ -939,8 +980,8 @@ public class DtoGenerator {
             }
         }
         
-        // Check for existing builder default from base class
-        if (hasExistingBuilderDefault(field)) {
+        // Check for existing builder default from base class (only if allowed)
+        if ((builderDefault == null || builderDefault.inherit()) && hasExistingBuilderDefault(field)) {
             String existingDefault = getExistingBuilderDefaultValue(field);
             if (existingDefault != null && !existingDefault.isEmpty()) {
                 return transformedType + " " + name + " = " + existingDefault;
@@ -962,6 +1003,12 @@ public class DtoGenerator {
             return typeSpecificValue;
         }
         
+        // If inherit=false, do not fall back to inherited default
+        if (!builderDefault.inherit()) {
+            // No explicit value and inheritance disabled: do not provide a default
+            return null;
+        }
+
         // Fallback to legacy string value parameter
         String annotationValue = builderDefault.value();
         if (!annotationValue.isEmpty()) {
@@ -987,54 +1034,53 @@ public class DtoGenerator {
      */
     private String getTypeSpecificValue(VariableElement field, DtoBuilderDefault builderDefault) {
         String fieldType = field.asType().toString();
-        String fieldName = field.getSimpleName().toString();
-        
+
         // Check for primitive and wrapper types
         if (isPrimitiveType(fieldType) || isWrapperType(fieldType)) {
             // Integer types
-            if (fieldType.equals("int") || fieldType.equals("java.lang.Integer") || fieldType.equals("Integer")) {
+            if (fieldType.equals(INTEGER_STRING) || fieldType.equals(JAVA_LANG_INTEGER) || fieldType.equals(INTEGER)) {
                 if (builderDefault.intValue() != Integer.MIN_VALUE) {
                     return String.valueOf(builderDefault.intValue());
                 }
             }
             
             // Long types
-            if (fieldType.equals("long") || fieldType.equals("java.lang.Long") || fieldType.equals("Long")) {
+            if (fieldType.equals(LONG_STRING) || fieldType.equals(JAVA_LANG_LONG) || fieldType.equals(LONG)) {
                 if (builderDefault.longValue() != Long.MIN_VALUE) {
                     return String.valueOf(builderDefault.longValue()) + "L";
                 }
             }
             
             // Short types
-            if (fieldType.equals("short") || fieldType.equals("java.lang.Short") || fieldType.equals("Short")) {
+            if (fieldType.equals(SHORT_STRING) || fieldType.equals(JAVA_LANG_SHORT) || fieldType.equals(SHORT)) {
                 if (builderDefault.shortValue() != Short.MIN_VALUE) {
                     return String.valueOf(builderDefault.shortValue());
                 }
             }
             
             // Byte types
-            if (fieldType.equals("byte") || fieldType.equals("java.lang.Byte") || fieldType.equals("Byte")) {
+            if (fieldType.equals(BYTE_STRING) || fieldType.equals(JAVA_LANG_BYTE) || fieldType.equals(BYTE)) {
                 if (builderDefault.byteValue() != Byte.MIN_VALUE) {
                     return String.valueOf(builderDefault.byteValue());
                 }
             }
             
             // Float types
-            if (fieldType.equals("float") || fieldType.equals("java.lang.Float") || fieldType.equals("Float")) {
+            if (fieldType.equals(FLOAT_STRING) || fieldType.equals(JAVA_LANG_FLOAT) || fieldType.equals(FLOAT)) {
                 if (builderDefault.floatValue() != Float.MIN_VALUE) {
-                    return String.valueOf(builderDefault.floatValue()) + "f";
+                    return builderDefault.floatValue() + "f";
                 }
             }
             
             // Double types
-            if (fieldType.equals("double") || fieldType.equals("java.lang.Double") || fieldType.equals("Double")) {
+            if (fieldType.equals(DOUBLE_STRING) || fieldType.equals(JAVA_LANG_DOUBLE) || fieldType.equals(DOUBLE)) {
                 if (builderDefault.doubleValue() != Double.MIN_VALUE) {
                     return String.valueOf(builderDefault.doubleValue());
                 }
             }
             
             // Boolean types - we need to check if any boolean parameter is explicitly set
-            if (fieldType.equals("boolean") || fieldType.equals("java.lang.Boolean") || fieldType.equals("Boolean")) {
+            if (fieldType.equals(BOOLEAN_STRING) || fieldType.equals(JAVA_LANG_BOOLEAN) || fieldType.equals(BOOLEAN)) {
                 // Check if booleanValue is explicitly set (we can't distinguish default false from explicit false)
                 // So we'll check if any other parameter is set to determine if booleanValue was intended
                 if (hasAnyOtherParameterSet(builderDefault)) {
@@ -1043,7 +1089,7 @@ public class DtoGenerator {
             }
             
             // Character types
-            if (fieldType.equals("char") || fieldType.equals("java.lang.Character") || fieldType.equals("Character")) {
+            if (fieldType.equals("char") || fieldType.equals(JAVA_LANG_CHARACTER) || fieldType.equals(CHARACTER)) {
                 if (builderDefault.charValue() != '\0') {
                     return "'" + builderDefault.charValue() + "'";
                 }
@@ -1139,31 +1185,31 @@ public class DtoGenerator {
         
         try {
             switch (fieldType) {
-                case "int" -> {
+                case INTEGER_STRING -> {
                     Integer.parseInt(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "long" -> {
+                case LONG_STRING -> {
                     Long.parseLong(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "short" -> {
+                case SHORT_STRING -> {
                     Short.parseShort(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "byte" -> {
+                case BYTE_STRING -> {
                     Byte.parseByte(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "float" -> {
+                case FLOAT_STRING -> {
                     Float.parseFloat(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "double" -> {
+                case DOUBLE_STRING -> {
                     Double.parseDouble(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "boolean" -> {
+                case BOOLEAN_STRING -> {
                     String trimmed = annotationValue.trim();
                     if (!trimmed.equals("true") && !trimmed.equals("false")) {
                         throw new NumberFormatException("Invalid boolean value");
@@ -1202,38 +1248,38 @@ public class DtoGenerator {
         
         try {
             switch (fieldType) {
-                case "java.lang.Integer", "Integer" -> {
+                case JAVA_LANG_INTEGER, INTEGER -> {
                     Integer.parseInt(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "java.lang.Long", "Long" -> {
+                case JAVA_LANG_LONG, LONG -> {
                     Long.parseLong(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "java.lang.Short", "Short" -> {
+                case JAVA_LANG_SHORT, SHORT -> {
                     Short.parseShort(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "java.lang.Byte", "Byte" -> {
+                case JAVA_LANG_BYTE, BYTE -> {
                     Byte.parseByte(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "java.lang.Float", "Float" -> {
+                case JAVA_LANG_FLOAT, FLOAT -> {
                     Float.parseFloat(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "java.lang.Double", "Double" -> {
+                case JAVA_LANG_DOUBLE, DOUBLE -> {
                     Double.parseDouble(annotationValue.trim());
                     return annotationValue.trim();
                 }
-                case "java.lang.Boolean", "Boolean" -> {
+                case JAVA_LANG_BOOLEAN, BOOLEAN -> {
                     String trimmed = annotationValue.trim();
                     if (!trimmed.equals("true") && !trimmed.equals("false")) {
                         throw new NumberFormatException("Invalid boolean value");
                     }
                     return trimmed;
                 }
-                case "java.lang.Character", "Character" -> {
+                case JAVA_LANG_CHARACTER, CHARACTER -> {
                     if (annotationValue.length() == 1) {
                         return "'" + annotationValue + "'";
                     } else if (annotationValue.startsWith("'") && annotationValue.endsWith("'")) {
@@ -1254,12 +1300,29 @@ public class DtoGenerator {
             return null;
         }
     }
+
+    private boolean hasExplicitDtoDefault(VariableElement field, DtoBuilderDefault builderDefault) {
+        // Returns true if any explicit parameter provides a value
+        return !builderDefault.stringValue().isEmpty() ||
+               builderDefault.intValue() != Integer.MIN_VALUE ||
+               builderDefault.longValue() != Long.MIN_VALUE ||
+               builderDefault.shortValue() != Short.MIN_VALUE ||
+               builderDefault.byteValue() != Byte.MIN_VALUE ||
+               builderDefault.floatValue() != Float.MIN_VALUE ||
+               builderDefault.doubleValue() != Double.MIN_VALUE ||
+               builderDefault.charValue() != '\0' ||
+               !builderDefault.enumValue().isEmpty() ||
+               !builderDefault.value().isEmpty() ||
+               // Collections/Optional: using annotation with no parameters implies default for those types
+               isCollectionType(field.asType().toString()) ||
+               isOptionalType(field.asType().toString());
+    }
     
     /**
      * Checks if the given type is a primitive type.
      */
     private boolean isPrimitiveType(String fieldType) {
-        return Arrays.asList("int", "long", "short", "byte", "float", "double", "boolean", "char")
+        return Arrays.asList(INTEGER_STRING, LONG_STRING, SHORT_STRING, BYTE_STRING, FLOAT_STRING, DOUBLE_STRING, BOOLEAN_STRING, "char")
                     .contains(fieldType);
     }
     
@@ -1268,14 +1331,14 @@ public class DtoGenerator {
      */
     private boolean isWrapperType(String fieldType) {
         return Arrays.asList(
-            "java.lang.Integer", "Integer",
-            "java.lang.Long", "Long", 
-            "java.lang.Short", "Short",
-            "java.lang.Byte", "Byte",
-            "java.lang.Float", "Float",
-            "java.lang.Double", "Double",
-            "java.lang.Boolean", "Boolean",
-            "java.lang.Character", "Character"
+                JAVA_LANG_INTEGER, INTEGER,
+                JAVA_LANG_LONG, LONG,
+                JAVA_LANG_SHORT, SHORT,
+                JAVA_LANG_BYTE, BYTE,
+                JAVA_LANG_FLOAT, FLOAT,
+                JAVA_LANG_DOUBLE, DOUBLE,
+                JAVA_LANG_BOOLEAN, BOOLEAN,
+                JAVA_LANG_CHARACTER, CHARACTER
         ).contains(fieldType);
     }
     
@@ -1346,62 +1409,7 @@ public class DtoGenerator {
         return enumSimpleName + "." + constantName;
     }
     
-    /**
-     * Processes enum values with auto-detection and validation.
-     */
-    private String processEnumValueFromString(VariableElement field, String enumClassName) {
-        String fieldName = field.getSimpleName().toString();
-        
-        try {
-            // Get the enum class name
-            String enumSimpleName = enumClassName;
-            
-            // Get the first enum constant (this is a limitation - we can't specify which constant)
-            // In practice, users should use enumConstant parameter for specific constants
-            Class<?> enumClass = Class.forName(enumClassName);
-            if (enumClass != null && Enum.class.isAssignableFrom(enumClass)) {
-                @SuppressWarnings("unchecked")
-                Class<? extends Enum<?>> typedEnumClass = (Class<? extends Enum<?>>) enumClass;
-                Enum<?>[] constants = typedEnumClass.getEnumConstants();
-                if (constants.length > 0) {
-                    String constantName = constants[0].name();
-                    return enumSimpleName + "." + constantName;
-                } else {
-                    messager.printMessage(Diagnostic.Kind.ERROR, 
-                        "@DtoBuilderDefault: Enum class " + enumSimpleName + " has no constants for field: " + fieldName, 
-                        field);
-                    return null;
-                }
-            } else {
-                messager.printMessage(Diagnostic.Kind.ERROR, 
-                    "@DtoBuilderDefault: Class " + enumClassName + " is not an enum for field: " + fieldName, 
-                    field);
-                return null;
-            }
-        } catch (Exception e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, 
-                "@DtoBuilderDefault: Error processing enum value for field: " + fieldName + ". Error: " + e.getMessage(), 
-                field);
-            return null;
-        }
-    }
-    
-    /**
-     * Extracts the enum constant name from a toEnumString helper method call.
-     * For example, from "toEnumString(Status.ACTIVE)" it extracts "Status.ACTIVE".
-     */
-    private String extractEnumConstantFromHelper(String enumValue) {
-        int start = enumValue.indexOf("(");
-        int end = enumValue.indexOf(")");
-        if (start != -1 && end != -1 && end > start) {
-            String enumString = enumValue.substring(start + 1, end);
-            if (enumString.contains(".")) {
-                return enumString;
-            }
-        }
-        return null;
-    }
-    
+
     /**
      * Adds necessary imports for enum types used in builder defaults.
      */
@@ -1441,12 +1449,172 @@ public class DtoGenerator {
     
     /**
      * Gets the existing default value from a field that already has @Builder.Default.
-     * This is a simplified implementation - in practice, you might need more sophisticated parsing.
+     * Uses a pre-scanned map populated from the AST when possible.
      */
     private String getExistingBuilderDefaultValue(VariableElement field) {
-        // This is a placeholder - extracting existing default values from source code
-        // would require parsing the field initializer, which is complex in annotation processing.
-        // For now, return null to indicate no default value extraction.
+        return inheritedDefaultInitializers.get(field);
+    }
+
+    private void preScanInheritedBuilderDefaults(List<VariableElement> fields) {
+        inheritedDefaultInitializers.clear();
+        extraImportsForInheritedDefaults.clear();
+        if (!builder || trees == null) {
+            return;
+        }
+
+        for (VariableElement field : fields) {
+            DtoBuilderDefault override = field.getAnnotation(DtoBuilderDefault.class);
+            if (override != null && !override.inherit()) {
+                continue; // explicitly do not inherit this default
+            }
+            if (!hasExistingBuilderDefault(field)) {
+                continue;
+            }
+            String init = extractInitializerSource(field);
+            if (init == null || init.isEmpty()) {
+                continue;
+            }
+            String safe = coerceSafeInitializer(field, init);
+            if (safe != null && !safe.isEmpty()) {
+                inheritedDefaultInitializers.put(field, safe);
+            }
+        }
+    }
+
+    private String extractInitializerSource(VariableElement field) {
+        try {
+            TreePath path = trees.getPath(field);
+            if (path == null) {
+                return null;
+            }
+            if (!(path.getLeaf() instanceof VariableTree variableTree)) {
+                return null;
+            }
+            ExpressionTree initializer = variableTree.getInitializer();
+            if (initializer == null) {
+                return null;
+            }
+            long start = trees.getSourcePositions().getStartPosition(path.getCompilationUnit(), initializer);
+            long end = trees.getSourcePositions().getEndPosition(path.getCompilationUnit(), initializer);
+            if (start < 0 || end < 0) {
+                return null;
+            }
+            CharSequence content = path.getCompilationUnit().getSourceFile().getCharContent(true);
+            return content.subSequence((int) start, (int) end).toString().trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String coerceSafeInitializer(VariableElement field, String initializerText) {
+        // Use AST again to classify safely
+        try {
+            TreePath path = trees.getPath(field);
+            if (path == null || !(path.getLeaf() instanceof VariableTree vt) || vt.getInitializer() == null) {
+                return null;
+            }
+            ExpressionTree expr = vt.getInitializer();
+            Tree.Kind kind = expr.getKind();
+
+            // 1) Literal kinds
+            if (kind == Tree.Kind.INT_LITERAL || kind == Tree.Kind.LONG_LITERAL ||
+                kind == Tree.Kind.FLOAT_LITERAL || kind == Tree.Kind.DOUBLE_LITERAL ||
+                kind == Tree.Kind.BOOLEAN_LITERAL || kind == Tree.Kind.CHAR_LITERAL ||
+                kind == Tree.Kind.STRING_LITERAL || kind == Tree.Kind.NULL_LITERAL) {
+                return initializerText;
+            }
+
+            // 2) Enum constants: convert to EnumSimpleName.CONSTANT
+            if (isEnumType(field) && (kind == Tree.Kind.MEMBER_SELECT || kind == Tree.Kind.IDENTIFIER)) {
+                String enumSimple = ((TypeElement) ((DeclaredType) field.asType()).asElement()).getSimpleName().toString();
+                String constant;
+                if (kind == Tree.Kind.MEMBER_SELECT) {
+                    MemberSelectTree mst = (MemberSelectTree) expr;
+                    constant = mst.getIdentifier().toString();
+                } else {
+                    IdentifierTree id = (IdentifierTree) expr;
+                    constant = id.getName().toString();
+                }
+                // ensure we import enum type via normal field import logic
+                return enumSimple + "." + constant;
+            }
+
+            // 3) new ArrayList<>() / new HashSet<>() / new HashMap<>() with no args
+            if (kind == Tree.Kind.NEW_CLASS) {
+                NewClassTree nct = (NewClassTree) expr;
+                if (nct.getArguments() != null && !nct.getArguments().isEmpty()) {
+                    return null;
+                }
+                String typeName = typeIdentifierToString(nct.getIdentifier());
+                if (typeName == null) {
+                    return null;
+                }
+                if (typeName.endsWith("ArrayList") || typeName.endsWith("HashSet") || typeName.endsWith("HashMap")) {
+                    // add necessary imports for impl classes
+                    if (typeName.endsWith("ArrayList")) {
+                        extraImportsForInheritedDefaults.add("java.util.List");
+                        extraImportsForInheritedDefaults.add("java.util.ArrayList");
+                    } else if (typeName.endsWith("HashSet")) {
+                        extraImportsForInheritedDefaults.add("java.util.Set");
+                        extraImportsForInheritedDefaults.add("java.util.HashSet");
+                    } else if (typeName.endsWith("HashMap")) {
+                        extraImportsForInheritedDefaults.add("java.util.Map");
+                        extraImportsForInheritedDefaults.add("java.util.HashMap");
+                    }
+                    return initializerText;
+                }
+                return null;
+            }
+
+            // 4) Optional.empty() and Collections.emptyXxx() with no args
+            if (kind == Tree.Kind.METHOD_INVOCATION) {
+                MethodInvocationTree mit = (MethodInvocationTree) expr;
+                if (mit.getArguments() != null && !mit.getArguments().isEmpty()) {
+                    return null;
+                }
+                String select = methodSelectToString(mit.getMethodSelect());
+                if (select == null) {
+                    return null;
+                }
+                if (select.endsWith("Optional.empty")) {
+                    extraImportsForInheritedDefaults.add("java.util.Optional");
+                    return initializerText + ""; // as-is
+                }
+                if (select.endsWith("Collections.emptyList") || select.endsWith("Collections.emptySet") || select.endsWith("Collections.emptyMap")) {
+                    extraImportsForInheritedDefaults.add("java.util.Collections");
+                    return initializerText + "";
+                }
+                return null;
+            }
+
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String typeIdentifierToString(Tree identifier) {
+        if (identifier instanceof IdentifierTree id) {
+            return id.getName().toString();
+        }
+        if (identifier instanceof MemberSelectTree mst) {
+            // build fully qualified or dotted string
+            return typeIdentifierToString(mst.getExpression()) + "." + mst.getIdentifier().toString();
+        }
+        return null;
+    }
+
+    private String methodSelectToString(ExpressionTree select) {
+        if (select instanceof IdentifierTree id) {
+            return id.getName().toString();
+        }
+        if (select instanceof MemberSelectTree mst) {
+            String left = methodSelectToString(mst.getExpression());
+            if (left == null) {
+                return null;
+            }
+            return left + "." + mst.getIdentifier().toString();
+        }
         return null;
     }
 
