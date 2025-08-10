@@ -4,35 +4,51 @@ import java.lang.annotation.*;
 
 /**
  * Annotation to specify default values for fields in generated DTOs when using the builder pattern.
- * This annotation only has effect when the @GenerateDto annotation has builder = true.
- * 
- * When applied to a field, the generated DTO will include a @Builder.Default annotation
- * with the specified default value.
- * 
- * Type-safe default values with direct primitive and enum support:
- * 
- * Primitive types (direct values, no quotes):
- * - @DtoBuilderDefault(intValue = 42) for int fields → private int count = 42;
- * - @DtoBuilderDefault(booleanValue = true) for boolean fields → private boolean active = true;
- * - @DtoBuilderDefault(doubleValue = 3.14) for double fields → private double pi = 3.14;
- * - @DtoBuilderDefault(charValue = 'A') for char fields → private char grade = 'A';
- * - @DtoBuilderDefault(longValue = 100L) for long fields → private long timestamp = 100L;
- * - @DtoBuilderDefault(floatValue = 1.5f) for float fields → private float ratio = 1.5f;
- * - @DtoBuilderDefault(byteValue = 127) for byte fields → private byte flags = 127;
- * - @DtoBuilderDefault(shortValue = 32767) for short fields → private short port = 32767;
- * 
- * String fields (quotes added automatically):
- * - @DtoBuilderDefault(stringValue = "Hello") generates: private String name = "Hello";
- * - @DtoBuilderDefault(stringValue = "\"Quoted\"") generates: private String text = "\"Quoted\"";
- * 
- * Enum fields (type-safe with static final variables):
- * - @DtoBuilderDefault(enumValue = "Status.ACTIVE") generates: private Status status = Status.ACTIVE;
- * - @DtoBuilderDefault(enumValue = "Status.INACTIVE") generates: private Status status = Status.INACTIVE;
- * 
- * Note: For type safety, use the full enum reference like "Status.ACTIVE" in the enumValue parameter.
- * 
- * Compile-time validation ensures type safety and provides clear error messages
- * for invalid values or type mismatches.
+ * This annotation only has effect when the {@code @GenerateDto} annotation has {@code builder = true}.
+ *
+ * <p>When applied to a field, the generated DTO will include a {@code @Builder.Default}
+ * annotation with the specified default value.</p>
+ *
+ * <p>Type-specific parameters (recommended) provide compile-time validation and direct values:</p>
+ *
+ * <p><b>Primitive types (direct values, no quotes):</b></p>
+ * <ul>
+ *   <li>{@code @DtoBuilderDefault(intValue = 42)} → {@code private int count = 42;}</li>
+ *   <li>{@code @DtoBuilderDefault(booleanValue = true)} → {@code private boolean active = true;}</li>
+ *   <li>{@code @DtoBuilderDefault(doubleValue = 3.14)} → {@code private double pi = 3.14;}</li>
+ *   <li>{@code @DtoBuilderDefault(charValue = 'A')} → {@code private char grade = 'A';}</li>
+ *   <li>{@code @DtoBuilderDefault(longValue = 100L)} → {@code private long timestamp = 100L;}</li>
+ *   <li>{@code @DtoBuilderDefault(floatValue = 1.5f)} → {@code private float ratio = 1.5f;}</li>
+ *   <li>{@code @DtoBuilderDefault(byteValue = 127)} → {@code private byte flags = 127;}</li>
+ *   <li>{@code @DtoBuilderDefault(shortValue = 32767)} → {@code private short port = 32767;}</li>
+ * </ul>
+ *
+ * <p><b>String fields (quotes added automatically):</b></p>
+ * <ul>
+ *   <li>{@code @DtoBuilderDefault(stringValue = "Hello")} generates {@code private String name = "Hello";}</li>
+ *   <li>{@code @DtoBuilderDefault(stringValue = "\"Quoted\"")} generates {@code private String text = "\"Quoted\"";}</li>
+ * </ul>
+ *
+ * <p><b>Enum fields:</b> use {@link #enumValue()} with either {@code "EnumName.CONSTANT"}
+ * or just {@code "CONSTANT"}. The processor validates that the constant exists and matches
+ * the field's enum type. Example: {@code @DtoBuilderDefault(enumValue = "Status.ACTIVE")} →
+ * {@code private Status status = Status.ACTIVE;}</p>
+ *
+ * <p><b>Collections and Optional:</b> when used without parameters on supported types, defaults are applied:</p>
+ * <ul>
+ *   <li>{@code List} → {@code new ArrayList<>()}</li>
+ *   <li>{@code Set} → {@code new HashSet<>()}</li>
+ *   <li>{@code Map} → {@code new HashMap<>()}</li>
+ *   <li>{@code Optional} → {@code Optional.empty()}</li>
+ * </ul>
+ *
+ * <p><b>Legacy escape hatch:</b> if no type-specific parameter applies, the {@link #value()}
+ * parameter can be used as a raw Java initializer for unsupported types or complex expressions
+ * (e.g., {@code BigDecimal}, {@code UUID}, {@code java.time}, arrays, non-empty collections/optionals).
+ * The expression is emitted as-is in the generated code.</p>
+ *
+ * <p><b>Errors:</b> For non-collection, non-Optional fields, if no applicable parameter is provided
+ * (and {@code value()} is empty), an error is reported during processing.</p>
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)
@@ -110,21 +126,23 @@ public @interface DtoBuilderDefault {
     char charValue() default '\0';
     
     /**
-     * Enum default value.
-     * Use for enum fields. The enum constant will be used directly.
-     * For type-safe enum usage, use the full enum reference:
-     * &#64;DtoBuilderDefault(enumValue = "Status.ACTIVE")
-     * 
+     * Enum default value. Use for enum fields.
+     * <p>Accepts either {@code "CONSTANT"} or {@code "EnumName.CONSTANT"}. The processor validates
+     * that the constant exists and belongs to the field's enum type. Example:
+     * {@code @DtoBuilderDefault(enumValue = "Status.ACTIVE")}.</p>
+     *
      * @return the enum default value
      */
     String enumValue() default "";
     
     /**
-     * Legacy string value parameter for backward compatibility.
-     * For enums, use the full reference like "Status.ACTIVE" for type safety.
-     * @deprecated Use the type-specific parameters instead for better type safety.
-     * @return the legacy string value
+     * Legacy string-based initializer that is emitted as-is into the generated field initializer.
+     * <p>Use as an escape hatch for unsupported types or complex initializers (e.g.,
+     * {@code new java.math.BigDecimal("12.34")}, {@code java.util.UUID.fromString("...")},
+     * {@code java.time.LocalDate.of(2025, 1, 1)}, {@code Optional.of(...)}, collections with contents,
+     * or to force an explicit boolean {@code false}).</p>
+     *
+     * @return the legacy string value (raw Java expression)
      */
-    @Deprecated
     String value() default "";
 } 

@@ -61,16 +61,12 @@ public enum Status {
     ACTIVE, INACTIVE, PENDING
 }
 
-// ✅ Type-safe approach: Use enumValue parameter with full enum reference
+// ✅ Type-safe approach: Use enumValue parameter with enum constant
 @DtoBuilderDefault(enumValue = "Status.ACTIVE")
 private Status status;
 
 @DtoBuilderDefault(enumValue = "Status.INACTIVE")
 private Status otherStatus;
-
-// ⚠️ Limited approach: Use enumValue parameter (uses first enum constant)
-@DtoBuilderDefault(enumValue = "com.example.Status")
-private Status limitedStatus;
 ```
 
 ## Generated Output
@@ -150,15 +146,19 @@ private Optional<String> description;  // defaults to Optional.empty()
 The annotation processor provides clear error messages:
 
 ```java
-// ❌ Error: Invalid enum constant 'INVALID' does not exist in enum Status
-@DtoBuilderDefault(enumConstant = "INVALID")
+// ❌ Error: Invalid enum reference format (must be "EnumName.CONSTANT" or just "CONSTANT")
+@DtoBuilderDefault(enumValue = "com.example.Status")
 private Status status;
 
-// ❌ Error: Multiple parameters specified for field: age
-@DtoBuilderDefault(intValue = 42, stringValue = "42")
-private int age;
+// ❌ Error: Enum reference name does not match the field's enum type
+@DtoBuilderDefault(enumValue = "OtherEnum.ACTIVE")
+private Status status;
 
-// ❌ Error: No value specified for non-collection field: name
+// ❌ Error: Enum constant does not exist in enum Status
+@DtoBuilderDefault(enumValue = "Status.INVALID")
+private Status status;
+
+// ❌ Error: No value specified for non-collection, non-Optional field
 @DtoBuilderDefault
 private String name;
 ```
@@ -198,3 +198,53 @@ private Status status;
 ✅ **Backward Compatible**: Legacy code still works  
 
 This solution gives you exactly what you wanted - direct input of values like `42` and `MyEnum.VALUE1` without quotes! 🚀 
+
+## Advanced: Using value() for unsupported types and complex initializers
+
+While `value()` is deprecated in the API, it remains supported as an escape hatch for cases not covered by the type-specific parameters. The value string is emitted as a raw Java initializer.
+
+Examples:
+
+```java
+// BigDecimal
+@DtoBuilderDefault(value = "new java.math.BigDecimal(\"12.34\")")
+private java.math.BigDecimal price;
+
+// UUID
+@DtoBuilderDefault(value = "java.util.UUID.fromString(\"123e4567-e89b-12d3-a456-426614174000\")")
+private java.util.UUID id;
+
+// java.time
+@DtoBuilderDefault(value = "java.time.LocalDate.of(2025, 1, 1)")
+private java.time.LocalDate startDate;
+
+// Optional (non-empty)
+@DtoBuilderDefault(value = "java.util.Optional.of(\"Hello\")")
+private java.util.Optional<String> greeting;
+
+// Collections with contents (no @NestedMapping)
+@DtoBuilderDefault(value = "new java.util.ArrayList<>(java.util.List.of(new Address(\"x\")))")
+private java.util.List<Address> addresses;
+
+// Collections with contents (with @NestedMapping to a DTO)
+@NestedMapping(dtoClass = AddressDto.class)
+@DtoBuilderDefault(value = "new java.util.ArrayList<>(java.util.List.of(new AddressDto(\"x\")))")
+private java.util.List<Address> addresses;
+
+// Maps
+@DtoBuilderDefault(value = "new java.util.HashMap<>(java.util.Map.of(\"k\", 1))")
+private java.util.Map<String, Integer> data;
+
+// Arrays
+@DtoBuilderDefault(value = "new int[]{1, 2, 3}")
+private int[] numbers;
+
+// Explicit boolean false (edge case)
+// Use value() to force false when no other parameters are set
+@DtoBuilderDefault(value = "false")
+private boolean disabled;
+```
+
+Notes:
+- The processor auto-imports field types and standard collection types when needed. If your initializer references additional classes, either fully qualify them (as above) or ensure they are available via imports.
+- Prefer type-specific parameters when possible; use `value()` for unsupported types or complex initializers.

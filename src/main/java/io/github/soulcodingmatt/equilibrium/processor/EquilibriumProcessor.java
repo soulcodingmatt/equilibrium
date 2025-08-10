@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes({
+        "io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefault",
         "io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
         "io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos",
         "io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
