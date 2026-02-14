@@ -1,5 +1,6 @@
-package io.github.soulcodingmatt.equilibrium.processor.generator;
+package io.github.soulcodingmatt.equilibrium.processor.generator.vo;
 
+import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.AccessorConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.ConstructorConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.FieldInclusionConfig;

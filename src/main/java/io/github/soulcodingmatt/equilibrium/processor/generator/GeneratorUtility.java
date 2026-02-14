@@ -30,7 +30,11 @@ public class GeneratorUtility {
     // Common constants
     public static final String STRING_END = "    }\n\n";
     public static final String OVERRIDE = "    @Override\n";
-    
+
+    private GeneratorUtility(){
+        throw new AssertionError("You should not be here!");
+    }
+
     /**
      * Enum representing different generator types for conditional logic
      */
@@ -387,4 +391,4 @@ public class GeneratorUtility {
             first = false;
         }
     }
-} 
+}

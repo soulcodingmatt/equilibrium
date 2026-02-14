@@ -1,4 +1,4 @@
-package io.github.soulcodingmatt.equilibrium.processor;
+package io.github.soulcodingmatt.equilibrium.processor.config;
 
 import io.github.soulcodingmatt.equilibrium.processor.util.ValidationUtil;
 

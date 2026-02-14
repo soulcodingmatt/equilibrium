@@ -1,5 +1,6 @@
 package io.github.soulcodingmatt.equilibrium.processor;
 
+import io.github.soulcodingmatt.equilibrium.processor.config.EquilibriumConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

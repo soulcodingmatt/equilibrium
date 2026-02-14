@@ -1,4 +1,4 @@
-package io.github.soulcodingmatt.equilibrium.processor;
+package io.github.soulcodingmatt.equilibrium.processor.core;
 
 import com.google.auto.service.AutoService;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.*;
@@ -8,9 +8,10 @@ import io.github.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVos;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo;
-import io.github.soulcodingmatt.equilibrium.processor.generator.DtoGenerator;
-import io.github.soulcodingmatt.equilibrium.processor.generator.RecordGenerator;
-import io.github.soulcodingmatt.equilibrium.processor.generator.VoGenerator;
+import io.github.soulcodingmatt.equilibrium.processor.config.EquilibriumConfig;
+import io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGenerator;
+import io.github.soulcodingmatt.equilibrium.processor.generator.record.RecordGenerator;
+import io.github.soulcodingmatt.equilibrium.processor.generator.vo.VoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.util.ValidationConflictUtil;
 
 import javax.annotation.processing.*;
