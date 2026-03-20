@@ -1,0 +1,68 @@
+# --- Global normalization ---
+
+# When .gitattributes are introduced, execute the following statements in your shell:
+# git add --renormalize .
+# git commit -m "Normalize line endings"
+
+# Ensure all text files use LF in the repo
+* text=auto eol=lf
+
+# --- Platform-specific scripts ---
+# Unix scripts must stay LF
+*.sh text eol=lf
+/mvnw text eol=lf
+
+# Windows scripts must use CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1   text eol=crlf
+
+# --- Binary files (no diff, no EOL conversion) ---
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.jar binary
+*.keystore binary
+*.ico binary
+*.zip binary
+
+# git config core.autocrlf
+# Werte:
+# true     Windows: CRLF im Working Tree, LF im Repo
+# input    LF bleibt LF, CRLF wird zu LF beim Commit
+# false    keine automatische Umwandlung
+#
+# Bei Verwendung der .gitattributes empfohlen:
+# git config core.autocrlf false                = local
+# git config --global core.autocrlf false       = global
+# auch OK:
+# git config core.autocrlf input
+# global = wird alles gespeichert in ~/.gitconfig
+# local = wird gespeichert in .git/config des jeweiligen Repos
+
+# Warum diese Kombination perfekt ist
+# Tool	          Rolle
+# .gitattributes	Repo-Standard (LF)
+# .editorconfig	  Editor-Verhalten
+# Spotless	      Enforcement
+# Git config	    neutral (kein Eingriff)
+
+# Wie du deinen aktuellen Zustand prüfst
+# git config --global core.autocrlf        global = User
+# git config --local core.autocrlf         local = Repo
+#
+#
+# Empfehlung: local setzen für jedes Projekt einzeln entscheiden
+#
+# core.autocrlf
+# - ist eine lokale Git-Einstellung, die nicht versioniert ist und pro Entwickler unterschiedlich ist.
+# - ist ein Default-Mechanismus
+#
+# .gitattributes hat Vorrang
+#
+# Mit false:
+# keine versteckten Konvertierungen
+# keine Konflikte
+# klare Kontrolle durch .gitattributes

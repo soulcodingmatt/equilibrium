@@ -150,6 +150,71 @@
                 <version>3.2.5</version>
             </plugin>
 
+            <!-- Spotless -->
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <version>3.3.0</version>
+
+            <configuration>
+              <lineEndings>PRESERVE</lineEndings>
+              <java>
+                <includes>
+                  <include>src/main/java/**/*.java</include>
+                  <include>src/test/java/**/*.java</include>
+                </includes>
+                <endWithNewline/>
+                <formatAnnotations/>
+                <googleJavaFormat>
+                  <style>GOOGLE</style>
+                </googleJavaFormat>
+                <removeUnusedImports/>
+                <trimTrailingWhitespace/>
+              </java>
+              <pom>
+                <includes>
+                  <include>pom.xml</include>
+                </includes>
+                <sortPom/>
+              </pom>
+              <markdown>
+                <includes>
+                  <include>**/*.md</include>
+                </includes>
+                <flexmark/>
+              </markdown>
+              <formats>
+                <format>
+                  <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.yml</include>
+                    <include>**/*.yaml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.json</include>
+                    <include>**/*.gitignore</include>
+                  </includes>
+                  <excludes>
+                    <exclude>pom.xml</exclude>
+                    <exclude>**/target/**</exclude>
+                    <exclude>**/node_modules/**</exclude>
+                    <exclude>**/dist/**</exclude>
+                    <exclude>**/build/**</exclude>
+                  </excludes>
+                  <trimTrailingWhitespace/>
+                  <endWithNewline/>
+                </format>
+              </formats>
+            </configuration>
+            <executions>
+              <execution>
+                <id>check-formatting</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
             <!-- Sources JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
