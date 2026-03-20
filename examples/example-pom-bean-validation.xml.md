@@ -1,7 +1,8 @@
 # Example pom.xml with Jakarta Bean Validation
 
 ## About
-If you are going to use the ```@ValidateDto``` annotation, you will have not only to add Jakarta Bean Validation 
+
+If you are going to use the ```@ValidateDto``` annotation, you will have not only to add Jakarta Bean Validation
 to your depencies, but also a corresponding implementation. The standard implementation of the Java Bean Validation
 is the **Hibernate Validator**, thus I addede the dependency to the following example. Feel free to use any other
 implementation.
@@ -11,7 +12,6 @@ implementation.
 ```🚧 Work in Progress 🚧```
 
 ...
-
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -94,3 +94,4 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     </build>
 </project>
 ```
+

@@ -1,12 +1,12 @@
 # Example pom.xml with Jakarta Bean Validation and Lombok integration
 
 ## About
+
 ...
 
 ```🚧 Work in Progress 🚧```
 
 ...
-
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -101,3 +101,4 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     </build>
 </project>
 ```
+

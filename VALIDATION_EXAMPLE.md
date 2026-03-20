@@ -134,6 +134,7 @@ public class User {
 ### Generated DTOs
 
 #### UserCreateDto (id = 1)
+
 ```java
 public class UserCreateDto {
     @NotNull(message = "Username cannot be null")
@@ -153,6 +154,7 @@ public class UserCreateDto {
 ```
 
 #### UserUpdateDto (id = 2)
+
 ```java
 public class UserUpdateDto {
     @NotNull(message = "Username cannot be null")
@@ -171,6 +173,7 @@ public class UserUpdateDto {
 ```
 
 #### UserViewDto (id = 3)
+
 ```java
 public class UserViewDto {
     // No username validation for view
@@ -191,11 +194,13 @@ public class UserViewDto {
 The following Jakarta Bean Validation annotations are automatically imported when used:
 
 ### Null Constraints
+
 - `@NotNull`
-- `@NotEmpty` 
+- `@NotEmpty`
 - `@NotBlank`
 
-### Size Constraints  
+### Size Constraints
+
 - `@Size`
 - `@Min`
 - `@Max`
@@ -208,20 +213,24 @@ The following Jakarta Bean Validation annotations are automatically imported whe
 - `@Digits`
 
 ### Format Constraints
+
 - `@Email`
 - `@Pattern`
 
 ### Date/Time Constraints
+
 - `@Future`
 - `@FutureOrPresent`
 - `@Past`
 - `@PastOrPresent`
 
 ### Boolean Constraints
+
 - `@AssertTrue`
 - `@AssertFalse`
 
 ### Validation
+
 - `@Valid`
 
 ## Tips for IDE Autocomplete
@@ -229,6 +238,7 @@ The following Jakarta Bean Validation annotations are automatically imported whe
 To get autocomplete support in your IDE:
 
 1. **Add Jakarta Bean Validation dependency** to your project:
+
    ```xml
    <dependency>
        <groupId>jakarta.validation</groupId>
@@ -236,14 +246,13 @@ To get autocomplete support in your IDE:
        <version>3.0.2</version>
    </dependency>
    ```
-
 2. **Use string literals** with proper escaping for complex patterns:
+
    ```java
    @ValidateDto({
        "@Pattern(regexp = \"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$\", message = \"Invalid email\")"
    })
    ```
-
 3. **IDE templates** can help with common validation patterns:
    - Create live templates for frequently used validation combinations
    - Use code snippets for complex regex patterns
@@ -270,15 +279,15 @@ private String name;
 
 ## Available Type-Safe Validation Annotations
 
-| Type-Safe Parameter | Generated Jakarta Annotation | Example |
-|---------------------|-------------------------------|---------|
-| `notNull` | `@NotNull` | `notNull = @NotNull(message = "Required")` |
-| `notBlank` | `@NotBlank` | `notBlank = @NotBlank(message = "Cannot be blank")` |
-| `size` | `@Size` | `size = @Size(min = 2, max = 50)` |
-| `min` | `@Min` | `min = @Min(value = 18)` |
-| `max` | `@Max` | `max = @Max(value = 120)` |
-| `email` | `@Email` | `email = @Email(message = "Invalid email")` |
-| `pattern` | `@Pattern` | `pattern = @Pattern(regexp = "^[A-Z]+$")` |
+| Type-Safe Parameter | Generated Jakarta Annotation |                       Example                       |
+|---------------------|------------------------------|-----------------------------------------------------|
+| `notNull`           | `@NotNull`                   | `notNull = @NotNull(message = "Required")`          |
+| `notBlank`          | `@NotBlank`                  | `notBlank = @NotBlank(message = "Cannot be blank")` |
+| `size`              | `@Size`                      | `size = @Size(min = 2, max = 50)`                   |
+| `min`               | `@Min`                       | `min = @Min(value = 18)`                            |
+| `max`               | `@Max`                       | `max = @Max(value = 120)`                           |
+| `email`             | `@Email`                     | `email = @Email(message = "Invalid email")`         |
+| `pattern`           | `@Pattern`                   | `pattern = @Pattern(regexp = "^[A-Z]+$")`           |
 
 ## Error Handling
 
@@ -286,4 +295,5 @@ private String name;
 - Invalid parameter values result in compilation errors
 - Missing `ids` array means validation applies to all generated DTOs
 - Invalid `ids` are ignored (validation won't be applied to non-existent DTOs)
-- Legacy string validations: malformed strings cause compilation errors in generated DTOs 
+- Legacy string validations: malformed strings cause compilation errors in generated DTOs
+

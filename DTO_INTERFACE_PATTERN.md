@@ -30,6 +30,7 @@ public class Bird {
 ```
 
 **Generated Result:**
+
 ```java
 /**
  * DTO for {@link Bird}
@@ -86,6 +87,7 @@ public class ComparableBird implements Comparable<ComparableBird>, Serializable 
 ## 📝 Usage Examples
 
 ### Basic Usage
+
 ```java
 // Create DTO
 BirdDto dto = new BirdDto();
@@ -101,6 +103,7 @@ Collections.sort(birdList); // Works with your custom compareTo
 ```
 
 ### Multiple Interface Implementations
+
 ```java
 // Different wrappers for different use cases
 public class SerializableBird implements Serializable {
@@ -122,6 +125,7 @@ public class FullFeaturedBird implements Comparable<FullFeaturedBird>,
 ```
 
 ### Builder Pattern Integration
+
 ```java
 @GenerateDto(builder = true)
 public class Bird {
@@ -141,6 +145,7 @@ ComparableBird bird = new ComparableBird(dto);
 ## 🎯 Best Practices
 
 ### 1. **Composition over Inheritance**
+
 ```java
 // ✅ Good: Composition
 public class ComparableBird implements Comparable<ComparableBird> {
@@ -154,6 +159,7 @@ public class ComparableBird extends BirdDto implements Comparable<ComparableBird
 ```
 
 ### 2. **Delegate Only What You Need**
+
 ```java
 public class ComparableBird implements Comparable<ComparableBird> {
     private final BirdDto dto;
@@ -168,6 +174,7 @@ public class ComparableBird implements Comparable<ComparableBird> {
 ```
 
 ### 3. **Meaningful Interface Implementations**
+
 ```java
 @Override
 public int compareTo(ComparableBird other) {
@@ -183,6 +190,7 @@ public int compareTo(ComparableBird other) {
 ```
 
 ### 4. **Consistent Naming**
+
 ```java
 // Pattern: [Purpose][EntityName]
 public class ComparableBird implements Comparable<ComparableBird> { }
@@ -196,22 +204,23 @@ public class BirdSerializer implements Serializable { }
 
 ## ✅ Benefits
 
-| Aspect | Benefit |
-|--------|---------|
-| **Separation of Concerns** | DTOs remain pure data containers |
-| **Developer Control** | Full control over interface implementations |
-| **Business Logic** | Meaningful implementations instead of generic ones |
-| **Flexibility** | Different wrappers for different use cases |
-| **Maintainability** | Clear separation between data and behavior |
-| **Testability** | Interface logic can be tested separately |
-| **IDE Support** | Full autocomplete and refactoring support |
-| **Type Safety** | Compile-time interface validation |
+|           Aspect           |                      Benefit                       |
+|----------------------------|----------------------------------------------------|
+| **Separation of Concerns** | DTOs remain pure data containers                   |
+| **Developer Control**      | Full control over interface implementations        |
+| **Business Logic**         | Meaningful implementations instead of generic ones |
+| **Flexibility**            | Different wrappers for different use cases         |
+| **Maintainability**        | Clear separation between data and behavior         |
+| **Testability**            | Interface logic can be tested separately           |
+| **IDE Support**            | Full autocomplete and refactoring support          |
+| **Type Safety**            | Compile-time interface validation                  |
 
 ## 🔄 Migration from Auto-Generated Interfaces
 
 If you previously used auto-generated interface implementations:
 
 ### Before (Auto-Generated)
+
 ```java
 @GenerateDto(interfaces = {"Comparable<BirdDto>"})
 public class Bird { }
@@ -223,6 +232,7 @@ public int compareTo(BirdDto other) {
 ```
 
 ### After (Manual Wrapper)
+
 ```java
 @GenerateDto  // Clean DTO only
 public class Bird { }
@@ -243,4 +253,4 @@ This pattern provides the **best of both worlds**:
 - **Clean separation** of data and behavior
 - **Meaningful business logic** instead of generic implementations
 
-The result is **maintainable, testable, and business-focused code** that scales well with your application's needs. 
+The result is **maintainable, testable, and business-focused code** that scales well with your application's needs.

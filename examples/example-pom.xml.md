@@ -1,6 +1,7 @@
 # Example basic pom.xml
 
 ## About
+
 This is the most basic configuration of a ```pom.xml``` for using *Project Equilibrium* in your own software project.
 You **won't be able to use all features** with this skeleton of a ```pom.xml```. More advanced features like usage of
 _Project Lombok's_ ```@SuperBuilder``` with _Project Equilibrium's_ ```@GenerateDto(builder = true)``` won't be accessible without adding the
@@ -9,10 +10,12 @@ which makes use of _Jakarta Bean Validation_ - the respective dependencies **and
 be added to your dependencies. You will find examples for these use cases in the ```/examples``` folder of _Project Equilibrium's_ repository.
 
 ## Maven Compiler Plugin
+
 For _Project Equilibrium_ to work, you have to use and configure the _Maven Compiler Plugin_ (```maven-compiler-plugin```).
 _Project Equilibrium_ has to be set in the ```<annotationProcessorPaths>``` section.
 
 ### Compiler Arguments
+
 There are six optional compiler arguments for _Project Equilibrium_ that can
 be added to the ```<compilerArgs>``` section of the _Maven Compiler Plugin_:
 
@@ -34,6 +37,7 @@ creates a default package name consisting of the groupId and artifactId of your 
 and creates a default file name consisting of the name of the base class and the
 respective file type, that means ```Dto```, ```Record```, or ```Vo``` are
 postfixed to the original file name by default.
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -92,3 +96,4 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     </build>
 </project>
 ```
+

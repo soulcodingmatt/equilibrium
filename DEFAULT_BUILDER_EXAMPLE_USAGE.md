@@ -5,6 +5,7 @@
 Now you can use direct values without quotes! 🎉
 
 ### Primitive Types
+
 ```java
 @GenerateDto(builder = true)
 public class User {
@@ -35,6 +36,7 @@ public class User {
 ```
 
 ### Wrapper Types
+
 ```java
 @DtoBuilderDefault(intValue = 42)
 private Integer age;
@@ -47,6 +49,7 @@ private Double pi;
 ```
 
 ### String Types
+
 ```java
 @DtoBuilderDefault(stringValue = "Hello World")
 private String message;
@@ -56,6 +59,7 @@ private String preQuoted;
 ```
 
 ### Enum Types
+
 ```java
 public enum Status {
     ACTIVE, INACTIVE, PENDING
@@ -146,6 +150,7 @@ private Optional<String> description;  // defaults to Optional.empty()
 When you use `@GenerateDto(builder = true)`, the processor will mirror an existing Lombok `@Builder.Default` from the base class and, for a safe subset of initializer forms, it will copy the initializer into the DTO.
 
 ### What is automatically carried over
+
 - Literals: numbers (including negatives), booleans, chars, strings, null
 - Enum constants: emitted as `EnumSimpleName.CONSTANT`
 - No-arg constructors: `new ArrayList<>()`, `new HashSet<>()`, `new HashMap<>()`
@@ -154,7 +159,9 @@ When you use `@GenerateDto(builder = true)`, the processor will mirror an existi
 The processor also auto-adds required imports (e.g., `List`, `ArrayList`, `Optional`, `Collections`).
 
 ### Example (base → generated DTO)
+
 Base class:
+
 ```java
 public class User {
     @Builder.Default
@@ -175,6 +182,7 @@ public class User {
 ```
 
 Generated DTO (excerpt):
+
 ```java
 @SuperBuilder
 public class UserDto {
@@ -196,6 +204,7 @@ public class UserDto {
 ```
 
 ### Not carried over (use `@DtoBuilderDefault` instead)
+
 - Method calls beyond the whitelisted empties: `Optional.of(...)`, `List/Set/Map.of(...)`, `BigDecimal.valueOf(...)`, `LocalDate.of(...)`, `UUID.fromString(...)`, etc.
 - Constructors other than the allowed no-arg `ArrayList/HashSet/HashMap`, or any constructor with arguments
 - Static non-enum constants: `BigDecimal.TEN`, `Duration.ZERO`, `Math.PI`, etc.
@@ -209,6 +218,7 @@ For these cases, specify the initializer via `@DtoBuilderDefault` (type-specific
 You can prevent a base-class `@Builder.Default` initializer from being used in the DTO by attaching `@DtoBuilderDefault(inherit = false)` to the same field in the base class.
 
 Base class:
+
 ```java
 @GenerateDto(builder = true)
 public class User {
@@ -220,6 +230,7 @@ public class User {
 ```
 
 Generated DTO (excerpt):
+
 ```java
 @SuperBuilder
 public class UserDto {
@@ -229,6 +240,7 @@ public class UserDto {
 ```
 
 You can also override the inherited default with an explicit one:
+
 ```java
 @GenerateDto(builder = true)
 public class User {
@@ -240,6 +252,7 @@ public class User {
 ```
 
 Generated DTO (excerpt):
+
 ```java
 @SuperBuilder
 public class UserDto {
@@ -273,6 +286,7 @@ private String name;
 ## Migration from Legacy to New
 
 ### Before (Legacy)
+
 ```java
 @DtoBuilderDefault("42")
 private int age;
@@ -285,6 +299,7 @@ private Status status;
 ```
 
 ### After (New)
+
 ```java
 @DtoBuilderDefault(intValue = 42)
 private int age;
@@ -302,9 +317,9 @@ private Status status;
 ✅ **Type Safety**: Compile-time validation  
 ✅ **IDE Support**: Autocomplete and refactoring  
 ✅ **Performance**: No string parsing at runtime  
-✅ **Backward Compatible**: Legacy code still works  
+✅ **Backward Compatible**: Legacy code still works
 
-This solution gives you exactly what you wanted - direct input of values like `42` and `MyEnum.VALUE1` without quotes! 🚀 
+This solution gives you exactly what you wanted - direct input of values like `42` and `MyEnum.VALUE1` without quotes! 🚀
 
 ## Advanced: Using value() for unsupported types and complex initializers
 

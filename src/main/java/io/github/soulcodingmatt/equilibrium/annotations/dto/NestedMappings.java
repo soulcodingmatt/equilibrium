@@ -6,10 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Container annotation for multiple nested DTO mappings.
- * Use this when you need different DTO classes for different DTO IDs on the same field.
- * 
- * Example:
+ * Container annotation for multiple nested DTO mappings. Use this when you need different DTO
+ * classes for different DTO IDs on the same field.
+ *
+ * <p>Example:
+ *
  * <pre>
  * &#64;NestedMappings({
  *     &#64;NestedMapping(ids = 1, dtoClass = FunkyShitDto.class),
@@ -21,5 +22,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)
 public @interface NestedMappings {
-    NestedMapping[] value();
-} 
+  NestedMapping[] value();
+}

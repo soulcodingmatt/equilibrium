@@ -1,15 +1,15 @@
-//package io.github.soulcodingmatt.equilibrium.annotations.dto;
+// package io.github.soulcodingmatt.equilibrium.annotations.dto;
 //
-//import io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefault;
-//import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
+// import io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefault;
+// import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
 //
-///**
+/// **
 // * Test class demonstrating the enhanced @DtoBuilderDefault functionality.
 // * This class shows how the annotation can be used with different field types
 // * and how the annotation processor handles type conversion and validation.
 // */
-//@GenerateDto(builder = true)
-//public class DtoBuilderDefaultTest {
+// @GenerateDto(builder = true)
+// public class DtoBuilderDefaultTest {
 //
 //    // Static final variables for enum constants (type-safe approach)
 //    public static final String STATUS_ACTIVE = "Status.ACTIVE";
@@ -69,7 +69,8 @@
 //    private Status statusQualified;
 //
 //    // Limited enum approach (uses first enum constant)
-//    @DtoBuilderDefault(enumValue = "io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefaultTest$Status")
+//    @DtoBuilderDefault(enumValue =
+// "io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefaultTest$Status")
 //    private Status limitedStatus;
 //
 //    // LEGACY: String-based approach (still supported for backward compatibility)
@@ -151,7 +152,8 @@
 //    public void setStatus(Status status) { this.status = status; }
 //
 //    public Status getStatusQualified() { return statusQualified; }
-//    public void setStatusQualified(Status statusQualified) { this.statusQualified = statusQualified; }
+//    public void setStatusQualified(Status statusQualified) { this.statusQualified =
+// statusQualified; }
 //
 //    // Legacy getters and setters
 //    public int getLegacyCount() { return legacyCount; }
@@ -176,5 +178,6 @@
 //    public void setMetadata(java.util.Map<String, Object> metadata) { this.metadata = metadata; }
 //
 //    public java.util.Optional<String> getDescription() { return description; }
-//    public void setDescription(java.util.Optional<String> description) { this.description = description; }
-//}
+//    public void setDescription(java.util.Optional<String> description) { this.description =
+// description; }
+// }

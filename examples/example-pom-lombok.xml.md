@@ -9,7 +9,6 @@ add the respective dependencies to your project's ```pom.xml```.
 
 ...
 
-
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -80,3 +79,4 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     </build>
 </project>
 ```
+
