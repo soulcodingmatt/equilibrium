@@ -70,8 +70,11 @@ public final class DefaultValueResolver {
           fieldType.equals(BOOLEAN_STRING)
               || fieldType.equals(JAVA_LANG_BOOLEAN)
               || fieldType.equals(BOOLEAN);
-      if (isBooleanType && hasAnyOtherParameterSet(builderDefault)) {
-        return String.valueOf(builderDefault.booleanValue());
+      if (isBooleanType) {
+        if (builderDefault.booleanValue()) {
+          return "true";
+        }
+        return null;
       }
 
       boolean isCharacterType =
@@ -102,6 +105,7 @@ public final class DefaultValueResolver {
         || builderDefault.byteValue() != Byte.MIN_VALUE
         || builderDefault.floatValue() != Float.MIN_VALUE
         || builderDefault.doubleValue() != Double.MIN_VALUE
+        || builderDefault.booleanValue()
         || builderDefault.charValue() != '\0'
         || !builderDefault.enumValue().isEmpty()
         || !builderDefault.value().isEmpty();
@@ -421,6 +425,7 @@ public final class DefaultValueResolver {
         || builderDefault.byteValue() != Byte.MIN_VALUE
         || builderDefault.floatValue() != Float.MIN_VALUE
         || builderDefault.doubleValue() != Double.MIN_VALUE
+        || builderDefault.booleanValue()
         || builderDefault.charValue() != '\0'
         || !builderDefault.enumValue().isEmpty()
         || !builderDefault.value().isEmpty()
