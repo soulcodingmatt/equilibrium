@@ -1,10 +1,12 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator.vo;
 
+import io.github.soulcodingmatt.equilibrium.annotations.vo.ValidateVo;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.AccessorConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.ConstructorConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.FieldInclusionConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.GeneratorType;
+import io.github.soulcodingmatt.equilibrium.processor.generator.ValidationSupport;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
@@ -49,6 +51,9 @@ public class VoGenerator {
     // Get all fields that should be included in the Value Object
     List<VariableElement> fields = GeneratorUtility.getIncludedFields(classElement, fieldConfig);
 
+    // Collect validation imports
+    Set<String> validationImports = ValidationSupport.collectVoValidationImports(fields, voId);
+
     // Create or update the Value Object file
     JavaFileObject sourceFile =
         filer.createSourceFile(packageName + "." + voClassName, classElement);
@@ -60,6 +65,14 @@ public class VoGenerator {
       // Write imports
       GeneratorUtility.writeBasicImports(writer, fields);
 
+      // Write validation imports
+      for (String validationImport : validationImports) {
+        writer.write("import " + validationImport + ";\n");
+      }
+      if (!validationImports.isEmpty()) {
+        writer.write("\n");
+      }
+
       // Write class declaration
       writer.write("/**\n");
       writer.write(" * Value Object for {@link " + classElement.getQualifiedName() + "}\n");
@@ -70,8 +83,16 @@ public class VoGenerator {
       // Create constructor configuration
       ConstructorConfig constructorConfig = new ConstructorConfig(!generateSetters, null);
 
-      // Write fields
+      // Write fields with validation annotations
       for (VariableElement field : fields) {
+        // Write validation annotations for this field
+        ValidateVo[] validateAnnotations = field.getAnnotationsByType(ValidateVo.class);
+        for (ValidateVo validateAnnotation : validateAnnotations) {
+          if (ValidationSupport.shouldApplyVoValidation(validateAnnotation, voId)) {
+            ValidationSupport.writeTypeSafeVoValidations(writer, validateAnnotation);
+          }
+        }
+
         GeneratorUtility.writeField(writer, field, constructorConfig);
       }
 

@@ -1,8 +1,10 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator.record;
 
+import io.github.soulcodingmatt.equilibrium.annotations.record.ValidateRecord;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.FieldInclusionConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.GeneratorType;
+import io.github.soulcodingmatt.equilibrium.processor.generator.ValidationSupport;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
@@ -44,6 +46,10 @@ public class RecordGenerator {
     // Get all fields that should be included in the Record
     List<VariableElement> fields = GeneratorUtility.getIncludedFields(classElement, fieldConfig);
 
+    // Collect validation imports
+    Set<String> validationImports =
+        ValidationSupport.collectRecordValidationImports(fields, recordId);
+
     // Create or update the Record file
     JavaFileObject sourceFile =
         filer.createSourceFile(packageName + "." + recordClassName, classElement);
@@ -53,7 +59,7 @@ public class RecordGenerator {
       writer.write("package " + packageName + ";\n\n");
 
       // Write imports (records typically don't need Objects import for equals/hashCode/toString)
-      writeImports(writer, fields);
+      writeImports(writer, fields, validationImports);
 
       // Write record declaration
       writer.write("/**\n");
@@ -63,12 +69,14 @@ public class RecordGenerator {
 
       // Write record with its parameters
       writer.write("public record " + recordClassName + "(");
-      GeneratorUtility.writeRecordParameters(writer, fields, null);
+      writeRecordParametersWithValidation(writer, fields);
       writer.write(") {}\n");
     }
   }
 
-  private void writeImports(Writer writer, List<VariableElement> fields) throws IOException {
+  private void writeImports(
+      Writer writer, List<VariableElement> fields, Set<String> validationImports)
+      throws IOException {
     Set<String> imports =
         fields.stream()
             .map(field -> field.asType().toString())
@@ -76,9 +84,43 @@ public class RecordGenerator {
             .filter(type -> type.contains("."))
             .collect(java.util.stream.Collectors.toSet());
 
+    // Add validation imports
+    imports.addAll(validationImports);
+
     for (String importType : imports) {
       writer.write("import " + importType + ";\n");
     }
     writer.write("\n");
+  }
+
+  /** Writes record parameters with validation annotations. */
+  private void writeRecordParametersWithValidation(Writer writer, List<VariableElement> fields)
+      throws IOException {
+    if (fields.isEmpty()) {
+      return;
+    }
+
+    writer.write("\n");
+    for (int i = 0; i < fields.size(); i++) {
+      VariableElement field = fields.get(i);
+
+      // Write validation annotations for this field
+      ValidateRecord[] validateAnnotations = field.getAnnotationsByType(ValidateRecord.class);
+      for (ValidateRecord validateAnnotation : validateAnnotations) {
+        if (ValidationSupport.shouldApplyRecordValidation(validateAnnotation, recordId)) {
+          ValidationSupport.writeTypeSafeRecordValidations(writer, validateAnnotation);
+        }
+      }
+
+      // Write the field type and name
+      String fieldType = field.asType().toString();
+      writer.write(fieldType + " " + field.getSimpleName());
+
+      if (i < fields.size() - 1) {
+        writer.write(",\n");
+      } else {
+        writer.write("\n");
+      }
+    }
   }
 }

@@ -14,6 +14,22 @@ import javax.annotation.processing.ProcessingEnvironment;
 /**
  * Configuration class for the Equilibrium annotation processor. Handles global settings from
  * pom.xml and provides default values.
+ *
+ * <p>Supported compiler options (read from ProcessingEnvironment.getOptions()):
+ *
+ * <ul>
+ *   <li>{@code equilibrium.dto.package} - Default package for generated DTOs
+ *   <li>{@code equilibrium.dto.postfix} - Default postfix for generated DTOs (default: "Dto")
+ *   <li>{@code equilibrium.record.package} - Default package for generated Records
+ *   <li>{@code equilibrium.record.postfix} - Default postfix for generated Records (default:
+ *       "Record")
+ *   <li>{@code equilibrium.vo.package} - Default package for generated Value Objects
+ *   <li>{@code equilibrium.vo.postfix} - Default postfix for generated Value Objects (default:
+ *       "Vo")
+ *   <li>{@code equilibrium.groupId} - Optional project groupId (inferred from pom.xml if not set)
+ *   <li>{@code equilibrium.artifactId} - Optional project artifactId (inferred from pom.xml if not
+ *       set)
+ * </ul>
  */
 public class EquilibriumConfig {
   private static final String PREFIX = "equilibrium.";

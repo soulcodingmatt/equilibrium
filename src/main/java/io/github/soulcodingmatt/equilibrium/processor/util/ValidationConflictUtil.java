@@ -2,6 +2,8 @@ package io.github.soulcodingmatt.equilibrium.processor.util;
 
 import io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDto;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
+import io.github.soulcodingmatt.equilibrium.annotations.record.ValidateRecord;
+import io.github.soulcodingmatt.equilibrium.annotations.vo.ValidateVo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +53,42 @@ public class ValidationConflictUtil {
     return errors;
   }
 
+  /**
+   * Validates all ValidateRecord annotations on a field for conflicts and type compatibility.
+   *
+   * @param field the field being validated
+   * @param validateRecordAnnotations array of ValidateRecord annotations on the field
+   * @return list of validation error messages, empty if no conflicts found
+   */
+  public static List<String> validateRecordField(
+      VariableElement field, ValidateRecord[] validateRecordAnnotations) {
+    List<String> errors = new ArrayList<>();
+
+    for (ValidateRecord validateRecord : validateRecordAnnotations) {
+      errors.addAll(validateSingleRecordAnnotation(field, validateRecord));
+    }
+
+    return errors;
+  }
+
+  /**
+   * Validates all ValidateVo annotations on a field for conflicts and type compatibility.
+   *
+   * @param field the field being validated
+   * @param validateVoAnnotations array of ValidateVo annotations on the field
+   * @return list of validation error messages, empty if no conflicts found
+   */
+  public static List<String> validateVoField(
+      VariableElement field, ValidateVo[] validateVoAnnotations) {
+    List<String> errors = new ArrayList<>();
+
+    for (ValidateVo validateVo : validateVoAnnotations) {
+      errors.addAll(validateSingleVoAnnotation(field, validateVo));
+    }
+
+    return errors;
+  }
+
   /** Validates a single ValidateDto annotation for conflicts and type compatibility. */
   private static List<String> validateSingleAnnotation(
       VariableElement field, ValidateDto validateDto) {
@@ -60,6 +98,52 @@ public class ValidationConflictUtil {
 
     // Collect all active validations
     List<ValidationInfo> activeValidations = collectActiveValidations(validateDto);
+
+    // Check type compatibility for each validation
+    for (ValidationInfo validation : activeValidations) {
+      List<String> typeErrors = checkTypeCompatibility(fieldName, fieldType, validation);
+      errors.addAll(typeErrors);
+    }
+
+    // Check logical conflicts between validations
+    List<String> conflictErrors = checkLogicalConflicts(fieldName, activeValidations);
+    errors.addAll(conflictErrors);
+
+    return errors;
+  }
+
+  /** Validates a single ValidateRecord annotation for conflicts and type compatibility. */
+  private static List<String> validateSingleRecordAnnotation(
+      VariableElement field, ValidateRecord validateRecord) {
+    List<String> errors = new ArrayList<>();
+    TypeMirror fieldType = field.asType();
+    String fieldName = field.getSimpleName().toString();
+
+    // Collect all active validations from ValidateRecord
+    List<ValidationInfo> activeValidations = collectActiveRecordValidations(validateRecord);
+
+    // Check type compatibility for each validation
+    for (ValidationInfo validation : activeValidations) {
+      List<String> typeErrors = checkTypeCompatibility(fieldName, fieldType, validation);
+      errors.addAll(typeErrors);
+    }
+
+    // Check logical conflicts between validations
+    List<String> conflictErrors = checkLogicalConflicts(fieldName, activeValidations);
+    errors.addAll(conflictErrors);
+
+    return errors;
+  }
+
+  /** Validates a single ValidateVo annotation for conflicts and type compatibility. */
+  private static List<String> validateSingleVoAnnotation(
+      VariableElement field, ValidateVo validateVo) {
+    List<String> errors = new ArrayList<>();
+    TypeMirror fieldType = field.asType();
+    String fieldName = field.getSimpleName().toString();
+
+    // Collect all active validations from ValidateVo
+    List<ValidationInfo> activeValidations = collectActiveVoValidations(validateVo);
 
     // Check type compatibility for each validation
     for (ValidationInfo validation : activeValidations) {
@@ -186,6 +270,225 @@ public class ValidationConflictUtil {
 
     // Check FutureOrPresent
     FutureOrPresent futureOrPresent = validateDto.futureOrPresent();
+    if (!futureOrPresent.message().isEmpty()) {
+      validations.add(new ValidationInfo(FUTURE_OR_PRESENT, futureOrPresent));
+    }
+
+    return validations;
+  }
+
+  /** Collects all active validations from a ValidateRecord annotation. */
+  private static List<ValidationInfo> collectActiveRecordValidations(
+      ValidateRecord validateRecord) {
+    List<ValidationInfo> validations = new ArrayList<>();
+
+    // Check NotNull
+    NotNull notNull = validateRecord.notNull();
+    if (!notNull.message().isEmpty()) {
+      validations.add(new ValidationInfo("NotNull", notNull));
+    }
+
+    // Check NotBlank
+    NotBlank notBlank = validateRecord.notBlank();
+    if (!notBlank.message().isEmpty()) {
+      validations.add(new ValidationInfo("NotBlank", notBlank));
+    }
+
+    // Check NotEmpty
+    NotEmpty notEmpty = validateRecord.notEmpty();
+    if (!notEmpty.message().isEmpty()) {
+      validations.add(new ValidationInfo(NOT_EMPTY, notEmpty));
+    }
+
+    // Check Size
+    Size size = validateRecord.size();
+    if (size.min() != -1 || size.max() != -1) {
+      validations.add(new ValidationInfo("Size", size));
+    }
+
+    // Check Min
+    Min min = validateRecord.min();
+    if (min.value() != Long.MIN_VALUE) {
+      validations.add(new ValidationInfo("Min", min));
+    }
+
+    // Check Max
+    Max max = validateRecord.max();
+    if (max.value() != Long.MAX_VALUE) {
+      validations.add(new ValidationInfo("Max", max));
+    }
+
+    // Check Email
+    Email email = validateRecord.email();
+    if (!email.message().isEmpty()) {
+      validations.add(new ValidationInfo("Email", email));
+    }
+
+    // Check Pattern
+    Pattern pattern = validateRecord.pattern();
+    if (!pattern.regexp().isEmpty()) {
+      validations.add(new ValidationInfo("Pattern", pattern));
+    }
+
+    // Check Positive
+    Positive positive = validateRecord.positive();
+    if (!positive.message().isEmpty()) {
+      validations.add(new ValidationInfo(POSITIVE, positive));
+    }
+
+    // Check PositiveOrZero
+    PositiveOrZero positiveOrZero = validateRecord.positiveOrZero();
+    if (!positiveOrZero.message().isEmpty()) {
+      validations.add(new ValidationInfo(POSITIVE_OR_ZERO, positiveOrZero));
+    }
+
+    // Check Negative
+    Negative negative = validateRecord.negative();
+    if (!negative.message().isEmpty()) {
+      validations.add(new ValidationInfo(NEGATIVE, negative));
+    }
+
+    // Check NegativeOrZero
+    NegativeOrZero negativeOrZero = validateRecord.negativeOrZero();
+    if (!negativeOrZero.message().isEmpty()) {
+      validations.add(new ValidationInfo(NEGATIVE_OR_ZERO, negativeOrZero));
+    }
+
+    // Check Digits
+    Digits digits = validateRecord.digits();
+    if (digits.integer() != -1 || digits.fraction() != -1) {
+      validations.add(new ValidationInfo(DIGITS, digits));
+    }
+
+    // Check Past
+    Past past = validateRecord.past();
+    if (!past.message().isEmpty()) {
+      validations.add(new ValidationInfo(PAST, past));
+    }
+
+    // Check Future
+    Future future = validateRecord.future();
+    if (!future.message().isEmpty()) {
+      validations.add(new ValidationInfo(FUTURE, future));
+    }
+
+    // Check PastOrPresent
+    PastOrPresent pastOrPresent = validateRecord.pastOrPresent();
+    if (!pastOrPresent.message().isEmpty()) {
+      validations.add(new ValidationInfo(PAST_OR_PRESENT, pastOrPresent));
+    }
+
+    // Check FutureOrPresent
+    FutureOrPresent futureOrPresent = validateRecord.futureOrPresent();
+    if (!futureOrPresent.message().isEmpty()) {
+      validations.add(new ValidationInfo(FUTURE_OR_PRESENT, futureOrPresent));
+    }
+
+    return validations;
+  }
+
+  /** Collects all active validations from a ValidateVo annotation. */
+  private static List<ValidationInfo> collectActiveVoValidations(ValidateVo validateVo) {
+    List<ValidationInfo> validations = new ArrayList<>();
+
+    // Check NotNull
+    NotNull notNull = validateVo.notNull();
+    if (!notNull.message().isEmpty()) {
+      validations.add(new ValidationInfo("NotNull", notNull));
+    }
+
+    // Check NotBlank
+    NotBlank notBlank = validateVo.notBlank();
+    if (!notBlank.message().isEmpty()) {
+      validations.add(new ValidationInfo("NotBlank", notBlank));
+    }
+
+    // Check NotEmpty
+    NotEmpty notEmpty = validateVo.notEmpty();
+    if (!notEmpty.message().isEmpty()) {
+      validations.add(new ValidationInfo(NOT_EMPTY, notEmpty));
+    }
+
+    // Check Size
+    Size size = validateVo.size();
+    if (size.min() != -1 || size.max() != -1) {
+      validations.add(new ValidationInfo("Size", size));
+    }
+
+    // Check Min
+    Min min = validateVo.min();
+    if (min.value() != Long.MIN_VALUE) {
+      validations.add(new ValidationInfo("Min", min));
+    }
+
+    // Check Max
+    Max max = validateVo.max();
+    if (max.value() != Long.MAX_VALUE) {
+      validations.add(new ValidationInfo("Max", max));
+    }
+
+    // Check Email
+    Email email = validateVo.email();
+    if (!email.message().isEmpty()) {
+      validations.add(new ValidationInfo("Email", email));
+    }
+
+    // Check Pattern
+    Pattern pattern = validateVo.pattern();
+    if (!pattern.regexp().isEmpty()) {
+      validations.add(new ValidationInfo("Pattern", pattern));
+    }
+
+    // Check Positive
+    Positive positive = validateVo.positive();
+    if (!positive.message().isEmpty()) {
+      validations.add(new ValidationInfo(POSITIVE, positive));
+    }
+
+    // Check PositiveOrZero
+    PositiveOrZero positiveOrZero = validateVo.positiveOrZero();
+    if (!positiveOrZero.message().isEmpty()) {
+      validations.add(new ValidationInfo(POSITIVE_OR_ZERO, positiveOrZero));
+    }
+
+    // Check Negative
+    Negative negative = validateVo.negative();
+    if (!negative.message().isEmpty()) {
+      validations.add(new ValidationInfo(NEGATIVE, negative));
+    }
+
+    // Check NegativeOrZero
+    NegativeOrZero negativeOrZero = validateVo.negativeOrZero();
+    if (!negativeOrZero.message().isEmpty()) {
+      validations.add(new ValidationInfo(NEGATIVE_OR_ZERO, negativeOrZero));
+    }
+
+    // Check Digits
+    Digits digits = validateVo.digits();
+    if (digits.integer() != -1 || digits.fraction() != -1) {
+      validations.add(new ValidationInfo(DIGITS, digits));
+    }
+
+    // Check Past
+    Past past = validateVo.past();
+    if (!past.message().isEmpty()) {
+      validations.add(new ValidationInfo(PAST, past));
+    }
+
+    // Check Future
+    Future future = validateVo.future();
+    if (!future.message().isEmpty()) {
+      validations.add(new ValidationInfo(FUTURE, future));
+    }
+
+    // Check PastOrPresent
+    PastOrPresent pastOrPresent = validateVo.pastOrPresent();
+    if (!pastOrPresent.message().isEmpty()) {
+      validations.add(new ValidationInfo(PAST_OR_PRESENT, pastOrPresent));
+    }
+
+    // Check FutureOrPresent
+    FutureOrPresent futureOrPresent = validateVo.futureOrPresent();
     if (!futureOrPresent.message().isEmpty()) {
       validations.add(new ValidationInfo(FUTURE_OR_PRESENT, futureOrPresent));
     }
