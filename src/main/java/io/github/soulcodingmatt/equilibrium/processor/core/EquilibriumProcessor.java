@@ -14,6 +14,8 @@ import io.github.soulcodingmatt.equilibrium.experimental.validation.record.*;
 import io.github.soulcodingmatt.equilibrium.experimental.validation.vo.*;
 import io.github.soulcodingmatt.equilibrium.processor.config.EquilibriumConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGenerator;
+import io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGeneratorTarget;
+import io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoProcessorServices;
 import io.github.soulcodingmatt.equilibrium.processor.generator.record.RecordGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.generator.vo.VoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.util.ValidationConflictUtil;
@@ -360,15 +362,9 @@ public class EquilibriumProcessor extends AbstractProcessor {
       int dtoId = annotation.id();
       DtoGenerator generator =
           new DtoGenerator(
-              classElement,
-              packageName,
-              className,
-              ignoredFields,
-              builder,
-              dtoId,
-              filer,
-              messager,
-              trees);
+              new DtoGeneratorTarget(
+                  classElement, packageName, className, ignoredFields, builder, dtoId),
+              new DtoProcessorServices(filer, messager, trees));
       generator.generate();
 
       note(classElement, "Generated DTO class: " + packageName + "." + className);
