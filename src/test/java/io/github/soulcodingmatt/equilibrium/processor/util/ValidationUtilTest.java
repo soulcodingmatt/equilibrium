@@ -197,4 +197,345 @@ class ValidationUtilTest {
         ValidationUtil.isValidPackageName(
             "com.example.package-test")); // "package-test" is not exactly "package"
   }
+
+  @Test
+  void testGetPackageValidationError_NullAndEmpty() {
+    // Null package name
+    assertEquals(
+        "Package name cannot be null or empty", ValidationUtil.getPackageValidationError(null));
+
+    // Empty package name
+    assertEquals(
+        "Package name cannot be null or empty", ValidationUtil.getPackageValidationError(""));
+  }
+
+  @Test
+  void testGetPackageValidationError_LeadingTrailingDots() {
+    // Leading dot
+    assertEquals(
+        "Package name '.com.example' cannot start or end with a dot",
+        ValidationUtil.getPackageValidationError(".com.example"));
+
+    // Trailing dot
+    assertEquals(
+        "Package name 'com.example.' cannot start or end with a dot",
+        ValidationUtil.getPackageValidationError("com.example."));
+
+    // Both leading and trailing dots
+    assertEquals(
+        "Package name '.com.example.' cannot start or end with a dot",
+        ValidationUtil.getPackageValidationError(".com.example."));
+  }
+
+  @Test
+  void testGetPackageValidationError_ConsecutiveDots() {
+    // Double dots
+    assertEquals(
+        "Package name 'com..example' cannot contain consecutive dots",
+        ValidationUtil.getPackageValidationError("com..example"));
+
+    // Triple dots
+    assertEquals(
+        "Package name 'com...example' cannot contain consecutive dots",
+        ValidationUtil.getPackageValidationError("com...example"));
+
+    // Multiple consecutive dots in different positions
+    assertEquals(
+        "Package name 'com..example..test' cannot contain consecutive dots",
+        ValidationUtil.getPackageValidationError("com..example..test"));
+  }
+
+  @Test
+  void testGetPackageValidationError_InvalidCharacters() {
+    // Space
+    String error = ValidationUtil.getPackageValidationError("com.example test");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+    assertTrue(error.contains("example test"));
+
+    // Slash
+    error = ValidationUtil.getPackageValidationError("com.example/test");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+    assertTrue(error.contains("example/test"));
+
+    // Special characters
+    error = ValidationUtil.getPackageValidationError("com.example@test");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+
+    error = ValidationUtil.getPackageValidationError("com.example#test");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+
+    error = ValidationUtil.getPackageValidationError("com.example$test");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+  }
+
+  @Test
+  void testGetPackageValidationError_StartsWithNumber() {
+    // Package starts with number
+    String error = ValidationUtil.getPackageValidationError("123com.example");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+    assertTrue(error.contains("123com"));
+
+    // Package part starts with number
+    error = ValidationUtil.getPackageValidationError("com.123example");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+    assertTrue(error.contains("123example"));
+
+    // Multiple parts starting with numbers
+    error = ValidationUtil.getPackageValidationError("com.123.456");
+    assertNotNull(error);
+    assertTrue(error.contains("invalid part"));
+  }
+
+  @Test
+  void testGetPackageValidationError_ReservedKeywords() {
+    // Common Java keywords
+    String error = ValidationUtil.getPackageValidationError("com.example.package");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+    assertTrue(error.contains("package"));
+
+    error = ValidationUtil.getPackageValidationError("com.example.new");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+    assertTrue(error.contains("new"));
+
+    error = ValidationUtil.getPackageValidationError("com.class.example");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+    assertTrue(error.contains("class"));
+
+    error = ValidationUtil.getPackageValidationError("com.interface.example");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+    assertTrue(error.contains("interface"));
+
+    // Case insensitive keyword check
+    error = ValidationUtil.getPackageValidationError("com.Example.Package");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+    assertTrue(error.contains("Package"));
+
+    // More keywords
+    error = ValidationUtil.getPackageValidationError("com.abstract.example");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+
+    error = ValidationUtil.getPackageValidationError("com.example.static");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+
+    error = ValidationUtil.getPackageValidationError("com.void.example");
+    assertNotNull(error);
+    assertTrue(error.contains("reserved keyword"));
+  }
+
+  @Test
+  void testGetPackageValidationError_ValidPackages() {
+    // Valid packages should return null
+    assertNull(ValidationUtil.getPackageValidationError("com.example"));
+    assertNull(ValidationUtil.getPackageValidationError("com.example123"));
+    assertNull(ValidationUtil.getPackageValidationError("Com.Example"));
+    assertNull(ValidationUtil.getPackageValidationError("com.example-test"));
+    assertNull(ValidationUtil.getPackageValidationError("com.example_test"));
+    assertNull(ValidationUtil.getPackageValidationError("com.example-123"));
+    assertNull(ValidationUtil.getPackageValidationError("com.example_123"));
+
+    // Keywords with additional characters are valid
+    assertNull(ValidationUtil.getPackageValidationError("com.example.package123"));
+    assertNull(ValidationUtil.getPackageValidationError("com.example.package_test"));
+    assertNull(ValidationUtil.getPackageValidationError("com.example.package-test"));
+  }
+
+  @Test
+  void testPostfixEdgeCases() {
+    // Empty string
+    assertFalse(ValidationUtil.isValidPostfix(""));
+
+    // Null
+    assertFalse(ValidationUtil.isValidPostfix(null));
+
+    // Single character
+    assertTrue(ValidationUtil.isValidPostfix("D"));
+    assertTrue(ValidationUtil.isValidPostfix("1"));
+
+    // Only numbers
+    assertTrue(ValidationUtil.isValidPostfix("123"));
+
+    // Mixed case
+    assertTrue(ValidationUtil.isValidPostfix("DtO"));
+    assertTrue(ValidationUtil.isValidPostfix("dTO"));
+
+    // Invalid characters
+    assertFalse(ValidationUtil.isValidPostfix("Dto-"));
+    assertFalse(ValidationUtil.isValidPostfix("Dto_"));
+    assertFalse(ValidationUtil.isValidPostfix("Dto."));
+    assertFalse(ValidationUtil.isValidPostfix("Dto "));
+    assertFalse(ValidationUtil.isValidPostfix(" Dto"));
+    assertFalse(ValidationUtil.isValidPostfix("Dt o"));
+    assertFalse(ValidationUtil.isValidPostfix("Dto@"));
+    assertFalse(ValidationUtil.isValidPostfix("Dto#"));
+    assertFalse(ValidationUtil.isValidPostfix("Dto$"));
+  }
+
+  @Test
+  void testFieldNameEdgeCases() {
+    // Empty string
+    assertFalse(ValidationUtil.isValidFieldName(""));
+
+    // Null
+    assertFalse(ValidationUtil.isValidFieldName(null));
+
+    // Single character
+    assertTrue(ValidationUtil.isValidFieldName("f"));
+    assertTrue(ValidationUtil.isValidFieldName("1"));
+
+    // Only numbers
+    assertTrue(ValidationUtil.isValidFieldName("123"));
+
+    // Mixed case
+    assertTrue(ValidationUtil.isValidFieldName("fieldName"));
+    assertTrue(ValidationUtil.isValidFieldName("FieldName"));
+    assertTrue(ValidationUtil.isValidFieldName("FIELDNAME"));
+
+    // Invalid characters
+    assertFalse(ValidationUtil.isValidFieldName("field-name"));
+    assertFalse(ValidationUtil.isValidFieldName("field_name"));
+    assertFalse(ValidationUtil.isValidFieldName("field.name"));
+    assertFalse(ValidationUtil.isValidFieldName("field name"));
+    assertFalse(ValidationUtil.isValidFieldName(" field"));
+    assertFalse(ValidationUtil.isValidFieldName("field "));
+    assertFalse(ValidationUtil.isValidFieldName("fie ld"));
+    assertFalse(ValidationUtil.isValidFieldName("field@"));
+    assertFalse(ValidationUtil.isValidFieldName("field#"));
+    assertFalse(ValidationUtil.isValidFieldName("field$"));
+  }
+
+  @Test
+  void testPackageNameWithAllReservedKeywords() {
+    // Test a comprehensive set of Java reserved keywords
+    String[] keywords = {
+      "abstract",
+      "assert",
+      "boolean",
+      "break",
+      "byte",
+      "case",
+      "catch",
+      "char",
+      "class",
+      "const",
+      "continue",
+      "default",
+      "do",
+      "double",
+      "else",
+      "enum",
+      "extends",
+      "final",
+      "finally",
+      "float",
+      "for",
+      "goto",
+      "if",
+      "implements",
+      "import",
+      "instanceof",
+      "int",
+      "interface",
+      "long",
+      "native",
+      "new",
+      "package",
+      "private",
+      "protected",
+      "public",
+      "return",
+      "short",
+      "static",
+      "strictfp",
+      "super",
+      "switch",
+      "synchronized",
+      "this",
+      "throw",
+      "throws",
+      "transient",
+      "try",
+      "void",
+      "volatile",
+      "while"
+    };
+
+    for (String keyword : keywords) {
+      // Test keyword as package part
+      assertFalse(
+          ValidationUtil.isValidPackageName("com." + keyword),
+          "Package name with keyword '" + keyword + "' should be invalid");
+
+      // Test keyword with different case
+      assertFalse(
+          ValidationUtil.isValidPackageName("com." + keyword.toUpperCase()),
+          "Package name with uppercase keyword '" + keyword.toUpperCase() + "' should be invalid");
+
+      // Test keyword with mixed case
+      if (keyword.length() > 1) {
+        String mixedCase = keyword.substring(0, 1).toUpperCase() + keyword.substring(1);
+        assertFalse(
+            ValidationUtil.isValidPackageName("com." + mixedCase),
+            "Package name with mixed case keyword '" + mixedCase + "' should be invalid");
+      }
+    }
+  }
+
+  @Test
+  void testPackageNameComplexEdgeCases() {
+    // Multiple consecutive dots
+    assertFalse(ValidationUtil.isValidPackageName("com....example"));
+
+    // Only dots
+    assertFalse(ValidationUtil.isValidPackageName("..."));
+    assertFalse(ValidationUtil.isValidPackageName("."));
+
+    // Single part package (valid)
+    assertTrue(ValidationUtil.isValidPackageName("com"));
+
+    // Very long package name (valid if all parts are valid) - but "package" is a keyword
+    assertFalse(
+        ValidationUtil.isValidPackageName("com.example.very.long.package.name.with.many.parts"));
+
+    // Very long package name without keywords - "long" is also a keyword, so avoid it
+    assertTrue(ValidationUtil.isValidPackageName("com.example.very.big.pkg.name.with.many.parts"));
+
+    // Package with numbers in valid positions
+    assertTrue(ValidationUtil.isValidPackageName("com.example2.test3"));
+    assertTrue(ValidationUtil.isValidPackageName("a1.b2.c3"));
+
+    // Package with hyphens and underscores mixed
+    assertTrue(ValidationUtil.isValidPackageName("com.example-test_package"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example_test-package"));
+  }
+
+  @Test
+  void testUtilityClassCannotBeInstantiated() {
+    // Verify that ValidationUtil cannot be instantiated
+    // The constructor throws UnsupportedOperationException, but reflection wraps it in
+    // InvocationTargetException
+    try {
+      var constructor = ValidationUtil.class.getDeclaredConstructor();
+      constructor.setAccessible(true);
+      constructor.newInstance();
+      fail("Expected exception when instantiating utility class");
+    } catch (Exception e) {
+      // Check that the cause is UnsupportedOperationException
+      assertTrue(e.getCause() instanceof UnsupportedOperationException);
+      assertEquals("This is a utility class and cannot be instantiated", e.getCause().getMessage());
+    }
+  }
 }
