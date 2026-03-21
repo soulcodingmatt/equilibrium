@@ -1,23 +1,23 @@
-package io.github.soulcodingmatt.equilibrium.annotations.dto;
+package io.github.soulcodingmatt.equilibrium.experimental.validation.vo;
 
-import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.common.*;
 import java.lang.annotation.*;
 
 /**
  * Annotation to add Jakarta Bean Validation annotations to the corresponding field in the generated
- * DTO class. The validation annotations specified here will be copied to the generated DTO field
- * with compile-time type safety.
+ * Value Object class. The validation annotations specified here will be copied to the generated VO
+ * field with compile-time type safety.
  *
  * <p>Usage example:
  *
  * <pre>{@code
- * @ValidateDto(
+ * @ValidateVo(
  *     notNull = @NotNull(message = "Name cannot be null"),
  *     size = @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
  * )
  * private String name;
  *
- * @ValidateDto(
+ * @ValidateVo(
  *     min = @Min(value = 18, message = "Age must be at least 18"),
  *     max = @Max(value = 120, message = "Age must be at most 120")
  * )
@@ -26,8 +26,8 @@ import java.lang.annotation.*;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)
-@Repeatable(ValidateDtos.class)
-public @interface ValidateDto {
+@Repeatable(ValidateVos.class)
+public @interface ValidateVo {
   /**
    * Adds @NotNull validation to the field.
    *
@@ -156,12 +156,11 @@ public @interface ValidateDto {
   String[] value() default {};
 
   /**
-   * Optional list of @GenerateDto IDs for which this validation should be applied. If not
-   * specified, the validation will be applied to ALL generated DTOs. If specified, the validation
-   * will only be applied to DTOs whose @GenerateDto annotation has an ID that is present in this
-   * list.
+   * Optional list of @GenerateVo IDs for which this validation should be applied. If not specified,
+   * the validation will be applied to ALL generated VOs. If specified, the validation will only be
+   * applied to VOs whose @GenerateVo annotation has an ID that is present in this list.
    *
-   * @return array of DTO generation IDs for which to apply this validation
+   * @return array of VO generation IDs for which to apply this validation
    */
   int[] ids() default {};
 }

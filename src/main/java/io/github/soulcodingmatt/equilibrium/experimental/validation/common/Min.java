@@ -1,20 +1,20 @@
-package io.github.soulcodingmatt.equilibrium.annotations.dto.validation;
+package io.github.soulcodingmatt.equilibrium.experimental.validation.common;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Type-safe wrapper for Jakarta Bean Validation @Max annotation. Used within @ValidateDto to ensure
+ * Type-safe wrapper for Jakarta Bean Validation @Min annotation. Used within @ValidateDto to ensure
  * compile-time validation.
  */
 @Target({}) // Only used as parameter in other annotations
 @Retention(RetentionPolicy.SOURCE)
-public @interface Max {
+public @interface Min {
   /**
-   * The maximum value (inclusive).
+   * The minimum value (inclusive).
    *
-   * @return the maximum value
+   * @return the minimum value
    */
   long value();
 
@@ -23,5 +23,5 @@ public @interface Max {
    *
    * @return the error message
    */
-  String message() default "must be less than or equal to {value}";
+  String message() default "must be greater than or equal to {value}";
 }

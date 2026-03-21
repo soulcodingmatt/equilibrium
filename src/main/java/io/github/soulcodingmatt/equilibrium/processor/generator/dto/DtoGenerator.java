@@ -7,7 +7,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefault;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMapping;
-import io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDto;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.dto.ValidateDto;
 import io.github.soulcodingmatt.equilibrium.processor.generator.*;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.FieldInclusionConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.GeneratorType;

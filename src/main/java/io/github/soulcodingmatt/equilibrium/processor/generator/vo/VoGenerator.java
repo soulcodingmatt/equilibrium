@@ -1,6 +1,6 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator.vo;
 
-import io.github.soulcodingmatt.equilibrium.annotations.vo.ValidateVo;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.vo.ValidateVo;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.AccessorConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.ConstructorConfig;

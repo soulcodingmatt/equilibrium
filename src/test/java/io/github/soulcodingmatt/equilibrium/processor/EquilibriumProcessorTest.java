@@ -72,8 +72,8 @@ class EquilibriumProcessorTest {
             "io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto",
             "io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDtos",
             "io.github.soulcodingmatt.equilibrium.annotations.dto.IgnoreDto",
-            "io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDto",
-            "io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDtos",
+            "io.github.soulcodingmatt.equilibrium.experimental.validation.dto.ValidateDto",
+            "io.github.soulcodingmatt.equilibrium.experimental.validation.dto.ValidateDtos",
             "io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMapping",
             "io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMappings",
             "io.github.soulcodingmatt.equilibrium.annotations.dto.NestedDtoMapping",
@@ -82,14 +82,14 @@ class EquilibriumProcessorTest {
             "io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord",
             "io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecords",
             "io.github.soulcodingmatt.equilibrium.annotations.record.IgnoreRecord",
-            "io.github.soulcodingmatt.equilibrium.annotations.record.ValidateRecord",
-            "io.github.soulcodingmatt.equilibrium.annotations.record.ValidateRecords",
+            "io.github.soulcodingmatt.equilibrium.experimental.validation.record.ValidateRecord",
+            "io.github.soulcodingmatt.equilibrium.experimental.validation.record.ValidateRecords",
             // VO annotations
             "io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo",
             "io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVos",
             "io.github.soulcodingmatt.equilibrium.annotations.vo.IgnoreVo",
-            "io.github.soulcodingmatt.equilibrium.annotations.vo.ValidateVo",
-            "io.github.soulcodingmatt.equilibrium.annotations.vo.ValidateVos",
+            "io.github.soulcodingmatt.equilibrium.experimental.validation.vo.ValidateVo",
+            "io.github.soulcodingmatt.equilibrium.experimental.validation.vo.ValidateVos",
             // Common annotations
             "io.github.soulcodingmatt.equilibrium.annotations.common.IgnoreAll");
 

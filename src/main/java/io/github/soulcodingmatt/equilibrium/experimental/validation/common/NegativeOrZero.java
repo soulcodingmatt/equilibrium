@@ -1,20 +1,20 @@
-package io.github.soulcodingmatt.equilibrium.annotations.dto.validation;
+package io.github.soulcodingmatt.equilibrium.experimental.validation.common;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Type-safe wrapper for Jakarta Bean Validation @Positive annotation. Used within @ValidateDto to
- * ensure compile-time validation.
+ * Type-safe wrapper for Jakarta Bean Validation @NegativeOrZero annotation. Used
+ * within @ValidateDto to ensure compile-time validation.
  */
 @Target({}) // Only used as parameter in other annotations
 @Retention(RetentionPolicy.SOURCE)
-public @interface Positive {
+public @interface NegativeOrZero {
   /**
    * The error message to be interpolated at the time of validation.
    *
    * @return the error message
    */
-  String message() default "must be greater than 0";
+  String message() default "must be less than or equal to 0";
 }

@@ -1,6 +1,6 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator.record;
 
-import io.github.soulcodingmatt.equilibrium.annotations.record.ValidateRecord;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.record.ValidateRecord;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.FieldInclusionConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generator.GeneratorUtility.GeneratorType;

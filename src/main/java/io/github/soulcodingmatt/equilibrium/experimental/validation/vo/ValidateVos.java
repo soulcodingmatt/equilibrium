@@ -1,4 +1,4 @@
-package io.github.soulcodingmatt.equilibrium.annotations.vo;
+package io.github.soulcodingmatt.equilibrium.experimental.validation.vo;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

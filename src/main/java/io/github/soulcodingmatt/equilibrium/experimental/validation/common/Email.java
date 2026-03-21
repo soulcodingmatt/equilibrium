@@ -1,4 +1,4 @@
-package io.github.soulcodingmatt.equilibrium.annotations.dto.validation;
+package io.github.soulcodingmatt.equilibrium.experimental.validation.common;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

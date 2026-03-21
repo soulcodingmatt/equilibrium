@@ -1,9 +1,9 @@
 package io.github.soulcodingmatt.equilibrium.processor.generator;
 
-import io.github.soulcodingmatt.equilibrium.annotations.dto.ValidateDto;
-import io.github.soulcodingmatt.equilibrium.annotations.dto.validation.*;
-import io.github.soulcodingmatt.equilibrium.annotations.record.ValidateRecord;
-import io.github.soulcodingmatt.equilibrium.annotations.vo.ValidateVo;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.common.*;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.dto.*;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.record.*;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.vo.*;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
