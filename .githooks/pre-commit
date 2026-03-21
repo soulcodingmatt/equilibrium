@@ -1,0 +1,59 @@
+#!/usr/bin/env sh
+set -e
+
+echo "Running Spotless..."
+
+CHANGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(java|xml|yml|yaml|properties|json|md|gitignore)$' || true)
+
+if [ -z "$CHANGED_FILES" ]; then
+    exit 0
+fi
+
+SPOTLESS_PATTERN=$(echo "$CHANGED_FILES" | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
+
+if [ -f "./mvnw" ]; then
+    ./mvnw -q spotless:apply -DspotlessFiles="$SPOTLESS_PATTERN"
+else
+    mvn -q spotless:apply -DspotlessFiles="$SPOTLESS_PATTERN"
+fi
+
+FORMATTING_APPLIED=false
+
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+
+    if ! git diff --quiet -- "$file"; then
+        FORMATTING_APPLIED=true
+    fi
+
+    git add "$file"
+done <<EOF
+$CHANGED_FILES
+EOF
+
+if [ "$FORMATTING_APPLIED" = true ]; then
+    echo "Formatting applied. Please review and commit again."
+    exit 1
+fi
+
+exit 0
+
+# chmod +x .githooks/pre-commit
+# git config core.hooksPath .githooks
+#
+# ls -l .githooks/pre-commit
+# should give:
+# -rwxr-xr-x
+# if not so, use the chmod command above
+
+# To test, if the spotless pre-commit hook works:
+# git commit --allow-empty -m "test hook"
+
+# Test behavior:
+# break formatting
+# echo "public class X{ }" > Test.java
+# git add Test.java
+# git commit -m "test formatting"
+
+# skip hook entirely:
+# git commit --no-verify

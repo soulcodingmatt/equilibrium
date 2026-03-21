@@ -11,10 +11,15 @@ If you find this project useful, consider supporting me ☕
 
 Equilibrium is a Java annotation processor that helps you maintain consistency between your domain classes and their corresponding Data Transfer Objects (DTOs), Java Records, and other value container classes. It automatically generates and updates these classes based on your source classes.
 
-## Latest version
+## Good to Know: Commercial Use
+
+💡 **Good to know**: You can safely use this annotation processor in **commercial or closed-source projects**, as long as it's only used at **compile time** and not included in your distributed artifacts. The GPL-3.0 license does **not** require you to open source your code in that case.
+
+➡️ This is the **typical use case** of *Project Equilibrium*.
+
+## Latest Version
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
-
 
 ## Features
 
@@ -73,6 +78,7 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
 **3. Adjust the compilation settings of your IDE (for Maven).**
 
 In IntelliJ IDEA open this menu:
+
 ```
 > File 
     > Settings 
@@ -81,13 +87,14 @@ In IntelliJ IDEA open this menu:
                 > Maven 
                     > Runner
 ```
+
 There you have to **check** the option "Delegate IDE build/run actions to Maven.
 If left unchecked, you will encounter compilation errors when using generated DTOs or other generated
 value container classes from a static context, like in the context of the execution **main()** method, when
 the IDE starts a pre-compile process.
 
-With the settings described above, you will not encounter the mentioned compilation error. 
-However, the downside is that each time you execute your static method, a full Maven build will 
+With the settings described above, you will not encounter the mentioned compilation error.
+However, the downside is that each time you execute your static method, a full Maven build will
 run, which takes more time than without the selected option and also produces more console output.
 
 **Note**: For the development of the current project, IntelliJ IDEA 2025.1.2 (Ultimate Edition) was used. The settings
@@ -135,6 +142,7 @@ your `pom.xml` file **and** to the `annotationProcessorPaths` of the `maven-comp
 ```
 
 ## Installation (Gradle)
+
 **TBD**
 
 ## Configuration Options
@@ -148,10 +156,10 @@ The following compiler arguments can be configured:
 - `-Aequilibrium.vo.package`: Target package for generated VOs
 - `-Aequilibrium.vo.postfix`: Suffix for generated class names (default: "Vo")
 
-
 ## Usage
 
 ### @GenerateDto
+
 Annotate your domain classes with `@GenerateDto`:
 
 ```java
@@ -166,34 +174,35 @@ public class User {
     // getters and setters
 }
 ```
+
 **Arguments for @GenerateDto**
 
 `id`
 - Usage: `@GenerateDto(id=1)` or `@GenerateDto(id=2)`
-- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier 
-  to this specific @GenerateDto annotation instance. This identifier can then be referenced by @IgnoreDto 
-  annotations to selectively exclude fields from specific DTO generations when multiple DTOs are being 
-  generated from the same source class.
+- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier
+to this specific @GenerateDto annotation instance. This identifier can then be referenced by @IgnoreDto
+annotations to selectively exclude fields from specific DTO generations when multiple DTOs are being
+generated from the same source class.
 
 `ignore`
 - Usage: `@GenerateDto(ignore="fieldname")` or `@GenerateDto(ignore={"field1", "field2"})`
-- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded 
-  from the generated DTO. This provides an alternative to using the `@IgnoreDto` field-level annotation.
-  You can specify a single field as a string or multiple fields as an array of strings.
+- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded
+from the generated DTO. This provides an alternative to using the `@IgnoreDto` field-level annotation.
+You can specify a single field as a string or multiple fields as an array of strings.
 
 `pkg`
 - Usage: `@GenerateDto(pkg="org.thisisanexample.dto")`
 - Default: Defaults to the compiler arguments for DTOs.
 
-`postfix`
-- Usage: `@GenerateDto(postfix="Dto")`
+`name`
+- Usage: `@GenerateDto(name="MyCustomDto")`
 - Default: Defaults to the compiler arguments for DTOs. If the compiler arguments aren't
-  set either, the default value is "Dto".
+set either, the default value is "Dto".
 
 `builder`
 - Usage: `@GenerateDto(builder=true)`
 - Default: This parameter is set to `false` by default. If set to `true`, Lombok's `@SuperBuilder`
-annotation will be added to the generated class, allowing to make use of the builder pattern for 
+annotation will be added to the generated class, allowing to make use of the builder pattern for
 generated DTOs and customized DTO classes that extend the generated VOs.
 - **Note**: For this feature to work, Project Lombok **must be added** to your project.
 
@@ -203,66 +212,66 @@ generated DTOs and customized DTO classes that extend the generated VOs.
 
 `id`
 - Usage: `@GenerateRecord(id=1)` or `@GenerateRecord(id=2)`
-- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier 
-  to this specific @GenerateRecord annotation instance. This identifier can then be referenced by @IgnoreRecord 
-  annotations to selectively exclude fields from specific Record generations when multiple Records are being 
-  generated from the same source class.
+- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier
+to this specific @GenerateRecord annotation instance. This identifier can then be referenced by @IgnoreRecord
+annotations to selectively exclude fields from specific Record generations when multiple Records are being
+generated from the same source class.
 
 `ignore`
 - Usage: `@GenerateRecord(ignore="fieldname")` or `@GenerateRecord(ignore={"field1", "field2"})`
-- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded 
-  from the generated Record. This provides an alternative to using the `@IgnoreRecord` field-level annotation.
-  You can specify a single field as a string or multiple fields as an array of strings.
+- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded
+from the generated Record. This provides an alternative to using the `@IgnoreRecord` field-level annotation.
+You can specify a single field as a string or multiple fields as an array of strings.
 
 `pkg`
 - Usage: `@GenerateRecord(pkg="org.thisisanexample.record")`
 - Default: Defaults to the compiler arguments for Java Records.
 
-`postfix`
-- Usage: `@GenerateRecord(postfix="Record")`
+`name`
+- Usage: `@GenerateRecord(name="MyCustomRecord")`
 - Default: Defaults to the compiler arguments for Java Records. If the compiler arguments aren't
-  set either, the default value is "Record".
-
+set either, the default value is "Record".
 
 ### @GenerateVo
+
 **Arguments for @GenerateVo**
 `id`
 - Usage: `@GenerateVo(id=1)` or `@GenerateVo(id=2)`
-- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier 
-  to this specific @GenerateVo annotation instance. This identifier can then be referenced by @IgnoreVo 
-  annotations to selectively exclude fields from specific VO generations when multiple VOs are being 
-  generated from the same source class.
+- Default: This parameter is **not** set by default. When specified, it assigns a unique integer identifier
+to this specific @GenerateVo annotation instance. This identifier can then be referenced by @IgnoreVo
+annotations to selectively exclude fields from specific VO generations when multiple VOs are being
+generated from the same source class.
 
 `ignore`
 - Usage: `@GenerateVo(ignore="fieldname")` or `@GenerateVo(ignore={"field1", "field2"})`
-- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded 
-  from the generated VO. This provides an alternative to using the `@IgnoreVo` field-level annotation.
-  You can specify a single field as a string or multiple fields as an array of strings.
-  Value objects typically do not have an identity, in contrast to domain classes.
-  Therefore, in most cases, it is desirable to exclude ID fields.
-
+- Default: This parameter is **not** set by default. When specified, the listed field(s) will be excluded
+from the generated VO. This provides an alternative to using the `@IgnoreVo` field-level annotation.
+You can specify a single field as a string or multiple fields as an array of strings.
+Value objects typically do not have an identity, in contrast to domain classes.
+Therefore, in most cases, it is desirable to exclude ID fields.
 
 `pkg`
 - Usage: `@GenerateVo(pkg="org.thisisanexample.vo")`
 - Default: Defaults to the compiler arguments for VOs.
 
-`postfix`
-- Usage: `@GenerateVo(postfix="Vo")`
+`name`
+- Usage: `@GenerateVo(name="MyCustomVo")`
 - Default: Defaults to the compiler arguments for VOs. If the compiler arguments aren't
-  set either, the default value is "Vo".
+set either, the default value is "Vo".
 
 `setters`
 - Usage: `@GenerateVo(setters=true)`
-- Default: This parameter defaults to false. Value objects (VOs) are typically immutable, meaning all 
+- Default: This parameter defaults to false. Value objects (VOs) are typically immutable, meaning all
 fields are final and there are no setters. This prevents mutation after creation.
-However, if you really need setters for your VO fields (for whatever reason), you can set this parameter 
+However, if you really need setters for your VO fields (for whatever reason), you can set this parameter
 to `true`.
 
 ### @IgnoreDto, @IgnoreRecord, @IgnoreVo, @IgnoreAll
-`@IgnoreDto`, `@IgnoreRecord`, and `@IgnoreVo` are field-level annotations that exclude specific fields from 
-being included in their respective generated classes (DTO, Record, or Value Object). `@IgnoreAll` is a 
-more general field-level annotation that excludes fields from all generated classes, regardless of their 
-type. These annotations are particularly useful for excluding internal fields, sensitive data, or fields 
+
+`@IgnoreDto`, `@IgnoreRecord`, and `@IgnoreVo` are field-level annotations that exclude specific fields from
+being included in their respective generated classes (DTO, Record, or Value Object). `@IgnoreAll` is a
+more general field-level annotation that excludes fields from all generated classes, regardless of their
+type. These annotations are particularly useful for excluding internal fields, sensitive data, or fields
 that shouldn't be part of the data transfer or value object representations.
 
 **New `ids` parameter for selective exclusion:**
@@ -270,21 +279,126 @@ that shouldn't be part of the data transfer or value object representations.
 - `@IgnoreRecord(ids={1, 2})`: Excludes the field only from Record generations with the specified IDs  
 - `@IgnoreVo(ids={1, 2})`: Excludes the field only from VO generations with the specified IDs
 
-This allows you to have multiple generations of the same type (e.g., multiple DTOs) from a single source class, 
-and selectively exclude fields from specific generations based on their ID. If no `ids` parameter is specified, 
+This allows you to have multiple generations of the same type (e.g., multiple DTOs) from a single source class,
+and selectively exclude fields from specific generations based on their ID. If no `ids` parameter is specified,
 the field will be excluded from all generations of that type.
+
+### @ValidateDto
+
+The `@ValidateDto` annotation automatically applies Jakarta Bean Validation constraints to fields in generated DTO classes, providing compile-time type safety for validation rules.
+
+Validation-related APIs live under **`io.github.soulcodingmatt.equilibrium.experimental.validation`**, mirroring the old layout: **`…validation.dto`** for `@ValidateDto` / `@ValidateDtos`, **`…validation.vo`** for `@ValidateVo` / `@ValidateVos`, **`…validation.record`** for `@ValidateRecord` / `@ValidateRecords`, and **`…validation.common`** for the shared type-safe constraint types (`@NotNull`, `@Size`, …) used by DTOs, records, and VOs. This API is experimental and may change between releases.
+
+### Key Features
+
+- **Type-safe validation**: Configure validation rules with compile-time checking
+- **Comprehensive coverage**: Supports all standard Jakarta Bean Validation annotations
+- **Selective application**: Target specific DTO generations using the `ids` parameter
+- **Repeatable**: Apply multiple validation rules to the same field
+
+### Available Validation Options
+
+|     Parameter     |  Validation Type   |                      Description                       |
+|-------------------|--------------------|--------------------------------------------------------|
+| `notNull`         | `@NotNull`         | Field cannot be null                                   |
+| `notBlank`        | `@NotBlank`        | String field cannot be null, empty, or whitespace-only |
+| `notEmpty`        | `@NotEmpty`        | Collection/array/string cannot be null or empty        |
+| `size`            | `@Size`            | Validates size constraints (min/max length)            |
+| `min`             | `@Min`             | Minimum numeric value                                  |
+| `max`             | `@Max`             | Maximum numeric value                                  |
+| `email`           | `@Email`           | Valid email format                                     |
+| `pattern`         | `@Pattern`         | Matches specified regex pattern                        |
+| `positive`        | `@Positive`        | Must be positive number                                |
+| `positiveOrZero`  | `@PositiveOrZero`  | Must be positive or zero                               |
+| `negative`        | `@Negative`        | Must be negative number                                |
+| `negativeOrZero`  | `@NegativeOrZero`  | Must be negative or zero                               |
+| `digits`          | `@Digits`          | Numeric constraints (integer/fraction digits)          |
+| `past`            | `@Past`            | Date must be in the past                               |
+| `future`          | `@Future`          | Date must be in the future                             |
+| `pastOrPresent`   | `@PastOrPresent`   | Date must be in the past or present                    |
+| `futureOrPresent` | `@FutureOrPresent` | Date must be in the future or present                  |
+
+### Special Parameters
+
+- **`ids`**: Array of `@GenerateDto` IDs to selectively apply validation (applies to all DTOs if not specified)
+
+### Usage Example
+
+```java
+import io.github.soulcodingmatt.equilibrium.experimental.validation.dto.ValidateDto;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.common.*;
+
+public class User {
+    @ValidateDto(
+        notNull = @NotNull(message = "Name cannot be null"),
+        size = @Size(min = 2, max = 50, message = "Name must be between 2 and 50 characters")
+    )
+    private String name;
+    
+    @ValidateDto(
+        min = @Min(value = 18, message = "Age must be at least 18"),
+        max = @Max(value = 120, message = "Age must be at most 120")
+    )
+    private Integer age;
+    
+    @ValidateDto(
+        email = @Email(message = "Invalid email format"),
+        ids = {1, 2}  // Only apply to DTOs with IDs 1 and 2
+    )
+    private String email;
+}
+```
+
+The validation annotations will be automatically applied to the corresponding fields in the generated DTO classes, ensuring data integrity with minimal boilerplate code.
+
+### @NestedMapping
+
+The `@NestedMapping` annotation maps a field to a specific DTO class for all generated DTOs, enabling precise control over nested object transformations.
+
+### Key Features
+
+- **Explicit mapping**: Specify exactly which DTO class to use for nested objects
+- **Global application**: Applied to all generated DTOs for the annotated field
+- **Single use**: Can only be used once per field for consistent mapping
+
+### Parameters
+
+| Parameter  |    Type    |                        Description                        |
+|------------|------------|-----------------------------------------------------------|
+| `dtoClass` | `Class<?>` | The DTO class to use for this field in all generated DTOs |
+
+### Usage Example
+
+```java
+public class User {
+    @NestedMapping(dtoClass = VoiceDto.class)
+    private Voice voice;
+    
+    @NestedMapping(dtoClass = AddressDto.class)
+    private Address address;
+    
+    // Other fields...
+}
+```
+
+In this example:
+- The `voice` field will be mapped to `VoiceDto` in all generated DTOs
+- The `address` field will be mapped to `AddressDto` in all generated DTOs
+
+This annotation ensures consistent nested object transformation across all DTO generations for the specified field.
 
 ## Multiple Annotations of the Same Type
 
-It is now possible to use multiple instances of `@GenerateDto`, `@GenerateVo`, and `@GenerateRecord` annotations 
-on the same class. This allows you to generate multiple DTOs, VOs, or Records from a single source class with 
+It is now possible to use multiple instances of `@GenerateDto`, `@GenerateVo`, and `@GenerateRecord` annotations
+on the same class. This allows you to generate multiple DTOs, VOs, or Records from a single source class with
 different configurations.
 
-**Important requirement:** Each annotation instance must generate a file with a **unique path**. The path is 
-comprised of the package name and the class name (original class name + postfix). As long as two annotations 
+**Important requirement:** Each annotation instance must generate a file with a **unique path**. The path is
+comprised of the package name and the class name (original class name + postfix). As long as two annotations
 do not try to create the same filename at the same path, multiple annotations will work correctly.
 
 **Example:**
+
 ```java
 @GenerateDto(id=1, pkg="com.example.dto.api", postfix="ApiDto")
 @GenerateDto(id=2, pkg="com.example.dto.internal", postfix="InternalDto") 
@@ -308,14 +422,30 @@ This will generate:
 - `com.example.vo.UserVo`
 - `com.example.vo.UserValueObject`
 
-**Note:** The generated file names must be syntactically correct and not yield technical errors. Ensure that 
+**Note:** The generated file names must be syntactically correct and not yield technical errors. Ensure that
 package names and postfixes follow Java naming conventions.
 
 ## Adding custom fields to generated DTOs
-**TBD**
 
-**Note**: The intended way to handle custom fields is to extend the generated DTOs and add them in your own subclass. 
+...
+
+```🚧 Work in Progress 🚧```
+
+...
+
+**Note**: The intended way to handle custom fields is to extend the generated DTOs and add them in your own subclass.
 This is the short explanation for now—more detailed documentation will follow.
+
+## DTO Interface Pattern
+
+To make your DTO implement specific interfaces like Serializable, Comparable, etc., you can use the
+DTO Interface Pattern...
+
+...
+
+```🚧 Work in Progress 🚧```
+
+...
 
 ## Requirements
 
@@ -341,4 +471,5 @@ For any questions or concerns, please open an issue in the repository.
 This project uses Lombok (https://projectlombok.org), licensed under the MIT License.
 
 ---
+
 **Note:** This project is currently under development.

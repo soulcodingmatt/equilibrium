@@ -1,235 +1,319 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.soulcodingmatt</groupId>
-    <artifactId>equilibrium</artifactId>
-    <version>0.3.0-RC1</version>
-    <packaging>jar</packaging>
+  <groupId>io.github.soulcodingmatt</groupId>
+  <artifactId>equilibrium</artifactId>
+  <version>0.4.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
 
-    <name>Equilibrium</name>
-    <description>A Java annotation processor for generating DTOs, transport types, and value container classes
-    </description>
+  <name>Equilibrium</name>
+  <description>A Java annotation processor for generating DTOs, transport types, and value container classes</description>
+  <url>https://github.com/soulcodingmatt/equilibrium</url>
+
+  <licenses>
+    <license>
+      <name>GNU General Public License, Version 3</name>
+      <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>soulcodingmatt</id>
+      <name>Matthias Lange</name>
+      <email>matt@soulcodingmatt.com</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/soulcodingmatt/equilibrium.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/soulcodingmatt/equilibrium.git</developerConnection>
+    <tag>HEAD</tag>
     <url>https://github.com/soulcodingmatt/equilibrium</url>
+  </scm>
 
-    <licenses>
-        <license>
-            <name>GNU General Public License, Version 3</name>
-            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
+  <distributionManagement>
+    <repository>
+      <id>central</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+    <snapshotRepository>
+      <id>central</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
 
-    <developers>
-        <developer>
-            <id>soulcodingmatt</id>
-            <name>Matthias Lange</name>
-            <email>matt@soulcodingmatt.com</email>
-        </developer>
-    </developers>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <auto-service.version>1.1.1</auto-service.version>
+    <junit-jupiter.version>5.13.1</junit-jupiter.version>
+    <compile-testing.version>0.21.0</compile-testing.version>
+  </properties>
 
-    <scm>
-        <url>https://github.com/soulcodingmatt/equilibrium</url>
-        <connection>scm:git:git://github.com/soulcodingmatt/equilibrium.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/soulcodingmatt/equilibrium.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
+  <dependencies>
+    <!-- Auto-service for annotation processor -->
+    <dependency>
+      <groupId>com.google.auto.service</groupId>
+      <artifactId>auto-service</artifactId>
+      <version>${auto-service.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>33.4.8-jre</version>
+      <scope>provided</scope>
+    </dependency>
 
-    <distributionManagement>
-        <snapshotRepository>
-            <id>central</id>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <id>central</id>
-            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
+    <!-- Jakarta Bean Validation -->
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <version>3.1.1</version>
+      <scope>provided</scope>
+    </dependency>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>21</maven.compiler.release>
-        <auto-service.version>1.1.1</auto-service.version>
-        <junit-jupiter.version>5.13.1</junit-jupiter.version>
-        <compile-testing.version>0.21.0</compile-testing.version>
-    </properties>
+    <!-- Test dependencies -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit-jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
-    <dependencies>
-        <!-- Auto-service for annotation processor -->
-        <dependency>
-            <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service</artifactId>
-            <version>${auto-service.version}</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>33.4.8-jre</version>
-            <scope>provided</scope>
-        </dependency>
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- Single source of truth: root LICENSE → JAR META-INF/LICENSE -->
+      <resource>
+        <targetPath>META-INF</targetPath>
+        <directory>${project.basedir}</directory>
+        <includes>
+          <include>LICENSE</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <!-- Annotation processing -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <executions>
+          <!-- Run annotation processors -->
+          <execution>
+            <id>process-annotations</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <proc>only</proc>
+              <release>${maven.compiler.release}</release>
+              <showWarnings>true</showWarnings>
+              <compilerArgs>
+                <arg>-Xlint:-processing</arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>com.google.auto.service</groupId>
+                  <artifactId>auto-service</artifactId>
+                  <version>${auto-service.version}</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+          <!-- Compile sources -->
+          <execution>
+            <id>default-compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>compile</phase>
+            <configuration>
+              <proc>none</proc>
+              <release>${maven.compiler.release}</release>
+              <showWarnings>true</showWarnings>
+              <compilerArgs>
+                <arg>-Xlint:all</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
-        <!-- Jakarta Bean Validation -->
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-            <version>3.1.1</version>
-        </dependency>
+      <!-- Run unit tests -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
 
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit-jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+      <!-- Spotless -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>3.3.0</version>
 
-    <build>
-        <plugins>
-            <!-- Annotation processing -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <executions>
-                    <!-- Run annotation processors -->
-                    <execution>
-                        <id>process-annotations</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <proc>only</proc>
-                            <release>${maven.compiler.release}</release>
-                            <showWarnings>true</showWarnings>
-                            <compilerArgs>
-                                <arg>-Xlint:-processing</arg>
-                            </compilerArgs>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>com.google.auto.service</groupId>
-                                    <artifactId>auto-service</artifactId>
-                                    <version>${auto-service.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                    <!-- Compile sources -->
-                    <execution>
-                        <id>default-compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <proc>none</proc>
-                            <release>${maven.compiler.release}</release>
-                            <showWarnings>true</showWarnings>
-                            <compilerArgs>
-                                <arg>-Xlint:all</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+        <configuration>
+          <lineEndings>PRESERVE</lineEndings>
+          <java>
+            <includes>
+              <include>src/main/java/**/*.java</include>
+              <include>src/test/java/**/*.java</include>
+            </includes>
+            <endWithNewline/>
+            <formatAnnotations/>
+            <googleJavaFormat>
+              <style>GOOGLE</style>
+            </googleJavaFormat>
+            <removeUnusedImports/>
+            <trimTrailingWhitespace/>
+          </java>
+          <pom>
+            <includes>
+              <include>pom.xml</include>
+            </includes>
+            <sortPom/>
+          </pom>
+          <markdown>
+            <includes>
+              <include>**/*.md</include>
+            </includes>
+            <flexmark/>
+          </markdown>
+          <formats>
+            <format>
+              <includes>
+                <include>**/*.xml</include>
+                <include>**/*.yml</include>
+                <include>**/*.yaml</include>
+                <include>**/*.properties</include>
+                <include>**/*.json</include>
+                <include>**/*.gitignore</include>
+              </includes>
+              <excludes>
+                <exclude>.idea/**</exclude>
+                <exclude>**/.idea/**</exclude>
+                <exclude>pom.xml</exclude>
+                <exclude>**/target/**</exclude>
+                <exclude>**/node_modules/**</exclude>
+                <exclude>**/dist/**</exclude>
+                <exclude>**/build/**</exclude>
+              </excludes>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+            </format>
+          </formats>
+        </configuration>
+        <executions>
+          <execution>
+            <id>check-formatting</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>validate</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Sources JAR -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 
-            <!-- Run unit tests -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-            </plugin>
+      <!-- Javadoc JAR (erforderlich für Maven Central) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.6.3</version>
+        <configuration>
+          <!-- javadoc:javadoc uses JavadocReport → reportOutputDirectory (not outputDirectory alone) -->
+          <reportOutputDirectory>${project.build.directory}/apidocs</reportOutputDirectory>
+          <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 
-            <!-- Sources JAR -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+      <!-- Add generated sources to source path -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/annotations</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
-            <!-- Javadoc JAR (erforderlich für Maven Central) -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.3</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+      <!-- Sign artifacts with GPG -->
+      <!-- Only needed for deployment -->
+      <!--            <plugin>-->
+      <!--                <groupId>org.apache.maven.plugins</groupId>-->
+      <!--                <artifactId>maven-gpg-plugin</artifactId>-->
+      <!--                <version>3.1.0</version>-->
+      <!--                <executions>-->
+      <!--                    <execution>-->
+      <!--                        <id>sign-artifacts</id>-->
+      <!--                        <phase>verify</phase>-->
+      <!--                        <goals>-->
+      <!--                            <goal>sign</goal>-->
+      <!--                        </goals>-->
+      <!--                    </execution>-->
+      <!--                </executions>-->
+      <!--            </plugin>-->
 
-            <!-- Add generated sources to source path -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <executions>
-                    <execution>
-                        <id>add-source</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.build.directory}/generated-sources/annotations</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+      <!-- Only needed for deployment -->
+      <!--            <plugin>-->
+      <!--                <groupId>org.sonatype.central</groupId>-->
+      <!--                <artifactId>central-publishing-maven-plugin</artifactId>-->
+      <!--                <version>0.7.0</version>-->
+      <!--                <extensions>true</extensions>-->
+      <!--                <configuration>-->
+      <!--                    <publishingServerId>central</publishingServerId>-->
+      <!--                    <autoPublish>true</autoPublish>-->
+      <!--                </configuration>-->
+      <!--            </plugin>-->
 
-            <!-- Sign artifacts with GPG -->
-            <!-- Only needed for deployment -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Only needed for deployment -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>central</publishingServerId>
-                    <autoPublish>true</autoPublish>
-                </configuration>
-            </plugin>
-
-        </plugins>
-    </build>
+    </plugins>
+  </build>
 
 </project>
