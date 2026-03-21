@@ -287,6 +287,8 @@ the field will be excluded from all generations of that type.
 
 The `@ValidateDto` annotation automatically applies Jakarta Bean Validation constraints to fields in generated DTO classes, providing compile-time type safety for validation rules.
 
+Validation-related APIs live under **`io.github.soulcodingmatt.equilibrium.experimental.validation`**, mirroring the old layout: **`…validation.dto`** for `@ValidateDto` / `@ValidateDtos`, **`…validation.vo`** for `@ValidateVo` / `@ValidateVos`, **`…validation.record`** for `@ValidateRecord` / `@ValidateRecords`, and **`…validation.common`** for the shared type-safe constraint types (`@NotNull`, `@Size`, …) used by DTOs, records, and VOs. This API is experimental and may change between releases.
+
 ### Key Features
 
 - **Type-safe validation**: Configure validation rules with compile-time checking
@@ -323,6 +325,9 @@ The `@ValidateDto` annotation automatically applies Jakarta Bean Validation cons
 ### Usage Example
 
 ```java
+import io.github.soulcodingmatt.equilibrium.experimental.validation.dto.ValidateDto;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.common.*;
+
 public class User {
     @ValidateDto(
         notNull = @NotNull(message = "Name cannot be null"),
