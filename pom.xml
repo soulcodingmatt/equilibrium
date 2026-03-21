@@ -92,6 +92,19 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- Single source of truth: root LICENSE → JAR META-INF/LICENSE -->
+      <resource>
+        <targetPath>META-INF</targetPath>
+        <directory>${project.basedir}</directory>
+        <includes>
+          <include>LICENSE</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <!-- Annotation processing -->
       <plugin>
@@ -233,6 +246,11 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.6.3</version>
+        <configuration>
+          <!-- javadoc:javadoc uses JavadocReport → reportOutputDirectory (not outputDirectory alone) -->
+          <reportOutputDirectory>${project.build.directory}/apidocs</reportOutputDirectory>
+          <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
+        </configuration>
         <executions>
           <execution>
             <id>attach-javadocs</id>
