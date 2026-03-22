@@ -95,132 +95,136 @@ class EquilibriumBuildBannerTest {
   void summaryTable_hasExpectedStructure_andStatusColumnWidth() {
     CollectingMessager messager = new CollectingMessager();
     EquilibriumBuildBanner.printGenerationSummary(messager, 14, 22, 0, 0, false);
-    List<String> n = messager.notes();
+    List<String> summaryNotes = messager.notes();
 
-    assertTrue(isAllSameChar(n.get(0), '-'), "leading dash line");
-    int summaryInnerWidth = n.get(0).length();
-    assertEquals("", n.get(1));
-    assertEquals("Summary", n.get(2));
-    assertTrue(isAllSameChar(n.get(3), '-'), "dash under Summary title");
-    assertEquals(summaryInnerWidth, n.get(3).length(), "inner rules share one width");
+    assertTrue(isAllSameChar(summaryNotes.get(0), '-'), "leading dash line");
+    int summaryInnerWidth = summaryNotes.get(0).length();
+    assertEquals("", summaryNotes.get(1));
+    assertEquals("Summary", summaryNotes.get(2));
+    assertTrue(isAllSameChar(summaryNotes.get(3), '-'), "dash under Summary title");
+    assertEquals(summaryInnerWidth, summaryNotes.get(3).length(), "inner rules share one width");
 
-    assertEquals(String.format("%-8s  %s", "Status", "Result"), n.get(4));
-    String sep = n.get(5);
+    assertEquals(String.format("%-8s  %s", "Status", "Result"), summaryNotes.get(4));
+    String sep = summaryNotes.get(5);
     assertTrue(sep.startsWith("--------"));
     assertTrue(sep.contains("  "));
 
-    assertTrue(n.get(6).startsWith("[OK]"));
-    assertTrue(n.get(6).contains("Processed 14 types"));
-    assertMatchesStatusColumnWidth(n.get(6));
+    assertTrue(summaryNotes.get(6).startsWith("[OK]"));
+    assertTrue(summaryNotes.get(6).contains("Processed 14 types"));
+    assertMatchesStatusColumnWidth(summaryNotes.get(6));
 
-    assertTrue(n.get(7).contains("Generated 22 files"));
-    assertTrue(n.get(8).contains("No errors"));
-    assertTrue(n.get(9).contains("No warnings"));
+    assertTrue(summaryNotes.get(7).contains("Generated 22 files"));
+    assertTrue(summaryNotes.get(8).contains("No errors"));
+    assertTrue(summaryNotes.get(9).contains("No warnings"));
 
-    assertEquals("", n.get(10));
-    assertEquals("Result: SUCCESS (14 types, 22 files)", n.get(11));
-    assertTrue(isAllSameChar(n.get(12), '='), "closing outer rule");
-    assertEquals(summaryInnerWidth, n.get(12).length(), "closing rule matches table width");
+    assertEquals("", summaryNotes.get(10));
+    assertEquals("Result: SUCCESS (14 types, 22 files)", summaryNotes.get(11));
+    assertTrue(isAllSameChar(summaryNotes.get(12), '='), "closing outer rule");
+    assertEquals(
+        summaryInnerWidth, summaryNotes.get(12).length(), "closing rule matches table width");
   }
 
   @Test
   void aggregateResult_success_omitsZeroWarnings() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 14, 22, 0, 0, false);
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 14, 22, 0, 0, false);
     String resultLine =
-        m.notes().stream().filter(s -> s.startsWith("Result:")).findFirst().orElse("");
+        messager.notes().stream().filter(line -> line.startsWith("Result:")).findFirst().orElse("");
     assertEquals("Result: SUCCESS (14 types, 22 files)", resultLine);
     assertFalse(resultLine.contains("warning"));
   }
 
   @Test
   void aggregateResult_successWithWarnings_singularAndPlural() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 2, 3, 0, 1, false);
-    assertContainsLine(m, "Result: SUCCESS WITH WARNINGS (2 types, 3 files, 1 warning)");
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 2, 3, 0, 1, false);
+    assertContainsLine(messager, "Result: SUCCESS WITH WARNINGS (2 types, 3 files, 1 warning)");
 
-    m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 2, 3, 0, 2, false);
-    assertContainsLine(m, "Result: SUCCESS WITH WARNINGS (2 types, 3 files, 2 warnings)");
+    messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 2, 3, 0, 2, false);
+    assertContainsLine(messager, "Result: SUCCESS WITH WARNINGS (2 types, 3 files, 2 warnings)");
   }
 
   @Test
   void aggregateResult_failure_errorsAndOptionalWarnings() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 14, 22, 1, 0, false);
-    assertContainsLine(m, "Result: FAILURE (14 types, 22 files, 1 error)");
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 14, 22, 1, 0, false);
+    assertContainsLine(messager, "Result: FAILURE (14 types, 22 files, 1 error)");
 
-    m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 14, 22, 2, 0, false);
-    assertContainsLine(m, "Result: FAILURE (14 types, 22 files, 2 errors)");
+    messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 14, 22, 2, 0, false);
+    assertContainsLine(messager, "Result: FAILURE (14 types, 22 files, 2 errors)");
 
-    m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 14, 22, 2, 1, false);
-    assertContainsLine(m, "Result: FAILURE (14 types, 22 files, 2 errors, 1 warning)");
+    messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 14, 22, 2, 1, false);
+    assertContainsLine(messager, "Result: FAILURE (14 types, 22 files, 2 errors, 1 warning)");
 
-    m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 14, 22, 1, 3, false);
-    assertContainsLine(m, "Result: FAILURE (14 types, 22 files, 1 error, 3 warnings)");
+    messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 14, 22, 1, 3, false);
+    assertContainsLine(messager, "Result: FAILURE (14 types, 22 files, 1 error, 3 warnings)");
   }
 
   @Test
   void aggregateResult_singularTypeAndFile() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 1, 1, 0, 0, false);
-    assertContainsLine(m, "Result: SUCCESS (1 type, 1 file)");
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 1, 1, 0, 0, false);
+    assertContainsLine(messager, "Result: SUCCESS (1 type, 1 file)");
   }
 
   @Test
   void summaryRows_singularProcessedAndGeneratedPhrases() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 1, 1, 0, 0, false);
-    assertContainsLine(m, "Processed 1 type");
-    assertContainsLine(m, "Generated 1 file");
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 1, 1, 0, 0, false);
+    assertContainsLine(messager, "Processed 1 type");
+    assertContainsLine(messager, "Generated 1 file");
   }
 
   @Test
   void summaryRows_reflectCounts_inStatusColumn() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 5, 7, 2, 1, false);
-    assertContainsLine(m, "Processed 5 types");
-    assertContainsLine(m, "Generated 7 files");
-    assertContainsLine(m, "2 errors");
-    assertContainsLine(m, "1 warning");
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 5, 7, 2, 1, false);
+    assertContainsLine(messager, "Processed 5 types");
+    assertContainsLine(messager, "Generated 7 files");
+    assertContainsLine(messager, "2 errors");
+    assertContainsLine(messager, "1 warning");
   }
 
   @Test
   void ansiDisabled_containsNoEscapeSequences() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.print(m);
-    EquilibriumBuildBanner.printGenerationSummary(m, 1, 1, 0, 0, false);
-    for (String line : m.notes()) {
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.print(messager);
+    EquilibriumBuildBanner.printGenerationSummary(messager, 1, 1, 0, 0, false);
+    for (String line : messager.notes()) {
       assertFalse(line.contains("\u001b"), line);
     }
   }
 
   @Test
   void ansiEnabled_tagsAndAggregateUseColorCodes() {
-    CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 1, 1, 0, 0, true);
-    String result = m.notes().stream().filter(s -> s.startsWith("Result:")).findFirst().orElse("");
+    CollectingMessager messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 1, 1, 0, 0, true);
+    String result =
+        messager.notes().stream().filter(line -> line.startsWith("Result:")).findFirst().orElse("");
     assertTrue(result.contains("\u001b[32m"), "SUCCESS should be green");
     assertTrue(result.contains("\u001b[0m"));
 
-    m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 1, 1, 1, 0, true);
-    result = m.notes().stream().filter(s -> s.startsWith("Result:")).findFirst().orElse("");
+    messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 1, 1, 1, 0, true);
+    result =
+        messager.notes().stream().filter(line -> line.startsWith("Result:")).findFirst().orElse("");
     assertTrue(result.contains("\u001b[31m"), "FAILURE should be red");
 
-    m = new CollectingMessager();
-    EquilibriumBuildBanner.printGenerationSummary(m, 1, 1, 0, 1, true);
-    result = m.notes().stream().filter(s -> s.startsWith("Result:")).findFirst().orElse("");
+    messager = new CollectingMessager();
+    EquilibriumBuildBanner.printGenerationSummary(messager, 1, 1, 0, 1, true);
+    result =
+        messager.notes().stream().filter(line -> line.startsWith("Result:")).findFirst().orElse("");
     assertTrue(result.contains("\u001b[33m"), "SUCCESS WITH WARNINGS should be yellow");
   }
 
-  private static void assertContainsLine(CollectingMessager m, String expected) {
+  private static void assertContainsLine(CollectingMessager messager, String expected) {
     assertTrue(
-        m.notes().stream().anyMatch(line -> line.contains(expected)),
-        () -> "expected substring not found; got:\n" + String.join("\n", m.notes()));
+        messager.notes().stream().anyMatch(line -> line.contains(expected)),
+        () -> "expected substring not found; got:\n" + String.join("\n", messager.notes()));
   }
 
   /** Status tag is left-padded to 8 chars, then two spaces, then result text (plain ANSI off). */
@@ -230,15 +234,15 @@ class EquilibriumBuildBannerTest {
   }
 
   private static int indexAfterLogoBlock(List<String> notes, int startIdx) {
-    int i = startIdx;
-    int expectedLen = notes.get(i).length();
-    while (i < notes.size()) {
-      String s = notes.get(i);
-      if (s.startsWith("Equilibrium")) {
-        return i;
+    int lineIndex = startIdx;
+    int expectedLen = notes.get(lineIndex).length();
+    while (lineIndex < notes.size()) {
+      String line = notes.get(lineIndex);
+      if (line.startsWith("Equilibrium")) {
+        return lineIndex;
       }
-      assertEquals(expectedLen, s.length(), "logo lines must share one width");
-      i++;
+      assertEquals(expectedLen, line.length(), "logo lines must share one width");
+      lineIndex++;
     }
     throw new AssertionError("no title line");
   }
@@ -251,13 +255,13 @@ class EquilibriumBuildBannerTest {
               new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8))) {
         return (int) br.lines().count();
       }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
     }
   }
 
-  private static boolean isAllSameChar(String s, char c) {
-    return !s.isEmpty() && s.chars().allMatch(ch -> ch == c);
+  private static boolean isAllSameChar(String text, char expectedChar) {
+    return !text.isEmpty() && text.chars().allMatch(ch -> ch == expectedChar);
   }
 
   private static final class CollectingMessager implements Messager {
@@ -275,7 +279,7 @@ class EquilibriumBuildBannerTest {
     }
 
     @Override
-    public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {
+    public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element element) {
       if (kind == Diagnostic.Kind.NOTE) {
         notes.add(msg.toString());
       }
@@ -283,14 +287,21 @@ class EquilibriumBuildBannerTest {
 
     @Override
     public void printMessage(
-        Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {
-      printMessage(kind, msg, e);
+        Diagnostic.Kind kind,
+        CharSequence msg,
+        Element element,
+        AnnotationMirror annotationMirror) {
+      printMessage(kind, msg, element);
     }
 
     @Override
     public void printMessage(
-        Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a, AnnotationValue v) {
-      printMessage(kind, msg, e);
+        Diagnostic.Kind kind,
+        CharSequence msg,
+        Element element,
+        AnnotationMirror annotationMirror,
+        AnnotationValue annotationValue) {
+      printMessage(kind, msg, element);
     }
   }
 }

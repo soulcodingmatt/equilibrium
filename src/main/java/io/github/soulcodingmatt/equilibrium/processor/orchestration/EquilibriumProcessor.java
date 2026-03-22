@@ -21,6 +21,7 @@ import io.github.soulcodingmatt.equilibrium.processor.generation.vo.VoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.validation.analysis.ValidationConflictUtil;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.*;
@@ -884,29 +885,17 @@ public class EquilibriumProcessor extends AbstractProcessor {
   }
 
   /**
-   * Validates all NestedMapping annotations in a class for proper usage and conflicts.
+   * Hook for {@link NestedMapping} validation before generation.
+   *
+   * <p>Target DTO types and mapping usage are validated when DTOs are generated; this method is
+   * reserved for extra field-level rules if needed.
    *
    * @param classElement the class to validate
-   * @return true if validation passes, false if there are errors
+   * @return {@code true} (no processor-level errors today)
    */
   private boolean validateNestedMappingAnnotations(TypeElement classElement) {
-    boolean hasErrors = false;
-
-    // Check all fields for NestedMapping annotations
-    for (Element element : classElement.getEnclosedElements()) {
-      if (element.getKind() == ElementKind.FIELD) {
-        VariableElement field = (VariableElement) element;
-
-        // Get NestedMapping annotation on this field
-        NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
-
-        if (nestedMapping != null) {
-          // DTO class existence is validated during generation; no extra checks here yet.
-        }
-      }
-    }
-
-    return !hasErrors;
+    Objects.requireNonNull(classElement);
+    return true;
   }
 
   private void error(Element element, String message) {

@@ -116,7 +116,7 @@ public class CustomObjectDetector {
         // Check if it's a known collection type
         if (isCollectionType(qualifiedName)) {
           // Return the first type argument (element type)
-          return declaredType.getTypeArguments().get(0);
+          return declaredType.getTypeArguments().getFirst();
         }
       }
     }

@@ -17,17 +17,17 @@ final class DefaultValuePrimitiveResolution {
         && !DefaultValueTypePredicates.isWrapperType(fieldType)) {
       return null;
     }
-    String s = tryIntegral(builderDefault, fieldType);
-    if (s != null) {
-      return s;
+    String initializerText = tryIntegral(builderDefault, fieldType);
+    if (initializerText != null) {
+      return initializerText;
     }
-    s = tryFloating(builderDefault, fieldType);
-    if (s != null) {
-      return s;
+    initializerText = tryFloating(builderDefault, fieldType);
+    if (initializerText != null) {
+      return initializerText;
     }
-    s = tryBoolean(builderDefault, fieldType);
-    if (s != null) {
-      return s;
+    initializerText = tryBoolean(builderDefault, fieldType);
+    if (initializerText != null) {
+      return initializerText;
     }
     return tryCharacter(builderDefault, fieldType);
   }

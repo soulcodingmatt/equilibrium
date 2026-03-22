@@ -86,12 +86,12 @@ public class DtoCollaboratorsHarnessProcessor extends AbstractProcessor {
     DtoGeneratorTarget target =
         new DtoGeneratorTarget(probe, "com.acme.gen", "OutDto", Set.of(), true, 1);
     try {
-      StringWriter w = new StringWriter();
-      CodeWriter code = new CodeWriter(w);
+      StringWriter fieldOutput = new StringWriter();
+      CodeWriter code = new CodeWriter(fieldOutput);
       DtoFieldWriter fieldWriter =
           new DtoFieldWriter(target, messager, nestedResolver, builderSupport);
-      fieldWriter.writeField(w, code, labelField);
-      lastFieldWriterLabelBlock = w.toString();
+      fieldWriter.writeField(fieldOutput, code, labelField);
+      lastFieldWriterLabelBlock = fieldOutput.toString();
     } catch (IOException e) {
       throw new AssertionError(e);
     }
@@ -99,18 +99,18 @@ public class DtoCollaboratorsHarnessProcessor extends AbstractProcessor {
 
   private static List<VariableElement> fieldsOf(TypeElement te) {
     List<VariableElement> out = new ArrayList<>();
-    for (Element e : te.getEnclosedElements()) {
-      if (e.getKind() == ElementKind.FIELD) {
-        out.add((VariableElement) e);
+    for (Element enclosed : te.getEnclosedElements()) {
+      if (enclosed.getKind() == ElementKind.FIELD) {
+        out.add((VariableElement) enclosed);
       }
     }
     return out;
   }
 
   private static VariableElement findField(List<VariableElement> fields, String name) {
-    for (VariableElement f : fields) {
-      if (f.getSimpleName().contentEquals(name)) {
-        return f;
+    for (VariableElement field : fields) {
+      if (field.getSimpleName().contentEquals(name)) {
+        return field;
       }
     }
     throw new IllegalStateException("No field: " + name);

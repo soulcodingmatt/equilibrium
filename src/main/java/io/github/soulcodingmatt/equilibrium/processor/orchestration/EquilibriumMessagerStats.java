@@ -40,22 +40,27 @@ public final class EquilibriumMessagerStats implements Messager {
   }
 
   @Override
-  public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {
+  public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element element) {
     tally(kind);
-    delegate.printMessage(kind, msg, e);
-  }
-
-  @Override
-  public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {
-    tally(kind);
-    delegate.printMessage(kind, msg, e, a);
+    delegate.printMessage(kind, msg, element);
   }
 
   @Override
   public void printMessage(
-      Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a, AnnotationValue v) {
+      Diagnostic.Kind kind, CharSequence msg, Element element, AnnotationMirror annotationMirror) {
     tally(kind);
-    delegate.printMessage(kind, msg, e, a, v);
+    delegate.printMessage(kind, msg, element, annotationMirror);
+  }
+
+  @Override
+  public void printMessage(
+      Diagnostic.Kind kind,
+      CharSequence msg,
+      Element element,
+      AnnotationMirror annotationMirror,
+      AnnotationValue annotationValue) {
+    tally(kind);
+    delegate.printMessage(kind, msg, element, annotationMirror, annotationValue);
   }
 
   private void tally(Diagnostic.Kind kind) {

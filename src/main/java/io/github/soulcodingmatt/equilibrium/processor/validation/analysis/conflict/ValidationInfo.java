@@ -2,11 +2,14 @@ package io.github.soulcodingmatt.equilibrium.processor.validation.analysis.confl
 
 /** One active nested validation on an Equilibrium {@code @Validate*} annotation. */
 public final class ValidationInfo {
-  final String type;
-  final Object annotation;
+  /** Dispatch label for the constraint (e.g. {@code "Min"}, {@code "NotNull"}). */
+  final String constraintKind;
 
-  ValidationInfo(String type, Object annotation) {
-    this.type = type;
-    this.annotation = annotation;
+  /** Mirror annotation instance for that constraint. */
+  final Object constraintAnnotation;
+
+  ValidationInfo(String constraintKind, Object constraintAnnotation) {
+    this.constraintKind = constraintKind;
+    this.constraintAnnotation = constraintAnnotation;
   }
 }

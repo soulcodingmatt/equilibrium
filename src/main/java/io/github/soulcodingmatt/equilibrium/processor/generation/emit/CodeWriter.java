@@ -11,7 +11,6 @@ public final class CodeWriter {
 
   private final Writer out;
   private int indentLevel = 0;
-  private String indentUnit = "    "; // 4 spaces
   private boolean lineStart = true;
 
   public CodeWriter(Writer out) {
@@ -74,6 +73,8 @@ public final class CodeWriter {
 
   private void writeIndent() throws IOException {
     for (int i = 0; i < indentLevel; i++) {
+      // 4 spaces
+      String indentUnit = "    ";
       out.write(indentUnit);
     }
   }

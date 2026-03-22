@@ -63,7 +63,7 @@ public final class DtoClassWriter {
     boolean first = true;
     for (VariableElement f : fields) {
       if (!first) header.append(", ");
-      header.append(typeResolver.apply(f)).append(" ").append(f.getSimpleName().toString());
+      header.append(typeResolver.apply(f)).append(" ").append(f.getSimpleName());
       first = false;
     }
     header.append(")");

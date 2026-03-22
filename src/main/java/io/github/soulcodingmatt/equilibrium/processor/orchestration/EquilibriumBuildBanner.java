@@ -130,25 +130,26 @@ public final class EquilibriumBuildBanner {
 
   /** Same width as header rules (for alignment); falls back when the logo resource is absent. */
   public static int headerContentWidthOrFallback() {
-    int w =
+    int contentWidth =
         computeHeaderContentWidth(readLogoLines(), List.of(titleLineVersion(), DESCRIPTION_LINE));
-    return w > 0 ? w : 61;
+    return contentWidth > 0 ? contentWidth : 61;
   }
 
   private static int computeSummaryMinimumWidth(
       int processedTypes, int generatedFiles, int errorCount, int warningCount) {
-    int w = "Summary".length();
-    w = Math.max(w, String.format(SUMMARY_TWO_COLUMN_FORMAT, "Status", "Result").length());
-    w = Math.max(w, STATUS_COL_WIDTH + 2 + processedPhrase(processedTypes).length());
-    w = Math.max(w, STATUS_COL_WIDTH + 2 + generatedPhrase(generatedFiles).length());
-    w = Math.max(w, STATUS_COL_WIDTH + 2 + errorsPhrase(errorCount).length());
-    w = Math.max(w, STATUS_COL_WIDTH + 2 + warningsPhrase(warningCount).length());
-    w =
+    int minWidth = "Summary".length();
+    minWidth =
+        Math.max(minWidth, String.format(SUMMARY_TWO_COLUMN_FORMAT, "Status", "Result").length());
+    minWidth = Math.max(minWidth, STATUS_COL_WIDTH + 2 + processedPhrase(processedTypes).length());
+    minWidth = Math.max(minWidth, STATUS_COL_WIDTH + 2 + generatedPhrase(generatedFiles).length());
+    minWidth = Math.max(minWidth, STATUS_COL_WIDTH + 2 + errorsPhrase(errorCount).length());
+    minWidth = Math.max(minWidth, STATUS_COL_WIDTH + 2 + warningsPhrase(warningCount).length());
+    minWidth =
         Math.max(
-            w,
+            minWidth,
             aggregateResultLine(false, processedTypes, generatedFiles, errorCount, warningCount)
                 .length());
-    return w;
+    return minWidth;
   }
 
   private static int computeHeaderContentWidth(List<String> logoLines, List<String> titleLines) {
@@ -191,11 +192,11 @@ public final class EquilibriumBuildBanner {
    * Left-justifies {@code s} in a field of {@code width} (same result as {@code String.format("%-"
    * + width + "s", s)} for typical strings) without building a dynamic format pattern string.
    */
-  static String padRightToWidthForLogo(String s, int width) {
-    if (s.length() >= width) {
-      return s;
+  static String padRightToWidthForLogo(String line, int width) {
+    if (line.length() >= width) {
+      return line;
     }
-    return s + " ".repeat(width - s.length());
+    return line + " ".repeat(width - line.length());
   }
 
   /**

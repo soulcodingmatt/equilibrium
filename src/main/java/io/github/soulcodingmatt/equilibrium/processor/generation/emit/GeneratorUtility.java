@@ -42,28 +42,13 @@ public class GeneratorUtility {
   }
 
   /** Configuration for field inclusion logic */
-  public static class FieldInclusionConfig {
-    private final GeneratorType generatorType;
-    private final Set<String> ignoredFields;
-    private final int entityId;
-
+  public record FieldInclusionConfig(
+      GeneratorType generatorType, Set<String> ignoredFields, int entityId) {
     public FieldInclusionConfig(
         GeneratorType generatorType, Set<String> ignoredFields, int entityId) {
       this.generatorType = generatorType;
       this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
       this.entityId = entityId;
-    }
-
-    public GeneratorType getGeneratorType() {
-      return generatorType;
-    }
-
-    public Set<String> getIgnoredFields() {
-      return ignoredFields;
-    }
-
-    public int getEntityId() {
-      return entityId;
     }
   }
 
@@ -147,19 +132,19 @@ public class GeneratorUtility {
     }
 
     // Handle generator-specific ignore annotations
-    switch (config.getGeneratorType()) {
+    switch (config.generatorType()) {
       case DTO:
-        if (!shouldIncludeFieldForDto(field, config.getEntityId())) {
+        if (!shouldIncludeFieldForDto(field, config.entityId())) {
           return false;
         }
         break;
       case VO:
-        if (!shouldIncludeFieldForVo(field, config.getEntityId())) {
+        if (!shouldIncludeFieldForVo(field, config.entityId())) {
           return false;
         }
         break;
       case RECORD:
-        if (!shouldIncludeFieldForRecord(field, config.getEntityId())) {
+        if (!shouldIncludeFieldForRecord(field, config.entityId())) {
           return false;
         }
         break;
@@ -167,7 +152,7 @@ public class GeneratorUtility {
 
     // Exclude any fields specified in the ignore collection
     String fieldName = field.getSimpleName().toString();
-    if (config.getIgnoredFields().contains(fieldName)) {
+    if (config.ignoredFields().contains(fieldName)) {
       return false;
     }
 

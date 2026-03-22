@@ -266,7 +266,7 @@ public class EquilibriumConfig {
    * @return the package to use, or throws an exception if none is available
    */
   public String validateAndGetPackage(String annotationPackage, String classType) {
-    String resolvedPackage = null;
+    String resolvedPackage;
 
     // First check if the annotation package is valid and non-empty
     if (!annotationPackage.isEmpty() && ValidationUtil.isValidPackageName(annotationPackage)) {
@@ -281,12 +281,10 @@ public class EquilibriumConfig {
             default -> Optional.empty();
           };
 
-      if (packageOpt.isPresent()) {
-        resolvedPackage = packageOpt.get();
-      } else {
-        // Finally, fall back to the default package based on project coordinates
-        resolvedPackage = ValidationUtil.getDefaultPackageName(groupId, artifactId, classType);
-      }
+      // Finally, fall back to the default package based on project coordinates
+      resolvedPackage =
+          packageOpt.orElseGet(
+              () -> ValidationUtil.getDefaultPackageName(groupId, artifactId, classType));
     }
 
     // Validate the final resolved package

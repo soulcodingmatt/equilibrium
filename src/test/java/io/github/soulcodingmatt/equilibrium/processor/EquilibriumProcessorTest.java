@@ -302,9 +302,9 @@ class EquilibriumProcessorTest {
     assertFalse(notes.isEmpty());
     String lastNonEmptyLine = "";
     for (int i = notes.size() - 1; i >= 0; i--) {
-      String m = notes.get(i).getMessage();
-      if (!m.isEmpty()) {
-        lastNonEmptyLine = m;
+      String noteText = notes.get(i).getMessage();
+      if (!noteText.isEmpty()) {
+        lastNonEmptyLine = noteText;
         break;
       }
     }
@@ -1036,11 +1036,11 @@ class EquilibriumProcessorTest {
     }
 
     @Override
-    public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {
+    public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element element) {
       if (kind == Diagnostic.Kind.ERROR) {
-        errorMessages.add(new TestMessage(kind, msg.toString(), e));
+        errorMessages.add(new TestMessage(kind, msg.toString(), element));
       } else if (kind == Diagnostic.Kind.NOTE) {
-        noteMessages.add(new TestMessage(kind, msg.toString(), e));
+        noteMessages.add(new TestMessage(kind, msg.toString(), element));
       }
     }
 
@@ -1048,19 +1048,19 @@ class EquilibriumProcessorTest {
     public void printMessage(
         Diagnostic.Kind kind,
         CharSequence msg,
-        Element e,
-        javax.lang.model.element.AnnotationMirror a) {
-      printMessage(kind, msg, e);
+        Element element,
+        javax.lang.model.element.AnnotationMirror annotationMirror) {
+      printMessage(kind, msg, element);
     }
 
     @Override
     public void printMessage(
         Diagnostic.Kind kind,
         CharSequence msg,
-        Element e,
-        javax.lang.model.element.AnnotationMirror a,
-        javax.lang.model.element.AnnotationValue v) {
-      printMessage(kind, msg, e);
+        Element element,
+        javax.lang.model.element.AnnotationMirror annotationMirror,
+        javax.lang.model.element.AnnotationValue annotationValue) {
+      printMessage(kind, msg, element);
     }
 
     public List<TestMessage> getErrorMessages() {

@@ -13,7 +13,6 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import java.util.Set;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -81,8 +80,7 @@ final class SafeInitializerCoercion {
     if (kind != Tree.Kind.MEMBER_SELECT && kind != Tree.Kind.IDENTIFIER) {
       return null;
     }
-    String enumSimple =
-        ((TypeElement) ((DeclaredType) field.asType()).asElement()).getSimpleName().toString();
+    String enumSimple = (((DeclaredType) field.asType()).asElement()).getSimpleName().toString();
     String constant;
     if (kind == Tree.Kind.MEMBER_SELECT) {
       MemberSelectTree mst = (MemberSelectTree) expr;
@@ -138,13 +136,13 @@ final class SafeInitializerCoercion {
     }
     if (select.endsWith("Optional.empty")) {
       extraImportsForInheritedDefaults.add(JAVA_UTIL_OPTIONAL);
-      return initializerText + "";
+      return initializerText;
     }
     if (select.endsWith("Collections.emptyList")
         || select.endsWith("Collections.emptySet")
         || select.endsWith("Collections.emptyMap")) {
       extraImportsForInheritedDefaults.add("java.util.Collections");
-      return initializerText + "";
+      return initializerText;
     }
     return null;
   }

@@ -41,7 +41,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordNotNull(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     NotNull notNull = validateAnnotation.notNull();
-    if (!notNull.message().equals("")) {
+    if (!notNull.message().isEmpty()) {
       writer.write(INDENT + ANN_NOT_NULL);
       if (!notNull.message().equals(DEFAULT_NOT_NULL)) {
         writer.write(
@@ -56,7 +56,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordNotBlank(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     NotBlank notBlank = validateAnnotation.notBlank();
-    if (!notBlank.message().equals("")) {
+    if (!notBlank.message().isEmpty()) {
       writer.write(ANN_NOT_BLANK);
       if (!notBlank.message().equals(DEFAULT_NOT_BLANK)) {
         writer.write(
@@ -80,7 +80,7 @@ public final class ValidationRecordCodegen {
       if (size.max() != -1 && size.max() != Integer.MAX_VALUE) {
         params.add(MAX + size.max());
       }
-      if (!size.message().equals("") && !size.message().equals(DEFAULT_SIZE)) {
+      if (!size.message().isEmpty() && !size.message().equals(DEFAULT_SIZE)) {
         params.add(
             MESSAGE_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(size.message()) + "\"");
       }
@@ -98,7 +98,7 @@ public final class ValidationRecordCodegen {
       writer.write(ANN_MIN);
       List<String> params = new ArrayList<>();
       params.add(VALUE + min.value());
-      if (!min.message().equals("") && !min.message().equals(DEFAULT_MIN)) {
+      if (!min.message().isEmpty() && !min.message().equals(DEFAULT_MIN)) {
         params.add(
             MESSAGE_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(min.message()) + "\"");
       }
@@ -114,7 +114,7 @@ public final class ValidationRecordCodegen {
       writer.write(ANN_MAX);
       List<String> params = new ArrayList<>();
       params.add(VALUE + max.value());
-      if (!max.message().equals("") && !max.message().equals(MUST_BE_LESS_THAN_OR_EQUAL_TO_VALUE)) {
+      if (!max.message().isEmpty() && !max.message().equals(MUST_BE_LESS_THAN_OR_EQUAL_TO_VALUE)) {
         params.add(
             MESSAGE_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(max.message()) + "\"");
       }
@@ -126,14 +126,14 @@ public final class ValidationRecordCodegen {
   private static void writeRecordEmail(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     Email email = validateAnnotation.email();
-    if (!email.message().equals("")) {
+    if (!email.message().isEmpty()) {
       writer.write(ANN_EMAIL);
       List<String> params = new ArrayList<>();
       if (!email.regexp().equals(EMAIL_REGEXP_DEFAULT)) {
         params.add(
             REGEXP_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(email.regexp()) + "\"");
       }
-      if (!email.message().equals("") && !email.message().equals(DEFAULT_EMAIL)) {
+      if (!email.message().isEmpty() && !email.message().equals(DEFAULT_EMAIL)) {
         params.add(
             MESSAGE_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(email.message()) + "\"");
       }
@@ -152,7 +152,7 @@ public final class ValidationRecordCodegen {
       List<String> params = new ArrayList<>();
       params.add(
           REGEXP_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(pattern.regexp()) + "\"");
-      if (!pattern.message().equals("") && !pattern.message().equals(DEFAULT_PATTERN)) {
+      if (!pattern.message().isEmpty() && !pattern.message().equals(DEFAULT_PATTERN)) {
         params.add(
             MESSAGE_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(pattern.message()) + "\"");
       }
@@ -164,7 +164,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordNotEmpty(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     NotEmpty notEmpty = validateAnnotation.notEmpty();
-    if (!notEmpty.message().equals("")) {
+    if (!notEmpty.message().isEmpty()) {
       writer.write(ANN_NOT_EMPTY);
       if (!notEmpty.message().equals(DEFAULT_NOT_EMPTY)) {
         writer.write(
@@ -179,7 +179,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordPositive(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     Positive positive = validateAnnotation.positive();
-    if (!positive.message().equals("")) {
+    if (!positive.message().isEmpty()) {
       writer.write(ANN_POSITIVE);
       if (!positive.message().equals(DEFAULT_POSITIVE)) {
         writer.write(
@@ -194,7 +194,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordPositiveOrZero(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     PositiveOrZero positiveOrZero = validateAnnotation.positiveOrZero();
-    if (!positiveOrZero.message().equals("")) {
+    if (!positiveOrZero.message().isEmpty()) {
       writer.write(ANN_POSITIVE_OR_ZERO);
       if (!positiveOrZero.message().equals(DEFAULT_POSITIVE_OR_ZERO)) {
         writer.write(
@@ -209,7 +209,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordNegative(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     Negative negative = validateAnnotation.negative();
-    if (!negative.message().equals("")) {
+    if (!negative.message().isEmpty()) {
       writer.write(ANN_NEGATIVE);
       if (!negative.message().equals(DEFAULT_NEGATIVE)) {
         writer.write(
@@ -224,7 +224,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordNegativeOrZero(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     NegativeOrZero negativeOrZero = validateAnnotation.negativeOrZero();
-    if (!negativeOrZero.message().equals("")) {
+    if (!negativeOrZero.message().isEmpty()) {
       writer.write(ANN_NEGATIVE_OR_ZERO);
       if (!negativeOrZero.message().equals(MUST_BE_LESS_THAN_OR_EQUAL_TO_0)) {
         writer.write(
@@ -248,7 +248,7 @@ public final class ValidationRecordCodegen {
       if (digits.fraction() != -1) {
         params.add(FRACTION + digits.fraction());
       }
-      if (!digits.message().equals("") && !digits.message().equals(DEFAULT_DIGITS)) {
+      if (!digits.message().isEmpty() && !digits.message().equals(DEFAULT_DIGITS)) {
         params.add(
             MESSAGE_PARAM_PREFIX + ValidationCodegenStrings.escapeQuotes(digits.message()) + "\"");
       }
@@ -262,7 +262,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordPast(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     Past past = validateAnnotation.past();
-    if (!past.message().equals("")) {
+    if (!past.message().isEmpty()) {
       writer.write(ANN_PAST);
       if (!past.message().equals(DEFAULT_PAST)) {
         writer.write(
@@ -277,7 +277,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordFuture(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     Future future = validateAnnotation.future();
-    if (!future.message().equals("")) {
+    if (!future.message().isEmpty()) {
       writer.write(ANN_FUTURE);
       if (!future.message().equals(DEFAULT_FUTURE)) {
         writer.write(
@@ -292,7 +292,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordPastOrPresent(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     PastOrPresent pastOrPresent = validateAnnotation.pastOrPresent();
-    if (!pastOrPresent.message().equals("")) {
+    if (!pastOrPresent.message().isEmpty()) {
       writer.write(ANN_PAST_OR_PRESENT);
       if (!pastOrPresent.message().equals(DEFAULT_PAST_OR_PRESENT)) {
         writer.write(
@@ -307,7 +307,7 @@ public final class ValidationRecordCodegen {
   private static void writeRecordFutureOrPresent(Writer writer, ValidateRecord validateAnnotation)
       throws IOException {
     FutureOrPresent futureOrPresent = validateAnnotation.futureOrPresent();
-    if (!futureOrPresent.message().equals("")) {
+    if (!futureOrPresent.message().isEmpty()) {
       writer.write(ANN_FUTURE_OR_PRESENT);
       if (!futureOrPresent.message().equals(DEFAULT_FUTURE_OR_PRESENT)) {
         writer.write(

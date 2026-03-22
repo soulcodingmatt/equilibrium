@@ -34,40 +34,40 @@ public final class ValidationTypeSafeImports {
 
   private static void addMessageTriggeredForDto(
       Set<String> validationImports, ValidateDto validateAnnotation) {
-    if (!validateAnnotation.notNull().message().equals("")) {
+    if (!validateAnnotation.notNull().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_NULL);
     }
-    if (!validateAnnotation.notBlank().message().equals("")) {
+    if (!validateAnnotation.notBlank().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_BLANK);
     }
-    if (!validateAnnotation.notEmpty().message().equals("")) {
+    if (!validateAnnotation.notEmpty().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_EMPTY);
     }
-    if (!validateAnnotation.positive().message().equals("")) {
+    if (!validateAnnotation.positive().message().isEmpty()) {
       validationImports.add(IMPORT_POSITIVE);
     }
-    if (!validateAnnotation.positiveOrZero().message().equals("")) {
+    if (!validateAnnotation.positiveOrZero().message().isEmpty()) {
       validationImports.add(IMPORT_POSITIVE_OR_ZERO);
     }
-    if (!validateAnnotation.negative().message().equals("")) {
+    if (!validateAnnotation.negative().message().isEmpty()) {
       validationImports.add(IMPORT_NEGATIVE);
     }
-    if (!validateAnnotation.negativeOrZero().message().equals("")) {
+    if (!validateAnnotation.negativeOrZero().message().isEmpty()) {
       validationImports.add(IMPORT_NEGATIVE_OR_ZERO);
     }
-    if (!validateAnnotation.past().message().equals("")) {
+    if (!validateAnnotation.past().message().isEmpty()) {
       validationImports.add(IMPORT_PAST);
     }
-    if (!validateAnnotation.future().message().equals("")) {
+    if (!validateAnnotation.future().message().isEmpty()) {
       validationImports.add(IMPORT_FUTURE);
     }
-    if (!validateAnnotation.pastOrPresent().message().equals("")) {
+    if (!validateAnnotation.pastOrPresent().message().isEmpty()) {
       validationImports.add(IMPORT_PAST_OR_PRESENT);
     }
-    if (!validateAnnotation.futureOrPresent().message().equals("")) {
+    if (!validateAnnotation.futureOrPresent().message().isEmpty()) {
       validationImports.add(IMPORT_FUTURE_OR_PRESENT);
     }
-    if (!validateAnnotation.email().message().equals("")) {
+    if (!validateAnnotation.email().message().isEmpty()) {
       validationImports.add(IMPORT_EMAIL);
     }
   }
@@ -95,40 +95,40 @@ public final class ValidationTypeSafeImports {
 
   private static void addMessageTriggeredForRecord(
       Set<String> validationImports, ValidateRecord validateAnnotation) {
-    if (!validateAnnotation.notNull().message().equals("")) {
+    if (!validateAnnotation.notNull().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_NULL);
     }
-    if (!validateAnnotation.notBlank().message().equals("")) {
+    if (!validateAnnotation.notBlank().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_BLANK);
     }
-    if (!validateAnnotation.notEmpty().message().equals("")) {
+    if (!validateAnnotation.notEmpty().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_EMPTY);
     }
-    if (!validateAnnotation.positive().message().equals("")) {
+    if (!validateAnnotation.positive().message().isEmpty()) {
       validationImports.add(IMPORT_POSITIVE);
     }
-    if (!validateAnnotation.positiveOrZero().message().equals("")) {
+    if (!validateAnnotation.positiveOrZero().message().isEmpty()) {
       validationImports.add(IMPORT_POSITIVE_OR_ZERO);
     }
-    if (!validateAnnotation.negative().message().equals("")) {
+    if (!validateAnnotation.negative().message().isEmpty()) {
       validationImports.add(IMPORT_NEGATIVE);
     }
-    if (!validateAnnotation.negativeOrZero().message().equals("")) {
+    if (!validateAnnotation.negativeOrZero().message().isEmpty()) {
       validationImports.add(IMPORT_NEGATIVE_OR_ZERO);
     }
-    if (!validateAnnotation.past().message().equals("")) {
+    if (!validateAnnotation.past().message().isEmpty()) {
       validationImports.add(IMPORT_PAST);
     }
-    if (!validateAnnotation.future().message().equals("")) {
+    if (!validateAnnotation.future().message().isEmpty()) {
       validationImports.add(IMPORT_FUTURE);
     }
-    if (!validateAnnotation.pastOrPresent().message().equals("")) {
+    if (!validateAnnotation.pastOrPresent().message().isEmpty()) {
       validationImports.add(IMPORT_PAST_OR_PRESENT);
     }
-    if (!validateAnnotation.futureOrPresent().message().equals("")) {
+    if (!validateAnnotation.futureOrPresent().message().isEmpty()) {
       validationImports.add(IMPORT_FUTURE_OR_PRESENT);
     }
-    if (!validateAnnotation.email().message().equals("")) {
+    if (!validateAnnotation.email().message().isEmpty()) {
       validationImports.add(IMPORT_EMAIL);
     }
   }
@@ -156,40 +156,40 @@ public final class ValidationTypeSafeImports {
 
   private static void addMessageTriggeredForVo(
       Set<String> validationImports, ValidateVo validateAnnotation) {
-    if (!validateAnnotation.notNull().message().equals("")) {
+    if (!validateAnnotation.notNull().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_NULL);
     }
-    if (!validateAnnotation.notBlank().message().equals("")) {
+    if (!validateAnnotation.notBlank().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_BLANK);
     }
-    if (!validateAnnotation.notEmpty().message().equals("")) {
+    if (!validateAnnotation.notEmpty().message().isEmpty()) {
       validationImports.add(IMPORT_NOT_EMPTY);
     }
-    if (!validateAnnotation.positive().message().equals("")) {
+    if (!validateAnnotation.positive().message().isEmpty()) {
       validationImports.add(IMPORT_POSITIVE);
     }
-    if (!validateAnnotation.positiveOrZero().message().equals("")) {
+    if (!validateAnnotation.positiveOrZero().message().isEmpty()) {
       validationImports.add(IMPORT_POSITIVE_OR_ZERO);
     }
-    if (!validateAnnotation.negative().message().equals("")) {
+    if (!validateAnnotation.negative().message().isEmpty()) {
       validationImports.add(IMPORT_NEGATIVE);
     }
-    if (!validateAnnotation.negativeOrZero().message().equals("")) {
+    if (!validateAnnotation.negativeOrZero().message().isEmpty()) {
       validationImports.add(IMPORT_NEGATIVE_OR_ZERO);
     }
-    if (!validateAnnotation.past().message().equals("")) {
+    if (!validateAnnotation.past().message().isEmpty()) {
       validationImports.add(IMPORT_PAST);
     }
-    if (!validateAnnotation.future().message().equals("")) {
+    if (!validateAnnotation.future().message().isEmpty()) {
       validationImports.add(IMPORT_FUTURE);
     }
-    if (!validateAnnotation.pastOrPresent().message().equals("")) {
+    if (!validateAnnotation.pastOrPresent().message().isEmpty()) {
       validationImports.add(IMPORT_PAST_OR_PRESENT);
     }
-    if (!validateAnnotation.futureOrPresent().message().equals("")) {
+    if (!validateAnnotation.futureOrPresent().message().isEmpty()) {
       validationImports.add(IMPORT_FUTURE_OR_PRESENT);
     }
-    if (!validateAnnotation.email().message().equals("")) {
+    if (!validateAnnotation.email().message().isEmpty()) {
       validationImports.add(IMPORT_EMAIL);
     }
   }

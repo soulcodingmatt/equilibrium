@@ -16,41 +16,21 @@ public final class ValidationTypeCompatibilityChecker {
   public static List<String> checkTypeCompatibility(
       String fieldName, TypeMirror fieldType, ValidationInfo validation) {
     String typeName = fieldType.toString();
-    String validationType = validation.type;
+    String validationType = validation.constraintKind;
 
-    if (validationType.equals(NOT_NULL)) {
-      return checkNotNull(fieldName, typeName);
-    }
-    if (validationType.equals(NOT_BLANK)) {
-      return checkNotBlank(fieldName, typeName);
-    }
-    if (validationType.equals(NOT_EMPTY)) {
-      return checkNotEmpty(fieldName, typeName);
-    }
-    if (validationType.equals("Size")) {
-      return checkSize(fieldName, typeName, (Size) validation.annotation);
-    }
-    if (validationType.equals("Min")
-        || validationType.equals("Max")
-        || validationType.equals(POSITIVE)
-        || validationType.equals(POSITIVE_OR_ZERO)
-        || validationType.equals(NEGATIVE)
-        || validationType.equals(NEGATIVE_OR_ZERO)) {
-      return checkNumericConstraint(fieldName, typeName, validationType);
-    }
-    if (validationType.equals(EMAIL) || validationType.equals(PATTERN)) {
-      return checkStringOnlyConstraint(fieldName, typeName, validationType);
-    }
-    if (validationType.equals(DIGITS)) {
-      return checkDigits(fieldName, typeName);
-    }
-    if (validationType.equals(PAST)
-        || validationType.equals(FUTURE)
-        || validationType.equals(PAST_OR_PRESENT)
-        || validationType.equals(FUTURE_OR_PRESENT)) {
-      return checkTemporal(fieldName, typeName, validationType);
-    }
-    throw new IllegalStateException("Unexpected value: " + validationType);
+    return switch (validationType) {
+      case NOT_NULL -> checkNotNull(fieldName, typeName);
+      case NOT_BLANK -> checkNotBlank(fieldName, typeName);
+      case NOT_EMPTY -> checkNotEmpty(fieldName, typeName);
+      case "Size" -> checkSize(fieldName, typeName, (Size) validation.constraintAnnotation);
+      case "Min", "Max", POSITIVE, POSITIVE_OR_ZERO, NEGATIVE, NEGATIVE_OR_ZERO ->
+          checkNumericConstraint(fieldName, typeName, validationType);
+      case EMAIL, PATTERN -> checkStringOnlyConstraint(fieldName, typeName, validationType);
+      case DIGITS -> checkDigits(fieldName, typeName);
+      case PAST, FUTURE, PAST_OR_PRESENT, FUTURE_OR_PRESENT ->
+          checkTemporal(fieldName, typeName, validationType);
+      default -> throw new IllegalStateException("Unexpected value: " + validationType);
+    };
   }
 
   private static List<String> checkNotNull(String fieldName, String typeName) {

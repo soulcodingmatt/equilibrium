@@ -20,8 +20,8 @@ public final class ImportManager {
 
   public void addAll(Collection<String> fullyQualifiedClassNames) {
     if (fullyQualifiedClassNames != null) {
-      for (String f : fullyQualifiedClassNames) {
-        add(f);
+      for (String qualifiedName : fullyQualifiedClassNames) {
+        add(qualifiedName);
       }
     }
   }

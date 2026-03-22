@@ -163,6 +163,14 @@ The following compiler arguments can be configured:
 - `-Aequilibrium.vo.package`: Target package for generated VOs
 - `-Aequilibrium.vo.postfix`: Suffix for generated class names (default: "Vo")
 
+## Using with MapStruct
+
+Use [MapStruct](https://mapstruct.org/) `@Mapper` interfaces to map between your domain or API types and Equilibrium-generated DTOs, records, and VOs. Generated classes use the same patterns MapStruct already supports (getters/setters, record components, optional builders, nested properties).
+
+- **Build:** Add the Equilibrium processor and `mapstruct-processor` to your annotation processor path, with generated sources on the compile classpath. Processing rounds make Equilibrium output available to MapStruct in the same compilation.
+- **Mappings:** Align property names across types, or use `@Mapping` where names differ. For generated types built with **builders**, configure MapStruct’s builder support for those types when needed.
+- **Value objects (VOs):** By default, Equilibrium generates **immutable** VOs (`final` fields, **no setters**). They **are** usable with MapStruct: mapping **from** a VO uses getters; mapping **to** a VO uses MapStruct’s **constructor** mapping (the generated all-args constructor), not setters. That is normal for immutable types. `@GenerateVo(setters=true)` is only if you want **mutable** VOs and setter-based mapping instead.
+
 ## Usage
 
 ### @GenerateDto
@@ -268,10 +276,9 @@ set either, the default value is "Vo".
 
 `setters`
 - Usage: `@GenerateVo(setters=true)`
-- Default: This parameter defaults to false. Value objects (VOs) are typically immutable, meaning all
-fields are final and there are no setters. This prevents mutation after creation.
-However, if you really need setters for your VO fields (for whatever reason), you can set this parameter
-to `true`.
+- Default: `false`. In the usual setup, generated VOs are **immutable** (`final` fields, no setters), which matches the common **value object** idea in DDD.
+- If you set `setters=true`, the generated class becomes **mutable** and **behaves much like a DTO** (getters and setters). That is **not** the typical way to model value objects; for a mutable transfer type, **prefer `@GenerateDto`** so you use the DTO pipeline (naming, options, and tooling aligned with that role).
+- The option remains for edge cases where you **insist** on a mutable class that you still want to generate and name as a **VO** (for example legacy naming or a specific convention). Use it sparingly.
 
 ### @IgnoreDto, @IgnoreRecord, @IgnoreVo, @IgnoreAll
 

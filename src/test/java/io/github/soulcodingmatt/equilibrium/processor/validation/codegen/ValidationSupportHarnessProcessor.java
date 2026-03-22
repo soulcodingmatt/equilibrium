@@ -49,12 +49,12 @@ public class ValidationSupportHarnessProcessor extends AbstractProcessor {
       if (!(root instanceof TypeElement te)) {
         continue;
       }
-      String qn = te.getQualifiedName().toString();
-      if (qn.contentEquals(DTO_PROBE)) {
+      String qualifiedName = te.getQualifiedName().toString();
+      if (qualifiedName.contentEquals(DTO_PROBE)) {
         captureDto(te);
-      } else if (qn.contentEquals(RECORD_PROBE)) {
+      } else if (qualifiedName.contentEquals(RECORD_PROBE)) {
         captureRecord(te);
-      } else if (qn.contentEquals(VO_PROBE)) {
+      } else if (qualifiedName.contentEquals(VO_PROBE)) {
         captureVo(te);
       }
     }
@@ -111,18 +111,18 @@ public class ValidationSupportHarnessProcessor extends AbstractProcessor {
 
   private static List<VariableElement> fieldsOf(TypeElement te) {
     List<VariableElement> out = new ArrayList<>();
-    for (Element e : te.getEnclosedElements()) {
-      if (e.getKind() == ElementKind.FIELD) {
-        out.add((VariableElement) e);
+    for (Element enclosed : te.getEnclosedElements()) {
+      if (enclosed.getKind() == ElementKind.FIELD) {
+        out.add((VariableElement) enclosed);
       }
     }
     return out;
   }
 
   private static VariableElement findField(TypeElement te, String name) {
-    for (Element e : te.getEnclosedElements()) {
-      if (e.getKind() == ElementKind.FIELD && e.getSimpleName().contentEquals(name)) {
-        return (VariableElement) e;
+    for (Element enclosed : te.getEnclosedElements()) {
+      if (enclosed.getKind() == ElementKind.FIELD && enclosed.getSimpleName().contentEquals(name)) {
+        return (VariableElement) enclosed;
       }
     }
     throw new IllegalStateException("Field not found: " + name);

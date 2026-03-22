@@ -27,14 +27,7 @@ class EquilibriumMessagerStatsTest {
           }
 
           @Override
-          public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {
-            kinds.add(kind);
-            messages.add(msg.toString());
-          }
-
-          @Override
-          public void printMessage(
-              Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {
+          public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element element) {
             kinds.add(kind);
             messages.add(msg.toString());
           }
@@ -43,9 +36,19 @@ class EquilibriumMessagerStatsTest {
           public void printMessage(
               Diagnostic.Kind kind,
               CharSequence msg,
-              Element e,
-              AnnotationMirror a,
-              AnnotationValue v) {
+              Element element,
+              AnnotationMirror annotationMirror) {
+            kinds.add(kind);
+            messages.add(msg.toString());
+          }
+
+          @Override
+          public void printMessage(
+              Diagnostic.Kind kind,
+              CharSequence msg,
+              Element element,
+              AnnotationMirror annotationMirror,
+              AnnotationValue annotationValue) {
             kinds.add(kind);
             messages.add(msg.toString());
           }
@@ -80,13 +83,7 @@ class EquilibriumMessagerStatsTest {
           }
 
           @Override
-          public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {
-            tally();
-          }
-
-          @Override
-          public void printMessage(
-              Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {
+          public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element element) {
             tally();
           }
 
@@ -94,9 +91,18 @@ class EquilibriumMessagerStatsTest {
           public void printMessage(
               Diagnostic.Kind kind,
               CharSequence msg,
-              Element e,
-              AnnotationMirror a,
-              AnnotationValue v) {
+              Element element,
+              AnnotationMirror annotationMirror) {
+            tally();
+          }
+
+          @Override
+          public void printMessage(
+              Diagnostic.Kind kind,
+              CharSequence msg,
+              Element element,
+              AnnotationMirror annotationMirror,
+              AnnotationValue annotationValue) {
             tally();
           }
         };

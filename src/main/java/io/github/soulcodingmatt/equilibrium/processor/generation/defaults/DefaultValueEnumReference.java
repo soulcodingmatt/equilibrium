@@ -21,7 +21,7 @@ public final class DefaultValueEnumReference {
     String enumSimpleName = enumElement.getSimpleName().toString();
 
     String constantName;
-    String specifiedEnumName = null;
+    String specifiedEnumName;
     if (annotationValue.contains(".")) {
       String[] parts = annotationValue.split("\\.");
       if (parts.length != 2) {
