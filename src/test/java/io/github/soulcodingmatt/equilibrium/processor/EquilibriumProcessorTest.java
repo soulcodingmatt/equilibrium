@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
 import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
-import io.github.soulcodingmatt.equilibrium.processor.core.EquilibriumFilerStats;
-import io.github.soulcodingmatt.equilibrium.processor.core.EquilibriumMessagerStats;
-import io.github.soulcodingmatt.equilibrium.processor.core.EquilibriumProcessor;
+import io.github.soulcodingmatt.equilibrium.processor.orchestration.EquilibriumFilerStats;
+import io.github.soulcodingmatt.equilibrium.processor.orchestration.EquilibriumMessagerStats;
+import io.github.soulcodingmatt.equilibrium.processor.orchestration.EquilibriumProcessor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1560,7 +1560,7 @@ class EquilibriumProcessorTest {
   void testDtoGeneratorHasRegisterMethod() throws Exception {
     // Verify that DtoGenerator has the registerGeneratedDto static method
     Method registerMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGenerator.class
+        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
             .getDeclaredMethod("registerGeneratedDto", String.class, String.class);
     assertNotNull(registerMethod, "DtoGenerator.registerGeneratedDto method should exist");
 
@@ -1581,7 +1581,7 @@ class EquilibriumProcessorTest {
   void testDtoGeneratorHasLookupMethod() throws Exception {
     // Verify that DtoGenerator has the lookupGeneratedDto static method
     Method lookupMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGenerator.class
+        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
             .getDeclaredMethod("lookupGeneratedDto", String.class);
     assertNotNull(lookupMethod, "DtoGenerator.lookupGeneratedDto method should exist");
 
@@ -1602,10 +1602,10 @@ class EquilibriumProcessorTest {
   void testRegisterAndLookupGeneratedDto() throws Exception {
     // Test the registration and lookup mechanism
     Method registerMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGenerator.class
+        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
             .getDeclaredMethod("registerGeneratedDto", String.class, String.class);
     Method lookupMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGenerator.class
+        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
             .getDeclaredMethod("lookupGeneratedDto", String.class);
 
     // Register a test DTO
@@ -1627,7 +1627,7 @@ class EquilibriumProcessorTest {
   void testLookupNonExistentDto() throws Exception {
     // Test that lookup returns null for non-existent DTOs
     Method lookupMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generator.dto.DtoGenerator.class
+        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
             .getDeclaredMethod("lookupGeneratedDto", String.class);
 
     // Lookup a non-existent DTO

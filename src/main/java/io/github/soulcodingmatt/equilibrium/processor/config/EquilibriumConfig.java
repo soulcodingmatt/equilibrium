@@ -1,6 +1,6 @@
 package io.github.soulcodingmatt.equilibrium.processor.config;
 
-import io.github.soulcodingmatt.equilibrium.processor.util.ValidationUtil;
+import io.github.soulcodingmatt.equilibrium.processor.validation.analysis.ValidationUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
