@@ -320,7 +320,8 @@ public final class EquilibriumBuildBanner {
           case WARN -> ANSI_YELLOW + plain + ANSI_RESET;
         };
     int pad = STATUS_COL_WIDTH - plain.length();
-    return colored + (pad > 0 ? " ".repeat(pad) : "");
+    // repeat(0) yields ""; max guards a too-narrow STATUS_COL_WIDTH vs. plain tags.
+    return colored + " ".repeat(Math.max(0, pad));
   }
 
   private static List<String> readLogoLines() {
