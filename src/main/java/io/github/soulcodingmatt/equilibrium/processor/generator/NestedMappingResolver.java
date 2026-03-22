@@ -17,12 +17,10 @@ public final class NestedMappingResolver {
 
   private final TypeElement sourceType;
   private final Messager messager;
-  private final String dtoClassName;
 
-  public NestedMappingResolver(TypeElement sourceType, Messager messager, String dtoClassName) {
+  public NestedMappingResolver(TypeElement sourceType, Messager messager) {
     this.sourceType = sourceType;
     this.messager = messager;
-    this.dtoClassName = dtoClassName;
   }
 
   public String findDtoImportFromSourceClass(NestedMapping mapping) {
@@ -96,22 +94,9 @@ public final class NestedMappingResolver {
             return simpleName;
           }
         }
-        try {
-          String annotationString = mapping.toString();
-          if (annotationString.contains(DtoGenerator.DTO_CLASS)
-              && annotationString.contains(".class")) {
-            int start =
-                annotationString.indexOf(DtoGenerator.DTO_CLASS) + DtoGenerator.DTO_CLASS.length();
-            int end = annotationString.indexOf(".class", start);
-            if (start > 0 && end > start) {
-              String classReference = annotationString.substring(start, end);
-              if (classReference.contains(".")) {
-                classReference = classReference.substring(classReference.lastIndexOf('.') + 1);
-              }
-              return classReference;
-            }
-          }
-        } catch (Exception ignored) {
+        String fromAnnotationString = tryParseSimpleNameFromNestedMappingToString(mapping);
+        if (fromAnnotationString != null) {
+          return fromAnnotationString;
         }
 
         messager.printMessage(
@@ -135,5 +120,32 @@ public final class NestedMappingResolver {
       int lastDotIndex = fullName.lastIndexOf('.');
       return lastDotIndex > 0 ? fullName.substring(lastDotIndex + 1) : fullName;
     }
+  }
+
+  /**
+   * Fallback when {@link MirroredTypeException} yields an error type: parse {@link
+   * NestedMapping#toString()} for {@code dtoClass=SomeDto.class}. Uses index checks only (no
+   * catch-all) so malformed strings fail the same way as "not found" and hit the error path below.
+   */
+  private static String tryParseSimpleNameFromNestedMappingToString(NestedMapping mapping) {
+    String annotationString = mapping.toString();
+    if (!annotationString.contains(DtoGenerator.DTO_CLASS)
+        || !annotationString.contains(".class")) {
+      return null;
+    }
+    int key = annotationString.indexOf(DtoGenerator.DTO_CLASS);
+    if (key < 0) {
+      return null;
+    }
+    int start = key + DtoGenerator.DTO_CLASS.length();
+    int end = annotationString.indexOf(".class", start);
+    if (end <= start) {
+      return null;
+    }
+    String classReference = annotationString.substring(start, end);
+    if (classReference.contains(".")) {
+      classReference = classReference.substring(classReference.lastIndexOf('.') + 1);
+    }
+    return classReference.isEmpty() ? null : classReference;
   }
 }

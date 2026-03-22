@@ -20,7 +20,6 @@ public final class DtoImportPlanner {
 
   public static void writeImports(
       Writer writer,
-      String dtoClassName,
       boolean builder,
       int dtoId,
       List<VariableElement> fields,

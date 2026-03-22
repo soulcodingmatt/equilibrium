@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
 import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
 import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
+import io.github.soulcodingmatt.equilibrium.processor.core.EquilibriumFilerStats;
+import io.github.soulcodingmatt.equilibrium.processor.core.EquilibriumMessagerStats;
 import io.github.soulcodingmatt.equilibrium.processor.core.EquilibriumProcessor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -146,7 +149,9 @@ class EquilibriumProcessorTest {
             "equilibrium.vo.package",
             "equilibrium.vo.postfix",
             "equilibrium.groupId",
-            "equilibrium.artifactId");
+            "equilibrium.artifactId",
+            "equilibrium.banner",
+            "equilibrium.banner.color");
 
     for (String option : expectedOptions) {
       assertTrue(supportedOptions.contains(option), "Processor must support option: " + option);
@@ -190,19 +195,22 @@ class EquilibriumProcessorTest {
     filerField.setAccessible(true);
     Filer storedFiler = (Filer) filerField.get(testProcessor);
     assertNotNull(storedFiler, "Filer should be stored during init");
+    assertTrue(storedFiler instanceof EquilibriumFilerStats, "Filer should be wrapped for stats");
     assertSame(
         testFiler,
-        storedFiler,
-        "Stored Filer should be the same instance from ProcessingEnvironment");
+        ((EquilibriumFilerStats) storedFiler).delegateFiler(),
+        "Stats wrapper should delegate to the ProcessingEnvironment filer");
 
     java.lang.reflect.Field messagerField = EquilibriumProcessor.class.getDeclaredField("messager");
     messagerField.setAccessible(true);
     Messager storedMessager = (Messager) messagerField.get(testProcessor);
     assertNotNull(storedMessager, "Messager should be stored during init");
+    assertTrue(
+        storedMessager instanceof EquilibriumMessagerStats, "Messager should be wrapped for stats");
     assertSame(
         testMessager,
-        storedMessager,
-        "Stored Messager should be the same instance from ProcessingEnvironment");
+        ((EquilibriumMessagerStats) storedMessager).delegateMessager(),
+        "Stats wrapper should delegate to the ProcessingEnvironment messager");
   }
 
   @Test
@@ -249,6 +257,142 @@ class EquilibriumProcessorTest {
     assertTrue(
         storedTrees == null || storedTrees.getClass().getName().contains("Trees"),
         "Trees should be null or a Trees instance");
+  }
+
+  @Test
+  void testInitPrintsBuildBannerWhenEnabled() throws Exception {
+    EquilibriumProcessor testProcessor = new EquilibriumProcessor();
+    TestMessager testMessager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    testEnv.getOptions().put("equilibrium.banner", "true");
+
+    testProcessor.init(testEnv);
+
+    assertFalse(testMessager.getNoteMessages().isEmpty(), "banner should emit NOTE diagnostics");
+    List<TestMessage> notes = testMessager.getNoteMessages();
+    assertEquals("", notes.get(0).getMessage(), "blank line precedes top rule");
+    String topRule = notes.get(1).getMessage();
+    String bottomRule = notes.get(notes.size() - 1).getMessage();
+    assertTrue(topRule.chars().allMatch(ch -> ch == '='));
+    assertTrue(bottomRule.chars().allMatch(ch -> ch == '-'));
+    assertEquals(topRule.length(), bottomRule.length());
+  }
+
+  @Test
+  void testProcessingOverPrintsGenerationFooterAfterNotes() throws Exception {
+    EquilibriumProcessor testProcessor = new EquilibriumProcessor();
+    TestMessager testMessager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    testEnv.getOptions().put("equilibrium.banner", "true");
+
+    testProcessor.init(testEnv);
+
+    Method noteMethod =
+        EquilibriumProcessor.class.getDeclaredMethod("note", Element.class, String.class);
+    noteMethod.setAccessible(true);
+    noteMethod.invoke(testProcessor, null, "Generated DTO class: example.Dto");
+
+    Method processMethod =
+        EquilibriumProcessor.class.getMethod(
+            "process", Set.class, javax.annotation.processing.RoundEnvironment.class);
+    TestRoundEnvironment lastRound = new TestRoundEnvironment(true, new HashSet<>());
+    processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
+
+    List<TestMessage> notes = testMessager.getNoteMessages();
+    assertFalse(notes.isEmpty());
+    String lastNonEmptyLine = "";
+    for (int i = notes.size() - 1; i >= 0; i--) {
+      String m = notes.get(i).getMessage();
+      if (!m.isEmpty()) {
+        lastNonEmptyLine = m;
+        break;
+      }
+    }
+    assertFalse(lastNonEmptyLine.isEmpty());
+    assertTrue(lastNonEmptyLine.chars().allMatch(ch -> ch == '='));
+  }
+
+  @Test
+  void testProcessingOver_skipsSummaryWhenNoWorkOrDiagnostics() throws Exception {
+    EquilibriumProcessor testProcessor = new EquilibriumProcessor();
+    TestMessager testMessager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    testEnv.getOptions().put("equilibrium.banner", "true");
+    testEnv.getOptions().put("equilibrium.banner.color", "false");
+
+    testProcessor.init(testEnv);
+
+    Method processMethod =
+        EquilibriumProcessor.class.getMethod(
+            "process", Set.class, javax.annotation.processing.RoundEnvironment.class);
+    TestRoundEnvironment lastRound = new TestRoundEnvironment(true, new HashSet<>());
+    processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
+
+    String joined =
+        testMessager.getNoteMessages().stream()
+            .map(TestMessage::getMessage)
+            .collect(Collectors.joining("\n"));
+    assertFalse(joined.contains("Summary"));
+    assertFalse(joined.contains("Result:"));
+  }
+
+  @Test
+  void testProcessingOver_printsSummaryAfterNoteWithAggregateCounts() throws Exception {
+    EquilibriumProcessor testProcessor = new EquilibriumProcessor();
+    TestMessager testMessager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    testEnv.getOptions().put("equilibrium.banner", "true");
+    testEnv.getOptions().put("equilibrium.banner.color", "false");
+
+    testProcessor.init(testEnv);
+
+    Method noteMethod =
+        EquilibriumProcessor.class.getDeclaredMethod("note", Element.class, String.class);
+    noteMethod.setAccessible(true);
+    noteMethod.invoke(testProcessor, null, "Generated DTO class: example.Dto");
+
+    Method processMethod =
+        EquilibriumProcessor.class.getMethod(
+            "process", Set.class, javax.annotation.processing.RoundEnvironment.class);
+    TestRoundEnvironment lastRound = new TestRoundEnvironment(true, new HashSet<>());
+    processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
+
+    String joined =
+        testMessager.getNoteMessages().stream()
+            .map(TestMessage::getMessage)
+            .collect(Collectors.joining("\n"));
+    assertTrue(joined.contains("Summary"));
+    assertTrue(joined.contains("Processed 0 types"));
+    assertTrue(joined.contains("Generated 0 files"));
+    assertTrue(joined.contains("Result: SUCCESS (0 types, 0 files)"));
+  }
+
+  @Test
+  void testProcessingOver_printsFailureSummaryWhenErrorEmitted() throws Exception {
+    EquilibriumProcessor testProcessor = new EquilibriumProcessor();
+    TestMessager testMessager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    testEnv.getOptions().put("equilibrium.banner", "true");
+    testEnv.getOptions().put("equilibrium.banner.color", "false");
+
+    testProcessor.init(testEnv);
+
+    Method errorMethod = EquilibriumProcessor.class.getDeclaredMethod("error", String.class);
+    errorMethod.setAccessible(true);
+    errorMethod.invoke(testProcessor, "synthetic failure");
+
+    Method processMethod =
+        EquilibriumProcessor.class.getMethod(
+            "process", Set.class, javax.annotation.processing.RoundEnvironment.class);
+    TestRoundEnvironment lastRound = new TestRoundEnvironment(true, new HashSet<>());
+    processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
+
+    String joined =
+        testMessager.getNoteMessages().stream()
+            .map(TestMessage::getMessage)
+            .collect(Collectors.joining("\n"));
+    assertTrue(joined.contains("Summary"));
+    assertTrue(joined.contains("Result: FAILURE (0 types, 0 files, 1 error)"));
   }
 
   @Test
@@ -882,6 +1026,8 @@ class EquilibriumProcessorTest {
     public void printMessage(Diagnostic.Kind kind, CharSequence msg) {
       if (kind == Diagnostic.Kind.ERROR) {
         generalErrorMessages.add(msg.toString());
+      } else if (kind == Diagnostic.Kind.NOTE) {
+        noteMessages.add(new TestMessage(kind, msg.toString(), null));
       }
     }
 
@@ -956,6 +1102,7 @@ class EquilibriumProcessorTest {
 
     public TestProcessingEnvironment(Messager messager) {
       this.messager = messager;
+      this.options.put("equilibrium.banner", "false");
     }
 
     @Override
@@ -1033,6 +1180,7 @@ class EquilibriumProcessorTest {
     public TestProcessingEnvironmentWithFiler(Messager messager, Filer filer) {
       this.messager = messager;
       this.filer = filer;
+      this.options.put("equilibrium.banner", "false");
     }
 
     @Override

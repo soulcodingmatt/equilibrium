@@ -82,7 +82,9 @@ import javax.tools.Diagnostic;
   "equilibrium.vo.package",
   "equilibrium.vo.postfix",
   "equilibrium.groupId",
-  "equilibrium.artifactId"
+  "equilibrium.artifactId",
+  "equilibrium.banner",
+  "equilibrium.banner.color"
 })
 public class EquilibriumProcessor extends AbstractProcessor {
   public static final String DUPLICATE_ID = "Duplicate ID ";
@@ -100,14 +102,34 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
   private Filer filer;
   private Messager messager;
+  private EquilibriumMessagerStats messagerStats;
+  private EquilibriumFilerStats filerStats;
   private EquilibriumConfig config;
   private Trees trees;
+  private boolean buildBannerEnabled;
+  private boolean bannerAnsiColors;
+  private boolean emittedGenerationNotes;
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
-    filer = processingEnv.getFiler();
-    messager = processingEnv.getMessager();
+    messagerStats = new EquilibriumMessagerStats(processingEnv.getMessager());
+    messager = messagerStats;
+    Filer rawFiler = processingEnv.getFiler();
+    if (rawFiler != null) {
+      filerStats = new EquilibriumFilerStats(rawFiler);
+      filer = filerStats;
+    } else {
+      filerStats = null;
+      filer = null;
+    }
+    processedElements.clear();
+    buildBannerEnabled = isBuildBannerEnabled(processingEnv);
+    bannerAnsiColors = isBannerAnsiColorsEnabled(processingEnv);
+    emittedGenerationNotes = false;
+    if (buildBannerEnabled) {
+      EquilibriumBuildBanner.print(messager, bannerAnsiColors);
+    }
     config = new EquilibriumConfig(processingEnv);
     try {
       trees = Trees.instance(processingEnv);
@@ -118,8 +140,17 @@ public class EquilibriumProcessor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    // If processing is over, we haven't claimed any new annotations
     if (roundEnv.processingOver()) {
+      if (buildBannerEnabled && shouldPrintGenerationSummary()) {
+        int generatedFiles = filerStats != null ? filerStats.getGeneratedJavaSourceCount() : 0;
+        EquilibriumBuildBanner.printGenerationSummary(
+            messager,
+            processedElements.size(),
+            generatedFiles,
+            messagerStats.getErrorCount(),
+            messagerStats.getWarningCount(),
+            bannerAnsiColors);
+      }
       return false;
     }
 
@@ -905,6 +936,31 @@ public class EquilibriumProcessor extends AbstractProcessor {
   }
 
   private void note(Element element, String message) {
+    emittedGenerationNotes = true;
     messager.printMessage(Diagnostic.Kind.NOTE, message, element);
+  }
+
+  private boolean shouldPrintGenerationSummary() {
+    return emittedGenerationNotes
+        || !processedElements.isEmpty()
+        || (filerStats != null && filerStats.getGeneratedJavaSourceCount() > 0)
+        || messagerStats.getErrorCount() > 0
+        || messagerStats.getWarningCount() > 0;
+  }
+
+  private static boolean isBuildBannerEnabled(ProcessingEnvironment processingEnv) {
+    String value = processingEnv.getOptions().get("equilibrium.banner");
+    if (value == null) {
+      return true;
+    }
+    return !"false".equalsIgnoreCase(value.trim());
+  }
+
+  private static boolean isBannerAnsiColorsEnabled(ProcessingEnvironment processingEnv) {
+    String value = processingEnv.getOptions().get("equilibrium.banner.color");
+    if (value == null) {
+      return true;
+    }
+    return !"false".equalsIgnoreCase(value.trim());
   }
 }

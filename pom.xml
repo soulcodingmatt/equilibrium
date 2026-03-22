@@ -51,6 +51,7 @@
     <auto-service.version>1.1.1</auto-service.version>
     <junit-jupiter.version>5.13.1</junit-jupiter.version>
     <compile-testing.version>0.21.0</compile-testing.version>
+    <lombok.version>1.18.36</lombok.version>
   </properties>
 
   <dependencies>
@@ -95,12 +96,29 @@
       <version>${compile-testing.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <resources>
       <resource>
+        <filtering>false</filtering>
         <directory>src/main/resources</directory>
+        <excludes>
+          <exclude>equilibrium-build-version.txt</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <filtering>true</filtering>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>equilibrium-build-version.txt</include>
+        </includes>
       </resource>
       <!-- Single source of truth: root LICENSE → JAR META-INF/LICENSE -->
       <resource>
@@ -198,6 +216,11 @@
             <includes>
               <include>**/*.md</include>
             </includes>
+            <excludes>
+              <exclude>**/target/**</exclude>
+              <exclude>**/build/**</exclude>
+              <exclude>**/node_modules/**</exclude>
+            </excludes>
             <flexmark/>
           </markdown>
           <formats>
@@ -218,6 +241,8 @@
                 <exclude>**/node_modules/**</exclude>
                 <exclude>**/dist/**</exclude>
                 <exclude>**/build/**</exclude>
+                <!-- ASCII art: must not be trimmed or newline-normalized -->
+                <exclude>src/main/resources/equilibrium-logo.txt</exclude>
               </excludes>
               <trimTrailingWhitespace/>
               <endWithNewline/>
@@ -234,6 +259,21 @@
           </execution>
         </executions>
       </plugin>
+      <!-- Implementation-Version for Package.getImplementationVersion() (JAR); exploded classpath
+           uses equilibrium-build-version.txt (filtered ${project.version}) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.2</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+
       <!-- Sources JAR -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

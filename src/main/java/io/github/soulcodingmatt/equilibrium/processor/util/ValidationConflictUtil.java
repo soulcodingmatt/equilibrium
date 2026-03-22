@@ -1,9 +1,9 @@
 package io.github.soulcodingmatt.equilibrium.processor.util;
 
 import io.github.soulcodingmatt.equilibrium.experimental.validation.common.*;
-import io.github.soulcodingmatt.equilibrium.experimental.validation.dto.*;
-import io.github.soulcodingmatt.equilibrium.experimental.validation.record.*;
-import io.github.soulcodingmatt.equilibrium.experimental.validation.vo.*;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.dto.ValidateDto;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.record.ValidateRecord;
+import io.github.soulcodingmatt.equilibrium.experimental.validation.vo.ValidateVo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +30,10 @@ public class ValidationConflictUtil {
   public static final String MIN = "': @Min(";
   public static final String MAX = "': @Max(";
   public static final String FIELD = "Field '";
+  public static final String PATTERN = "Pattern";
+  public static final String NOT_BLANK = "NotBlank";
+  public static final String EMAIL = "Email";
+  public static final String NOT_NULL = "NotNull";
 
   private ValidationConflictUtil() {
     throw new AssertionError("Utility class should not be instantiated");
@@ -165,13 +169,13 @@ public class ValidationConflictUtil {
     // Check NotNull
     NotNull notNull = validateDto.notNull();
     if (!notNull.message().isEmpty()) {
-      validations.add(new ValidationInfo("NotNull", notNull));
+      validations.add(new ValidationInfo(NOT_NULL, notNull));
     }
 
     // Check NotBlank
     NotBlank notBlank = validateDto.notBlank();
     if (!notBlank.message().isEmpty()) {
-      validations.add(new ValidationInfo("NotBlank", notBlank));
+      validations.add(new ValidationInfo(NOT_BLANK, notBlank));
     }
 
     // Check NotEmpty
@@ -211,13 +215,13 @@ public class ValidationConflictUtil {
     // Check Email
     Email email = validateDto.email();
     if (!email.message().isEmpty()) {
-      validations.add(new ValidationInfo("Email", email));
+      validations.add(new ValidationInfo(EMAIL, email));
     }
 
     // Check Pattern
     Pattern pattern = validateDto.pattern();
     if (!pattern.regexp().isEmpty()) {
-      validations.add(new ValidationInfo("Pattern", pattern));
+      validations.add(new ValidationInfo(PATTERN, pattern));
     }
 
     // Check Positive
@@ -285,13 +289,13 @@ public class ValidationConflictUtil {
     // Check NotNull
     NotNull notNull = validateRecord.notNull();
     if (!notNull.message().isEmpty()) {
-      validations.add(new ValidationInfo("NotNull", notNull));
+      validations.add(new ValidationInfo(NOT_NULL, notNull));
     }
 
     // Check NotBlank
     NotBlank notBlank = validateRecord.notBlank();
     if (!notBlank.message().isEmpty()) {
-      validations.add(new ValidationInfo("NotBlank", notBlank));
+      validations.add(new ValidationInfo(NOT_BLANK, notBlank));
     }
 
     // Check NotEmpty
@@ -321,13 +325,13 @@ public class ValidationConflictUtil {
     // Check Email
     Email email = validateRecord.email();
     if (!email.message().isEmpty()) {
-      validations.add(new ValidationInfo("Email", email));
+      validations.add(new ValidationInfo(EMAIL, email));
     }
 
     // Check Pattern
     Pattern pattern = validateRecord.pattern();
     if (!pattern.regexp().isEmpty()) {
-      validations.add(new ValidationInfo("Pattern", pattern));
+      validations.add(new ValidationInfo(PATTERN, pattern));
     }
 
     // Check Positive
@@ -394,13 +398,13 @@ public class ValidationConflictUtil {
     // Check NotNull
     NotNull notNull = validateVo.notNull();
     if (!notNull.message().isEmpty()) {
-      validations.add(new ValidationInfo("NotNull", notNull));
+      validations.add(new ValidationInfo(NOT_NULL, notNull));
     }
 
     // Check NotBlank
     NotBlank notBlank = validateVo.notBlank();
     if (!notBlank.message().isEmpty()) {
-      validations.add(new ValidationInfo("NotBlank", notBlank));
+      validations.add(new ValidationInfo(NOT_BLANK, notBlank));
     }
 
     // Check NotEmpty
@@ -430,13 +434,13 @@ public class ValidationConflictUtil {
     // Check Email
     Email email = validateVo.email();
     if (!email.message().isEmpty()) {
-      validations.add(new ValidationInfo("Email", email));
+      validations.add(new ValidationInfo(EMAIL, email));
     }
 
     // Check Pattern
     Pattern pattern = validateVo.pattern();
     if (!pattern.regexp().isEmpty()) {
-      validations.add(new ValidationInfo("Pattern", pattern));
+      validations.add(new ValidationInfo(PATTERN, pattern));
     }
 
     // Check Positive
@@ -504,7 +508,7 @@ public class ValidationConflictUtil {
     String validationType = validation.type;
 
     switch (validationType) {
-      case "NotNull":
+      case NOT_NULL:
         // NotNull can be applied to any reference type, but not primitives
         if (isPrimitiveType(typeName)) {
           errors.add(
@@ -516,7 +520,7 @@ public class ValidationConflictUtil {
         }
         break;
 
-      case "NotBlank":
+      case NOT_BLANK:
         if (!isStringType(typeName)) {
           errors.add(
               "@NotBlank can only be applied to String fields. Field '"
@@ -585,7 +589,7 @@ public class ValidationConflictUtil {
         }
         break;
 
-      case "Email", "Pattern":
+      case EMAIL, PATTERN:
         if (!isStringType(typeName)) {
           errors.add(
               "@"

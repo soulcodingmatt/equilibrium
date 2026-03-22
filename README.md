@@ -1,6 +1,7 @@
 # Project Equilibrium
 
 A Java annotation processor for generating DTOs and other value container classes.
+![Equilibrium Summary Output](docs/images/equilibrium-logo-v1.0.0.png)
 
 **Disclaimer:** The project is currently under development.
 
@@ -20,6 +21,12 @@ Equilibrium is a Java annotation processor that helps you maintain consistency b
 ## Latest Version
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
+
+## Building Equilibrium vs. using it in your project
+
+**Building the Equilibrium artifact** (this repository) is done with **Maven**. The build includes Maven-specific pieces (for example resource filtering so the published JAR carries the correct version). Those would need to be **modified or adapted** if you wanted to produce the same artifact with another build tool, such as Gradle.
+
+**Using Equilibrium in your own project** is **build-tool agnostic**: you only need a toolchain that can **resolve artifacts** from **Maven Central** (or another Maven-compatible repository you use). You **never** run this project’s `pom.xml`; you declare the dependency and **consume the JAR that was already built and published**. That applies whether your project uses Maven, Gradle, or any other tool that can pull from such a repository.
 
 ## Features
 
@@ -450,9 +457,9 @@ DTO Interface Pattern...
 ## Requirements
 
 - Java 21 or higher
-- Maven 3.x **or** Gradle 8.x
+- For **projects that depend on Equilibrium**: a build that can resolve artifacts from Maven Central and run the annotation processor (for example Maven 3.x **or** Gradle 8.x)
 
-**Note**: Earlier versions of Java, Maven or Gradle might also work, but that wasn't tested.
+**Note**: Earlier versions of Java, Maven, or Gradle might also work, but that wasn't tested. Building the Equilibrium library itself uses Maven; see [Building Equilibrium vs. using it in your project](#building-equilibrium-vs-using-it-in-your-project).
 
 ## Contributing
 

@@ -55,7 +55,7 @@ public class DtoGenerator {
         InheritedBuilderDefaultScanner.scan(services.trees(), builder, fields);
 
     NestedMappingResolver nestedResolver =
-        new NestedMappingResolver(classElement, services.messager(), dtoClassName);
+        new NestedMappingResolver(classElement, services.messager());
 
     DtoBuilderDefaultSupport builderSupport =
         new DtoBuilderDefaultSupport(builder, services.messager(), inherited.safeInitializers());
@@ -70,7 +70,6 @@ public class DtoGenerator {
       classWriter.writeFileHeader(writer, packageName, builder);
       DtoImportPlanner.writeImports(
           writer,
-          dtoClassName,
           builder,
           dtoId,
           fields,
