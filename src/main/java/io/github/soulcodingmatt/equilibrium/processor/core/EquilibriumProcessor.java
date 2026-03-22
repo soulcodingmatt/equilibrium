@@ -128,7 +128,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
     bannerAnsiColors = isBannerAnsiColorsEnabled(processingEnv);
     emittedGenerationNotes = false;
     if (buildBannerEnabled) {
-      EquilibriumBuildBanner.print(messager, bannerAnsiColors);
+      EquilibriumBuildBanner.print(messager);
     }
     config = new EquilibriumConfig(processingEnv);
     try {
@@ -141,109 +141,93 @@ public class EquilibriumProcessor extends AbstractProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     if (roundEnv.processingOver()) {
-      if (buildBannerEnabled && shouldPrintGenerationSummary()) {
-        int generatedFiles = filerStats != null ? filerStats.getGeneratedJavaSourceCount() : 0;
-        EquilibriumBuildBanner.printGenerationSummary(
-            messager,
-            processedElements.size(),
-            generatedFiles,
-            messagerStats.getErrorCount(),
-            messagerStats.getWarningCount(),
-            bannerAnsiColors);
-      }
+      printGenerationSummaryOnLastRoundIfEnabled();
       return false;
     }
+    return processModelRound(annotations, roundEnv);
+  }
 
-    // Check if any of our Equilibrium annotations are present
+  private void printGenerationSummaryOnLastRoundIfEnabled() {
+    if (buildBannerEnabled && shouldPrintGenerationSummary()) {
+      int generatedFiles = filerStats != null ? filerStats.getGeneratedJavaSourceCount() : 0;
+      EquilibriumBuildBanner.printGenerationSummary(
+          messager,
+          processedElements.size(),
+          generatedFiles,
+          messagerStats.getErrorCount(),
+          messagerStats.getWarningCount(),
+          bannerAnsiColors);
+    }
+  }
+
+  private boolean processModelRound(
+      Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     boolean hasEquilibriumAnnotations =
         annotations.stream()
             .map(TypeElement::getQualifiedName)
             .map(Object::toString)
             .anyMatch(name -> name.startsWith("io.github.soulcodingmatt.equilibrium.annotations"));
 
-    // Check if any Jakarta validation annotations are present
     boolean hasJakartaValidationAnnotations =
         annotations.stream()
             .map(TypeElement::getQualifiedName)
             .map(Object::toString)
             .anyMatch(name -> name.startsWith("jakarta.validation.constraints"));
 
-    // If we have Jakarta validation annotations but no Equilibrium annotations,
-    // we should still claim the Jakarta annotations since we likely generated them
     if (hasJakartaValidationAnnotations && !hasEquilibriumAnnotations) {
-      // Just claim the Jakarta validation annotations without processing
       return true;
     }
 
     try {
-      // Get valid class elements that need processing
       Set<TypeElement> validElements = getValidClassElements(roundEnv);
-
-      // If no valid elements found, don't claim the annotations
       if (validElements.isEmpty()) {
         return false;
       }
 
-      // Validate ValidateDto annotations before processing
       for (TypeElement typeElement : validElements) {
         if (!validateValidateDtoAnnotations(typeElement)) {
-          // Validation failed, compilation errors already generated
           return false;
         }
-
-        // Validate ValidateRecord annotations before processing
         if (!validateValidateRecordAnnotations(typeElement)) {
-          // Validation failed, compilation errors already generated
           return false;
         }
-
-        // Validate ValidateVo annotations before processing
         if (!validateValidateVoAnnotations(typeElement)) {
-          // Validation failed, compilation errors already generated
           return false;
         }
-
-        // Validate NestedMapping annotations
         if (!validateNestedMappingAnnotations(typeElement)) {
-          // Validation failed, compilation errors already generated
           return false;
         }
       }
 
-      // FIRST PASS: Pre-register all DTOs that will be generated
       preRegisterAllDtos(validElements);
-
-      // SECOND PASS: Process each valid element normally
       for (TypeElement typeElement : validElements) {
         processElement(typeElement);
       }
-
-      // We've processed our annotations, so claim them
-      // This includes both Equilibrium annotations and any Jakarta validation annotations
-      // that we generate in the output DTOs
       return true;
     } catch (Exception e) {
-      // Try to get the first valid element for better error context
-      Set<TypeElement> validElements = getValidClassElements(roundEnv);
-      if (!validElements.isEmpty()) {
-        TypeElement contextElement = validElements.iterator().next();
-        error(
-            contextElement,
-            "Failed to process annotations: "
-                + e.getMessage()
-                + " ("
-                + e.getClass().getSimpleName()
-                + ")");
-      } else {
-        error(
-            "Failed to process annotations: "
-                + e.getMessage()
-                + " ("
-                + e.getClass().getSimpleName()
-                + ")");
-      }
-      // On error, don't claim the annotations so other processors might handle them
+      reportProcessingFailure(roundEnv, e);
       return false;
+    }
+  }
+
+  private void reportProcessingFailure(RoundEnvironment roundEnv, Exception e) {
+    Set<TypeElement> validElements = getValidClassElements(roundEnv);
+    if (!validElements.isEmpty()) {
+      TypeElement contextElement = validElements.iterator().next();
+      error(
+          contextElement,
+          "Failed to process annotations: "
+              + e.getMessage()
+              + " ("
+              + e.getClass().getSimpleName()
+              + ")");
+    } else {
+      error(
+          "Failed to process annotations: "
+              + e.getMessage()
+              + " ("
+              + e.getClass().getSimpleName()
+              + ")");
     }
   }
 
@@ -917,9 +901,7 @@ public class EquilibriumProcessor extends AbstractProcessor {
         NestedMapping nestedMapping = field.getAnnotation(NestedMapping.class);
 
         if (nestedMapping != null) {
-          // Basic validation - the DTO class reference validation
-          // will happen naturally during code generation if the class doesn't exist
-          // No complex validation needed with simplified single-annotation approach
+          // DTO class existence is validated during generation; no extra checks here yet.
         }
       }
     }

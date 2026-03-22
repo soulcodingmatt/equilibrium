@@ -38,7 +38,7 @@ class EquilibriumBuildBannerTest {
     assertFalse(expected.isEmpty());
 
     CollectingMessager messager = new CollectingMessager();
-    EquilibriumBuildBanner.print(messager, false);
+    EquilibriumBuildBanner.print(messager);
     int idx = 2 + countLogoResourceLines();
     assertEquals("Equilibrium " + expected, messager.notes().get(idx));
   }
@@ -47,7 +47,7 @@ class EquilibriumBuildBannerTest {
   void
       header_emitsBlankThenOuterRule_thenLogoWithUniformLineLengths_thenTitleDashDescriptionDash() {
     CollectingMessager messager = new CollectingMessager();
-    EquilibriumBuildBanner.print(messager, false);
+    EquilibriumBuildBanner.print(messager);
 
     List<String> notes = messager.notes();
     assertFalse(notes.isEmpty());
@@ -80,7 +80,7 @@ class EquilibriumBuildBannerTest {
   @Test
   void header_allLogoLinesHaveUniformLength_withinTopRuleWidth() {
     CollectingMessager messager = new CollectingMessager();
-    EquilibriumBuildBanner.print(messager, false);
+    EquilibriumBuildBanner.print(messager);
     List<String> notes = messager.notes();
     int logoLines = countLogoResourceLines();
     int topRuleLen = notes.get(1).length();
@@ -191,7 +191,7 @@ class EquilibriumBuildBannerTest {
   @Test
   void ansiDisabled_containsNoEscapeSequences() {
     CollectingMessager m = new CollectingMessager();
-    EquilibriumBuildBanner.print(m, false);
+    EquilibriumBuildBanner.print(m);
     EquilibriumBuildBanner.printGenerationSummary(m, 1, 1, 0, 0, false);
     for (String line : m.notes()) {
       assertFalse(line.contains("\u001b"), line);

@@ -35,6 +35,9 @@ public final class EquilibriumBuildBanner {
    */
   private static final int STATUS_COL_WIDTH = 8;
 
+  /** Two-column summary table: padded status cell, two spaces, result text. */
+  private static final String SUMMARY_TWO_COLUMN_FORMAT = "%-" + STATUS_COL_WIDTH + "s  %s";
+
   private enum SummaryTag {
     OK,
     ERROR,
@@ -43,7 +46,7 @@ public final class EquilibriumBuildBanner {
 
   private EquilibriumBuildBanner() {}
 
-  public static void print(Messager messager, boolean ansiColors) {
+  public static void print(Messager messager) {
     List<String> logoLines = readLogoLines();
     if (logoLines.isEmpty()) {
       return;
@@ -93,13 +96,11 @@ public final class EquilibriumBuildBanner {
     messager.printMessage(Diagnostic.Kind.NOTE, innerRule);
 
     messager.printMessage(
-        Diagnostic.Kind.NOTE, String.format("%-" + STATUS_COL_WIDTH + "s  %s", "Status", "Result"));
+        Diagnostic.Kind.NOTE, String.format(SUMMARY_TWO_COLUMN_FORMAT, "Status", "Result"));
     messager.printMessage(
         Diagnostic.Kind.NOTE,
         String.format(
-            "%-" + STATUS_COL_WIDTH + "s  %s",
-            "-".repeat(STATUS_COL_WIDTH),
-            "-".repeat(resultColWidth)));
+            SUMMARY_TWO_COLUMN_FORMAT, "-".repeat(STATUS_COL_WIDTH), "-".repeat(resultColWidth)));
 
     messager.printMessage(
         Diagnostic.Kind.NOTE,
@@ -137,7 +138,7 @@ public final class EquilibriumBuildBanner {
   private static int computeSummaryMinimumWidth(
       int processedTypes, int generatedFiles, int errorCount, int warningCount) {
     int w = "Summary".length();
-    w = Math.max(w, String.format("%-" + STATUS_COL_WIDTH + "s  %s", "Status", "Result").length());
+    w = Math.max(w, String.format(SUMMARY_TWO_COLUMN_FORMAT, "Status", "Result").length());
     w = Math.max(w, STATUS_COL_WIDTH + 2 + processedPhrase(processedTypes).length());
     w = Math.max(w, STATUS_COL_WIDTH + 2 + generatedPhrase(generatedFiles).length());
     w = Math.max(w, STATUS_COL_WIDTH + 2 + errorsPhrase(errorCount).length());
@@ -173,7 +174,7 @@ public final class EquilibriumBuildBanner {
     if (frameWidth < logoMax) {
       List<String> narrow = new ArrayList<>(logoLines.size());
       for (String line : logoLines) {
-        narrow.add(String.format("%-" + logoMax + "s", line));
+        narrow.add(padRightToWidthForLogo(line, logoMax));
       }
       return narrow;
     }
@@ -181,10 +182,20 @@ public final class EquilibriumBuildBanner {
     String left = " ".repeat(blockPad);
     List<String> out = new ArrayList<>(logoLines.size());
     for (String line : logoLines) {
-      String normalized = String.format("%-" + logoMax + "s", line);
-      out.add(left + normalized);
+      out.add(String.format("%s%s", left, padRightToWidthForLogo(line, logoMax)));
     }
     return out;
+  }
+
+  /**
+   * Left-justifies {@code s} in a field of {@code width} (same result as {@code String.format("%-"
+   * + width + "s", s)} for typical strings) without building a dynamic format pattern string.
+   */
+  static String padRightToWidthForLogo(String s, int width) {
+    if (s.length() >= width) {
+      return s;
+    }
+    return s + " ".repeat(width - s.length());
   }
 
   /**
@@ -201,7 +212,7 @@ public final class EquilibriumBuildBanner {
     if (version == null || version.isEmpty()) {
       return "Equilibrium";
     }
-    return "Equilibrium " + version;
+    return String.format("Equilibrium %s", version);
   }
 
   private static String readImplementationVersionFromResource() {
@@ -300,7 +311,7 @@ public final class EquilibriumBuildBanner {
           case WARN -> "[WARN]";
         };
     if (!ansi) {
-      return String.format("%-" + STATUS_COL_WIDTH + "s", plain);
+      return padRightToWidthForLogo(plain, STATUS_COL_WIDTH);
     }
     String colored =
         switch (tag) {

@@ -37,14 +37,14 @@ import org.junit.jupiter.api.Test;
 class EquilibriumProcessorTest {
 
   private EquilibriumProcessor processor;
-  private TestMessager testMessager;
+  private TestMessager fixtureMessager;
   private TestProcessingEnvironment testProcessingEnv;
 
   @BeforeEach
   void setUp() {
     processor = new EquilibriumProcessor();
-    testMessager = new TestMessager();
-    testProcessingEnv = new TestProcessingEnvironment(testMessager);
+    fixtureMessager = new TestMessager();
+    testProcessingEnv = new TestProcessingEnvironment(fixtureMessager);
 
     // Initialize the processor
     processor.init(testProcessingEnv);
@@ -182,10 +182,10 @@ class EquilibriumProcessorTest {
   void testInitStoresFilerAndMessager() throws Exception {
     // Create a new processor instance to test init
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
+    TestMessager messager = new TestMessager();
     TestFiler testFiler = new TestFiler();
     TestProcessingEnvironmentWithFiler testEnv =
-        new TestProcessingEnvironmentWithFiler(testMessager, testFiler);
+        new TestProcessingEnvironmentWithFiler(messager, testFiler);
 
     // Act - initialize the processor
     testProcessor.init(testEnv);
@@ -208,7 +208,7 @@ class EquilibriumProcessorTest {
     assertTrue(
         storedMessager instanceof EquilibriumMessagerStats, "Messager should be wrapped for stats");
     assertSame(
-        testMessager,
+        messager,
         ((EquilibriumMessagerStats) storedMessager).delegateMessager(),
         "Stats wrapper should delegate to the ProcessingEnvironment messager");
   }
@@ -217,8 +217,8 @@ class EquilibriumProcessorTest {
   void testInitBuildsEquilibriumConfig() throws Exception {
     // Create a new processor instance to test init
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
 
     // Add some options to verify config is built from ProcessingEnvironment
     testEnv.getOptions().put("equilibrium.dto.package", "com.test.dto");
@@ -242,8 +242,8 @@ class EquilibriumProcessorTest {
   void testInitObtainsTreesNullable() throws Exception {
     // Create a new processor instance to test init
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
 
     // Act - initialize the processor
     testProcessor.init(testEnv);
@@ -260,16 +260,16 @@ class EquilibriumProcessorTest {
   }
 
   @Test
-  void testInitPrintsBuildBannerWhenEnabled() throws Exception {
+  void testInitPrintsBuildBannerWhenEnabled() {
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
     testEnv.getOptions().put("equilibrium.banner", "true");
 
     testProcessor.init(testEnv);
 
-    assertFalse(testMessager.getNoteMessages().isEmpty(), "banner should emit NOTE diagnostics");
-    List<TestMessage> notes = testMessager.getNoteMessages();
+    assertFalse(messager.getNoteMessages().isEmpty(), "banner should emit NOTE diagnostics");
+    List<TestMessage> notes = messager.getNoteMessages();
     assertEquals("", notes.get(0).getMessage(), "blank line precedes top rule");
     String topRule = notes.get(1).getMessage();
     String bottomRule = notes.get(notes.size() - 1).getMessage();
@@ -281,8 +281,8 @@ class EquilibriumProcessorTest {
   @Test
   void testProcessingOverPrintsGenerationFooterAfterNotes() throws Exception {
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
     testEnv.getOptions().put("equilibrium.banner", "true");
 
     testProcessor.init(testEnv);
@@ -298,7 +298,7 @@ class EquilibriumProcessorTest {
     TestRoundEnvironment lastRound = new TestRoundEnvironment(true, new HashSet<>());
     processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
 
-    List<TestMessage> notes = testMessager.getNoteMessages();
+    List<TestMessage> notes = messager.getNoteMessages();
     assertFalse(notes.isEmpty());
     String lastNonEmptyLine = "";
     for (int i = notes.size() - 1; i >= 0; i--) {
@@ -315,8 +315,8 @@ class EquilibriumProcessorTest {
   @Test
   void testProcessingOver_skipsSummaryWhenNoWorkOrDiagnostics() throws Exception {
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
     testEnv.getOptions().put("equilibrium.banner", "true");
     testEnv.getOptions().put("equilibrium.banner.color", "false");
 
@@ -329,7 +329,7 @@ class EquilibriumProcessorTest {
     processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
 
     String joined =
-        testMessager.getNoteMessages().stream()
+        messager.getNoteMessages().stream()
             .map(TestMessage::getMessage)
             .collect(Collectors.joining("\n"));
     assertFalse(joined.contains("Summary"));
@@ -339,8 +339,8 @@ class EquilibriumProcessorTest {
   @Test
   void testProcessingOver_printsSummaryAfterNoteWithAggregateCounts() throws Exception {
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
     testEnv.getOptions().put("equilibrium.banner", "true");
     testEnv.getOptions().put("equilibrium.banner.color", "false");
 
@@ -358,7 +358,7 @@ class EquilibriumProcessorTest {
     processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
 
     String joined =
-        testMessager.getNoteMessages().stream()
+        messager.getNoteMessages().stream()
             .map(TestMessage::getMessage)
             .collect(Collectors.joining("\n"));
     assertTrue(joined.contains("Summary"));
@@ -370,8 +370,8 @@ class EquilibriumProcessorTest {
   @Test
   void testProcessingOver_printsFailureSummaryWhenErrorEmitted() throws Exception {
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
     testEnv.getOptions().put("equilibrium.banner", "true");
     testEnv.getOptions().put("equilibrium.banner.color", "false");
 
@@ -388,7 +388,7 @@ class EquilibriumProcessorTest {
     processMethod.invoke(testProcessor, new HashSet<>(), lastRound);
 
     String joined =
-        testMessager.getNoteMessages().stream()
+        messager.getNoteMessages().stream()
             .map(TestMessage::getMessage)
             .collect(Collectors.joining("\n"));
     assertTrue(joined.contains("Summary"));
@@ -399,21 +399,19 @@ class EquilibriumProcessorTest {
   void testInitHasNoSideEffects() throws Exception {
     // Create a new processor instance to test init
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
 
     // Act - initialize the processor
     testProcessor.init(testEnv);
 
     // Assert - verify no messages were printed (no side effects)
-    assertEquals(
-        0, testMessager.getErrorMessages().size(), "init() should not produce error messages");
+    assertEquals(0, messager.getErrorMessages().size(), "init() should not produce error messages");
     assertEquals(
         0,
-        testMessager.getGeneralErrorMessages().size(),
+        messager.getGeneralErrorMessages().size(),
         "init() should not produce general error messages");
-    assertEquals(
-        0, testMessager.getNoteMessages().size(), "init() should not produce note messages");
+    assertEquals(0, messager.getNoteMessages().size(), "init() should not produce note messages");
 
     // Verify processedElements set is empty (no processing happened)
     java.lang.reflect.Field processedElementsField =
@@ -427,11 +425,11 @@ class EquilibriumProcessorTest {
   }
 
   @Test
-  void testInitCallsSuperInit() throws Exception {
+  void testInitCallsSuperInit() {
     // Create a new processor instance to test init
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
-    TestMessager testMessager = new TestMessager();
-    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(testMessager);
+    TestMessager messager = new TestMessager();
+    TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
 
     // Act - initialize the processor
     testProcessor.init(testEnv);
@@ -457,8 +455,8 @@ class EquilibriumProcessorTest {
     errorMethod.invoke(processor, null, "Test error with element");
 
     // Assert
-    assertEquals(1, testMessager.getErrorMessages().size());
-    TestMessage errorMessage = testMessager.getErrorMessages().get(0);
+    assertEquals(1, fixtureMessager.getErrorMessages().size());
+    TestMessage errorMessage = fixtureMessager.getErrorMessages().get(0);
     assertEquals(Diagnostic.Kind.ERROR, errorMessage.getKind());
     assertEquals("Test error with element", errorMessage.getMessage());
     assertNull(errorMessage.getElement());
@@ -474,8 +472,8 @@ class EquilibriumProcessorTest {
     errorMethod.invoke(processor, "Test error without element");
 
     // Assert
-    assertEquals(1, testMessager.getGeneralErrorMessages().size());
-    assertEquals("Test error without element", testMessager.getGeneralErrorMessages().get(0));
+    assertEquals(1, fixtureMessager.getGeneralErrorMessages().size());
+    assertEquals("Test error without element", fixtureMessager.getGeneralErrorMessages().get(0));
   }
 
   @Test
@@ -497,8 +495,8 @@ class EquilibriumProcessorTest {
     errorMethod.invoke(processor, expectedMessage);
 
     // Assert
-    assertEquals(1, testMessager.getGeneralErrorMessages().size());
-    String actualMessage = testMessager.getGeneralErrorMessages().get(0);
+    assertEquals(1, fixtureMessager.getGeneralErrorMessages().size());
+    String actualMessage = fixtureMessager.getGeneralErrorMessages().get(0);
     assertTrue(actualMessage.contains("Failed to process annotations"));
     assertTrue(actualMessage.contains("Test exception message"));
     assertTrue(actualMessage.contains("RuntimeException"));
@@ -515,8 +513,8 @@ class EquilibriumProcessorTest {
     noteMethod.invoke(processor, null, "Test note message");
 
     // Assert
-    assertEquals(1, testMessager.getNoteMessages().size());
-    TestMessage noteMessage = testMessager.getNoteMessages().get(0);
+    assertEquals(1, fixtureMessager.getNoteMessages().size());
+    TestMessage noteMessage = fixtureMessager.getNoteMessages().get(0);
     assertEquals(Diagnostic.Kind.NOTE, noteMessage.getKind());
     assertEquals("Test note message", noteMessage.getMessage());
   }
@@ -721,7 +719,9 @@ class EquilibriumProcessorTest {
 
     // Verify error messages were generated for non-class elements
     assertEquals(
-        2, testMessager.getErrorMessages().size(), "Should generate errors for non-class elements");
+        2,
+        fixtureMessager.getErrorMessages().size(),
+        "Should generate errors for non-class elements");
   }
 
   @Test
@@ -795,7 +795,9 @@ class EquilibriumProcessorTest {
     // Assert
     assertTrue(result, "Should return true for class elements");
     assertEquals(
-        0, testMessager.getErrorMessages().size(), "Should not generate errors for class elements");
+        0,
+        fixtureMessager.getErrorMessages().size(),
+        "Should not generate errors for class elements");
   }
 
   @Test
@@ -813,9 +815,11 @@ class EquilibriumProcessorTest {
     // Assert
     assertFalse(result, "Should return false for interface elements");
     assertEquals(
-        1, testMessager.getErrorMessages().size(), "Should generate error for interface element");
+        1,
+        fixtureMessager.getErrorMessages().size(),
+        "Should generate error for interface element");
     assertTrue(
-        testMessager
+        fixtureMessager
             .getErrorMessages()
             .get(0)
             .getMessage()
@@ -838,9 +842,9 @@ class EquilibriumProcessorTest {
     // Assert
     assertFalse(result, "Should return false for enum elements");
     assertEquals(
-        1, testMessager.getErrorMessages().size(), "Should generate error for enum element");
+        1, fixtureMessager.getErrorMessages().size(), "Should generate error for enum element");
     assertTrue(
-        testMessager
+        fixtureMessager
             .getErrorMessages()
             .get(0)
             .getMessage()

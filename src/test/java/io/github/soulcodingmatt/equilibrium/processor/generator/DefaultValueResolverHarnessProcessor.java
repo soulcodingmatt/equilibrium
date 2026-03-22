@@ -130,7 +130,9 @@ public class DefaultValueResolverHarnessProcessor extends AbstractProcessor {
               hasExplicitEmptyOnOptional = DefaultValueResolver.hasExplicitDtoDefault(field, ann);
           case "withString" ->
               hasOtherParamsWithString = DefaultValueResolver.hasAnyOtherParameterSet(ann);
-          default -> {}
+          default -> {
+            /* Ignore fields not mapped by this harness (probe may add new fields later). */
+          }
         }
       }
     }

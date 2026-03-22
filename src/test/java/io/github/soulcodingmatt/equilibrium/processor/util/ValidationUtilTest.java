@@ -2,6 +2,7 @@ package io.github.soulcodingmatt.equilibrium.processor.util;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -145,57 +146,42 @@ class ValidationUtilTest {
   }
 
   @Test
-  void testPackageNameValidationRules() {
-    // Valid cases
+  void testPackageNameValidationRules_validAndKeywordSuffixes() {
     assertTrue(ValidationUtil.isValidPackageName("com.example"));
     assertTrue(ValidationUtil.isValidPackageName("com.example123"));
     assertTrue(ValidationUtil.isValidPackageName("Com.Example"));
-    assertTrue(
-        ValidationUtil.isValidPackageName("com.example-test")); // hyphen allowed (not a keyword)
-    assertTrue(
-        ValidationUtil.isValidPackageName(
-            "com.example_test")); // underscore allowed (not a keyword)
-    assertTrue(ValidationUtil.isValidPackageName("com.example-123")); // hyphen allowed
-    assertTrue(ValidationUtil.isValidPackageName("com.example_123")); // underscore allowed
-    assertTrue(ValidationUtil.isValidPackageName("com.example-test.sub-test")); // multiple hyphens
-    assertTrue(
-        ValidationUtil.isValidPackageName("com.example_test.sub_test")); // multiple underscores
+    assertTrue(ValidationUtil.isValidPackageName("com.example-test"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example_test"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example-123"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example_123"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example-test.sub-test"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example_test.sub_test"));
 
-    // Invalid cases - syntax errors
-    assertFalse(ValidationUtil.isValidPackageName("123com.example")); // starts with number
-    assertFalse(ValidationUtil.isValidPackageName("com.123example")); // part starts with number
-    assertFalse(
-        ValidationUtil.isValidPackageName("com.example.123test")); // part starts with number
-    assertFalse(ValidationUtil.isValidPackageName("com.123.example")); // part starts with number
-    assertFalse(ValidationUtil.isValidPackageName("com.123.456")); // parts start with numbers
-    assertFalse(ValidationUtil.isValidPackageName("com..example")); // double dot
-    assertFalse(ValidationUtil.isValidPackageName("com.example.")); // trailing dot
-    assertFalse(ValidationUtil.isValidPackageName(".com.example")); // leading dot
-    assertFalse(ValidationUtil.isValidPackageName("com.example/test")); // slash not allowed
-    assertFalse(ValidationUtil.isValidPackageName("com.example test")); // space not allowed
-    assertFalse(ValidationUtil.isValidPackageName(null)); // null
-    assertFalse(ValidationUtil.isValidPackageName("")); // empty
+    assertTrue(ValidationUtil.isValidPackageName("com.example.package123"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example.package_test"));
+    assertTrue(ValidationUtil.isValidPackageName("com.example.package-test"));
+  }
 
-    // Invalid cases - Java keywords (exact matches only)
-    assertFalse(ValidationUtil.isValidPackageName("com.example.package")); // "package" is a keyword
-    assertFalse(ValidationUtil.isValidPackageName("com.example.new")); // "new" is a keyword
-    assertFalse(ValidationUtil.isValidPackageName("com.class.example")); // "class" is a keyword
-    assertFalse(
-        ValidationUtil.isValidPackageName("com.interface.example")); // "interface" is a keyword
-    assertFalse(
-        ValidationUtil.isValidPackageName(
-            "com.Example.Package")); // "Package" is a keyword (case insensitive)
+  @Test
+  void testPackageNameValidationRules_invalidSyntaxAndReservedParts() {
+    assertFalse(ValidationUtil.isValidPackageName("123com.example"));
+    assertFalse(ValidationUtil.isValidPackageName("com.123example"));
+    assertFalse(ValidationUtil.isValidPackageName("com.example.123test"));
+    assertFalse(ValidationUtil.isValidPackageName("com.123.example"));
+    assertFalse(ValidationUtil.isValidPackageName("com.123.456"));
+    assertFalse(ValidationUtil.isValidPackageName("com..example"));
+    assertFalse(ValidationUtil.isValidPackageName("com.example."));
+    assertFalse(ValidationUtil.isValidPackageName(".com.example"));
+    assertFalse(ValidationUtil.isValidPackageName("com.example/test"));
+    assertFalse(ValidationUtil.isValidPackageName("com.example test"));
+    assertFalse(ValidationUtil.isValidPackageName(null));
+    assertFalse(ValidationUtil.isValidPackageName(""));
 
-    // Valid cases - keywords with additional characters are allowed
-    assertTrue(
-        ValidationUtil.isValidPackageName(
-            "com.example.package123")); // "package123" is not exactly "package"
-    assertTrue(
-        ValidationUtil.isValidPackageName(
-            "com.example.package_test")); // "package_test" is not exactly "package"
-    assertTrue(
-        ValidationUtil.isValidPackageName(
-            "com.example.package-test")); // "package-test" is not exactly "package"
+    assertFalse(ValidationUtil.isValidPackageName("com.example.package"));
+    assertFalse(ValidationUtil.isValidPackageName("com.example.new"));
+    assertFalse(ValidationUtil.isValidPackageName("com.class.example"));
+    assertFalse(ValidationUtil.isValidPackageName("com.interface.example"));
+    assertFalse(ValidationUtil.isValidPackageName("com.Example.Package"));
   }
 
   @Test
@@ -524,18 +510,15 @@ class ValidationUtilTest {
 
   @Test
   void testUtilityClassCannotBeInstantiated() {
-    // Verify that ValidationUtil cannot be instantiated
-    // The constructor throws UnsupportedOperationException, but reflection wraps it in
-    // InvocationTargetException
-    try {
-      var constructor = ValidationUtil.class.getDeclaredConstructor();
-      constructor.setAccessible(true);
-      constructor.newInstance();
-      fail("Expected exception when instantiating utility class");
-    } catch (Exception e) {
-      // Check that the cause is UnsupportedOperationException
-      assertTrue(e.getCause() instanceof UnsupportedOperationException);
-      assertEquals("This is a utility class and cannot be instantiated", e.getCause().getMessage());
-    }
+    InvocationTargetException ex =
+        assertThrows(
+            InvocationTargetException.class,
+            () -> {
+              var constructor = ValidationUtil.class.getDeclaredConstructor();
+              constructor.setAccessible(true);
+              constructor.newInstance();
+            });
+    assertTrue(ex.getCause() instanceof UnsupportedOperationException);
+    assertEquals("This is a utility class and cannot be instantiated", ex.getCause().getMessage());
   }
 }
