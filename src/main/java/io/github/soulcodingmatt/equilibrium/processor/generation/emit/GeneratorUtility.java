@@ -393,23 +393,4 @@ public class GeneratorUtility {
     writer.write(" +\n            \"}\";\n");
     writer.write(STRING_END);
   }
-
-  /** Write record parameters for record declaration */
-  public static void writeRecordParameters(
-      Writer writer,
-      List<VariableElement> fields,
-      Function<VariableElement, String> typeTransformer)
-      throws IOException {
-    boolean first = true;
-    for (VariableElement field : fields) {
-      if (!first) {
-        writer.write(", ");
-      }
-      String type =
-          typeTransformer != null ? typeTransformer.apply(field) : field.asType().toString();
-      String name = field.getSimpleName().toString();
-      writer.write(type + " " + name);
-      first = false;
-    }
-  }
 }
