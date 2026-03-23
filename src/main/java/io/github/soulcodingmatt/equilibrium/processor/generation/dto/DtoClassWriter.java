@@ -11,6 +11,9 @@ import javax.lang.model.element.VariableElement;
 /**
  * Emits a DTO class file given the key pieces of data. This is intentionally minimal at first and
  * will evolve as we progressively extract logic from {@link DtoGenerator}.
+ *
+ * <p>When {@code useSuperBuilder} is true, Lombok later generates builder implementation types;
+ * those may use {@code $} in member names per Lombok, not under Equilibrium’s control.
  */
 public final class DtoClassWriter {
 
@@ -40,7 +43,7 @@ public final class DtoClassWriter {
   public void emitGetter(CodeWriter code, String type, String name) throws IOException {
     String cap = name.substring(0, 1).toUpperCase() + name.substring(1);
     code.beginBlock("public " + type + " get" + cap + "()");
-    code.writeLine("return " + name + ";");
+    code.writeLine("return this." + name + ";");
     code.endBlock();
     code.blankLine();
   }

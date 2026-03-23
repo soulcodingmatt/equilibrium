@@ -13,8 +13,8 @@ import java.lang.annotation.Target;
  *
  * <pre>
  * &#64;NestedMappings({
- *     &#64;NestedMapping(ids = 1, dtoClass = FunkyShitDto.class),
- *     &#64;NestedMapping(ids = 2, dtoClass = DoTheFunkyChickenDto.class)
+ *     &#64;NestedMapping(ids = 1, dtoClass = NestedBodyDto.class),
+ *     &#64;NestedMapping(ids = 2, dtoClass = NestedBodyAltDto.class)
  * })
  * private Body body;
  * </pre>

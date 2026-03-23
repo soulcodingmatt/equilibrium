@@ -23,6 +23,11 @@ import javax.lang.model.type.TypeMirror;
 /**
  * Utility class containing common code generation methods shared across different generators. This
  * class helps eliminate code duplication between DtoGenerator, VoGenerator, and RecordGenerator.
+ *
+ * <p>Emitted source aims to follow the
+ * <ahref="https://google.github.io/styleguide/javaguide.html">Google Java Style Guide</a> for
+ * generated code (for example {@code this.} on field reads, braces on {@code if} bodies).
+ * Lombok-generated code (for example {@code @SuperBuilder} expansion) is not produced here.
  */
 public class GeneratorUtility {
 
@@ -299,7 +304,7 @@ public class GeneratorUtility {
 
     // Getter
     writer.write("    public " + type + " get" + capitalizedName + "() {\n");
-    writer.write("        return " + name + ";\n");
+    writer.write("        return this." + name + ";\n");
     writer.write(STRING_END);
 
     // Setter (only if enabled)
@@ -310,19 +315,27 @@ public class GeneratorUtility {
     }
   }
 
-  /** Write equals method */
+  /**
+   * Write equals method (Google Java Style: braces on all {@code if} bodies, {@code this.} on
+   * fields).
+   */
   public static void writeEquals(Writer writer, List<VariableElement> fields, String className)
       throws IOException {
     writer.write(OVERRIDE);
     writer.write("    public boolean equals(Object o) {\n");
-    writer.write("        if (this == o) return true;\n");
-    writer.write("        if (o == null || getClass() != o.getClass()) return false;\n");
+    writer.write("        if (this == o) {\n");
+    writer.write("            return true;\n");
+    writer.write("        }\n");
+    writer.write("        if (o == null || getClass() != o.getClass()) {\n");
+    writer.write("            return false;\n");
+    writer.write("        }\n");
     writer.write("        " + className + " that = (" + className + ") o;\n");
 
-    // Compare each field
     for (VariableElement field : fields) {
       String name = field.getSimpleName().toString();
-      writer.write("        if (!Objects.equals(" + name + ", that." + name + ")) return false;\n");
+      writer.write("        if (!Objects.equals(this." + name + ", that." + name + ")) {\n");
+      writer.write("            return false;\n");
+      writer.write("        }\n");
     }
 
     writer.write("        return true;\n");
@@ -341,7 +354,7 @@ public class GeneratorUtility {
       if (!first) {
         writer.write(", ");
       }
-      writer.write(field.getSimpleName().toString());
+      writer.write("this." + field.getSimpleName());
       first = false;
     }
 
@@ -361,10 +374,10 @@ public class GeneratorUtility {
     for (VariableElement field : fields) {
       String name = field.getSimpleName().toString();
       if (first) {
-        writer.write("            \"" + name + "=\" + " + name);
+        writer.write("            \"" + name + "=\" + this." + name);
         first = false;
       } else {
-        writer.write(" +\n            \", " + name + "=\" + " + name);
+        writer.write(" +\n            \", " + name + "=\" + this." + name);
       }
     }
 

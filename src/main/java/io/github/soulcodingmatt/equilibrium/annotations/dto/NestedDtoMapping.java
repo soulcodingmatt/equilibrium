@@ -10,8 +10,8 @@ import java.lang.annotation.*;
  * <p>Example:
  *
  * <pre>
- * &#64;NestedDtoMapping(ids = 1, dtoClassName = "my.first.packagee.FunkyShitDto")
- * &#64;NestedDtoMapping(ids = 2, dtoClassName = "my.second.packagee.DoTheFunkyChickenDto")
+ * &#64;NestedDtoMapping(ids = 1, dtoClassName = "io.github.soulcodingmatt.customsamples.birds.dto.NestedBodyDto")
+ * &#64;NestedDtoMapping(ids = 2, dtoClassName = "io.github.soulcodingmatt.customsamples.birds.dto.NestedBodyAltDto")
  * private Body body;
  * </pre>
  */
