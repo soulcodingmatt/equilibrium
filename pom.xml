@@ -52,7 +52,32 @@
     <junit-jupiter.version>5.13.1</junit-jupiter.version>
     <compile-testing.version>0.21.0</compile-testing.version>
     <lombok.version>1.18.36</lombok.version>
+    <!-- Align Truth vs compile-testing (older checker-qual / Guava transitively). -->
+    <checker-qual.version>3.26.0</checker-qual.version>
+    <guava.version>33.4.8-jre</guava.version>
+    <!-- Match Guava’s transitive error_prone; Truth pulls an older one. -->
+    <error_prone_annotations.version>2.36.0</error_prone_annotations.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.checkerframework</groupId>
+        <artifactId>checker-qual</artifactId>
+        <version>${checker-qual.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>${error_prone_annotations.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <!-- Auto-service for annotation processor -->
@@ -71,7 +96,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>33.4.8-jre</version>
+      <version>${guava.version}</version>
       <scope>provided</scope>
     </dependency>
 
