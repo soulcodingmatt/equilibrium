@@ -9,6 +9,30 @@ A Java annotation processor for generating DTOs and other value container classe
 If you find this project useful, consider supporting me ☕  
 [![Buy Me a Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-orange?logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/soulcodingmatt)
 
+## Table of contents
+
+Short overview here; deeper guides are linked from [Documentation in this repository](#documentation-in-this-repository) (Markdown files under the `docs` directory). Same pattern many open-source projects use: README for orientation and copy-paste setup, separate files for full explanations.
+
+- [Overview](#overview)
+- [Commercial use (GPL)](#commercial-use-gpl)
+- [Requirements](#requirements)
+- [Features](#features)
+- [Consuming vs building this project](#consuming-vs-building-this-project)
+- [Documentation in this repository](#documentation-in-this-repository)
+- [Getting started (Maven)](#getting-started-maven)
+- [Configuration](#configuration)
+- [IDE and optional tooling](#ide-and-optional-tooling)
+- [Installation (Gradle)](#installation-gradle)
+- [Usage](#usage)
+- [Using with MapStruct](#using-with-mapstruct)
+- [Adding custom fields to generated DTOs](#adding-custom-fields-to-generated-dtos)
+- [DTO interface pattern](#dto-interface-pattern)
+- [Changelog](#changelog)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+- [Third party](#third-party)
+
 ## Overview
 
 Project Equilibrium is a Java annotation processor that helps you keep domain classes and their **Data Transfer Objects (DTOs)**, **Java records**, and **value objects (VOs)** in sync. It generates and updates those types from your source classes so naming, packages, and structure stay consistent across your project.
@@ -28,7 +52,7 @@ Older tool versions may work but are not validated. **Building the Equilibrium l
 
 ## Features
 
-- Generation of DTOs, records, and VOs with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo` (including **multiple generations per source class** via `id`, `pkg`, and postfix)
+- Generation of DTOs, records, and VOs with `@GenerateDto`, `@GenerateRecord`, and `@GenerateVo` (including **multiple generations per source class** via `id`, `pkg`, and `name`)
 - **Global defaults** via compiler options (`-Aequilibrium.*`), with **per-annotation overrides** where supported
 - Field exclusion with `@IgnoreDto`, `@IgnoreRecord`, `@IgnoreVo`, and `@IgnoreAll`, including **selective exclusion** with `ids` when you generate several variants from one class
 - **Nested DTO wiring** with `@NestedMapping` (class reference) and **`@NestedDtoMapping`** (string class names, including **per–DTO-id** mappings when you use multiple `@GenerateDto` ids)
@@ -42,6 +66,15 @@ Older tool versions may work but are not validated. **Building the Equilibrium l
 **In your application:** add the published dependency and configure the compiler. You only need a repository that can download the JAR (Maven, Gradle, or any compatible tool).
 
 **From this repository:** the library is built with **Maven** (including version stamping in the JAR). Reproducing the same artifact with another build tool would require adapting those steps.
+
+## Documentation in this repository
+
+| Guide | What it covers |
+|-------|----------------|
+| [DTO builder pattern](docs/dto-builder-pattern.md) | `@GenerateDto(builder=true)`, `@DtoBuilderDefault`, Lombok `@SuperBuilder`, defaults |
+| [Experimental validation](docs/experimental-validation.md) | `@ValidateDto` / `@ValidateRecord` / `@ValidateVo`, packages, `ids`, `value()` |
+| [DTOs and interfaces (wrapper pattern)](docs/dto-interface-pattern.md) | `Serializable`, `Comparable`, etc., without generating `implements` on the DTO |
+| [Custom fields on generated DTOs](docs/custom-fields-on-dtos.md) | Subclassing generated DTOs, `equals` / `hashCode` caveats |
 
 ## Getting started (Maven)
 
@@ -89,7 +122,11 @@ Older tool versions may work but are not validated. **Building the Equilibrium l
 </build>
 ```
 
-## Compiler options
+## Configuration
+
+Compiler flags, default precedence, and optional compile-time banner output.
+
+### Compiler options
 
 All options use the `-A` prefix (for example in `compilerArgs`).
 
@@ -120,7 +157,7 @@ If you omit these, the processor may **infer** `groupId` and `artifactId` from a
 | `-Aequilibrium.banner` | Set to `false` to disable the build banner and generation summary. If omitted, the banner is **on**. |
 | `-Aequilibrium.banner.color` | Set to `false` for plain-text output (no ANSI escape codes). If omitted, **color is on** where supported. |
 
-### How defaults are resolved
+### Default precedence
 
 For packages, names, and postfixes, more specific settings win over global ones. In general:
 
@@ -131,11 +168,13 @@ For packages, names, and postfixes, more specific settings win over global ones.
 
 Invalid package or postfix values are rejected with compiler errors so misconfiguration fails fast.
 
-## Compile output
+### Compile output
 
 When the banner is enabled, compilation prints a **header** (including the processor version) and, when generation or diagnostics ran, a **short summary** of what was processed and whether the run succeeded. With colors enabled, status highlights use ANSI sequences; with `-Aequilibrium.banner.color=false`, output stays plain text. This is informational only and does not change generated code.
 
-## IntelliJ IDEA (Maven users)
+## IDE and optional tooling
+
+### IntelliJ IDEA (Maven users)
 
 If generated types are missing in the editor when you run or test code that references them, enable **Delegate IDE build/run actions to Maven**:
 
@@ -143,7 +182,7 @@ If generated types are missing in the editor when you run or test code that refe
 
 That ties the IDE to the same compile and annotation processing as the command line. The trade-off is that running a simple `main()` may trigger a fuller Maven run. Menu paths can differ slightly in other IDE versions.
 
-## Optional: Lombok (builders)
+### Lombok (builders)
 
 For `@GenerateDto(builder=true)`, add **Lombok** as a dependency and list it on **`annotationProcessorPaths`** before or alongside Equilibrium (order may matter for your setup; Lombok is usually first).
 
@@ -186,7 +225,13 @@ For `@GenerateDto(builder=true)`, add **Lombok** as a dependency and list it on 
 
 ## Installation (Gradle)
 
-**TBD**
+Using Project Equilibrium from **Gradle** is **supported in principle** for **Java** projects: add the same dependency from Maven Central, register the processor on the **annotation processor classpath**, and pass the same **`-Aequilibrium.*`** compiler arguments as in Maven (packages, postfixes, banner options, and so on).
+
+Equilibrium is a **Java** annotation processor: annotated **domain types must be Java** classes. **Kotlin** sources (or Kotlin-first tooling such as `kapt`) are **not** supported or tested here. That is separate from Gradle’s optional **Kotlin DSL** for build scripts (`build.gradle.kts`): you could still author the build in Kotlin DSL while compiling **Java** sources, but we do not document or verify that setup yet.
+
+This repository is built and tested with **Maven**, and we do **not** yet ship a verified Gradle **`build.gradle`** (Groovy DSL) snippet or step-by-step instructions. If you already wire Java annotation processors in Gradle, Equilibrium should follow the same pattern.
+
+**Planned:** a dedicated Gradle section with an example **Java** + Gradle build once it has been exercised and reviewed.
 
 ## Usage
 
@@ -314,10 +359,10 @@ You can repeat `@GenerateDto`, `@GenerateVo`, and `@GenerateRecord` on the same 
 **Example:**
 
 ```java
-@GenerateDto(id=1, pkg="com.example.dto.api", postfix="ApiDto")
-@GenerateDto(id=2, pkg="com.example.dto.internal", postfix="InternalDto") 
-@GenerateVo(id=1, pkg="com.example.vo", postfix="Vo")
-@GenerateVo(id=2, pkg="com.example.vo", postfix="ValueObject")
+@GenerateDto(id=1, pkg="com.example.dto.api", name="UserApiDto")
+@GenerateDto(id=2, pkg="com.example.dto.internal", name="UserInternalDto")
+@GenerateVo(id=1, pkg="com.example.vo", name="UserVo")
+@GenerateVo(id=2, pkg="com.example.vo", name="UserValueObject")
 public class User {
     private String name;
     private int age;
@@ -360,44 +405,15 @@ When you have **several `@GenerateDto` ids** and need **different nested DTO typ
 
 ### Experimental: `@ValidateDto`, `@ValidateRecord`, `@ValidateVo`
 
-For a concise guide (classpath dependencies, package layout, **`ids`**, and the **`value()`** string escape hatch), see **[Experimental validation](docs/experimental-validation.md)**.
+These annotations add **Jakarta Bean Validation** constraints on **generated** DTO, record, or VO members using **type-safe** parameters in `io.github.soulcodingmatt.equilibrium.experimental.validation` (`…validation.dto`, `…validation.record`, `…validation.vo`, shared constraint types in `…validation.common`). The API may change between releases.
 
-These annotations drive **Jakarta Bean Validation** constraints on **generated** DTO, record, or VO members, with **type-safe** constraint parameters in your source. They live under `io.github.soulcodingmatt.equilibrium.experimental.validation` (`…validation.dto`, `…validation.record`, `…validation.vo`, and shared constraint types in `…validation.common`). The API may change between releases.
+**Details and full parameter list:** **[Experimental validation](docs/experimental-validation.md)** (classpath, `ids`, `value()` escape hatch, packages).
 
 **Behavior notes**
 
 - **Validation is analyzed before generation.** Invalid combinations (for example contradictory constraints, `@NotNull` on a primitive, or `@NotBlank` on a non-`String` field) are **compile errors** on your domain class, not silent fixes in generated code.
 - **Standard Jakarta annotations** on your sources are recognized in the **same compilation** as Equilibrium, so mixed usage is fine.
 - Use the **`ids`** parameter to limit constraints to specific `@GenerateDto` / `@GenerateRecord` / `@GenerateVo` ids; if omitted, validation applies to all generations of that kind.
-
-**Key features**
-
-- Type-safe validation configuration with compile-time checking of constraint parameters
-- Coverage of the **Jakarta Bean Validation constraints** this processor integrates with (see table below and the supported types in the library)
-- **Selective application** via `ids`
-- **Repeatable** container annotations where provided (`@ValidateDtos`, etc.)
-
-**Available validation parameters (DTO example; record and VO mirror the same constraint set)**
-
-| Parameter         | Maps to            | Description                                              |
-|-------------------|--------------------|----------------------------------------------------------|
-| `notNull`         | `@NotNull`         | Field cannot be null                                     |
-| `notBlank`        | `@NotBlank`        | String cannot be null, empty, or whitespace-only         |
-| `notEmpty`        | `@NotEmpty`        | Collection/array/string cannot be null or empty          |
-| `size`            | `@Size`            | Size bounds (min/max length)                             |
-| `min`             | `@Min`             | Minimum numeric value                                    |
-| `max`             | `@Max`             | Maximum numeric value                                    |
-| `email`           | `@Email`           | Email format                                             |
-| `pattern`         | `@Pattern`         | Regex                                                    |
-| `positive`        | `@Positive`        | Strictly positive                                        |
-| `positiveOrZero`  | `@PositiveOrZero`  | Non-negative                                             |
-| `negative`        | `@Negative`        | Strictly negative                                        |
-| `negativeOrZero`  | `@NegativeOrZero`  | Non-positive                                             |
-| `digits`          | `@Digits`          | Integer and fraction digit limits                        |
-| `past`            | `@Past`            | Date/time in the past                                    |
-| `future`          | `@Future`          | Date/time in the future                                  |
-| `pastOrPresent`   | `@PastOrPresent`   | Past or present                                          |
-| `futureOrPresent` | `@FutureOrPresent` | Future or present                                        |
 
 **Example (`@ValidateDto`)**
 

@@ -84,5 +84,5 @@ The processor reports errors for cases such as: **`enumValue`** that does not na
 
 ## See also
 
-- Main README: [Optional: Lombok (builders)](../README.md#optional-lombok-builders) — add Lombok and the annotation processor path.
+- Main README: [Lombok (builders)](../README.md#lombok-builders) — add Lombok and the annotation processor path.
 - Library Javadoc: `io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefault` and `GenerateDto`.
