@@ -35,6 +35,9 @@ public class GeneratorUtility {
   public static final String STRING_END = "    }\n\n";
   public static final String OVERRIDE = "    @Override\n";
 
+  /** Closes an {@code if} block inside generated {@code equals} (8 spaces + newline). */
+  private static final String EQUALS_IF_BLOCK_CLOSE = "        }\n";
+
   private GeneratorUtility() {
     throw new AssertionError("You should not be here!");
   }
@@ -331,17 +334,17 @@ public class GeneratorUtility {
     writer.write("    public boolean equals(Object o) {\n");
     writer.write("        if (this == o) {\n");
     writer.write("            return true;\n");
-    writer.write("        }\n");
+    writer.write(EQUALS_IF_BLOCK_CLOSE);
     writer.write("        if (o == null || getClass() != o.getClass()) {\n");
     writer.write("            return false;\n");
-    writer.write("        }\n");
+    writer.write(EQUALS_IF_BLOCK_CLOSE);
     writer.write("        " + className + " that = (" + className + ") o;\n");
 
     for (VariableElement field : fields) {
       String name = field.getSimpleName().toString();
       writer.write("        if (!Objects.equals(this." + name + ", that." + name + ")) {\n");
       writer.write("            return false;\n");
-      writer.write("        }\n");
+      writer.write(EQUALS_IF_BLOCK_CLOSE);
     }
 
     writer.write("        return true;\n");
