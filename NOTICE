@@ -1,0 +1,31 @@
+Project Equilibrium
+====================
+
+This project is licensed under the GNU General Public License v3.0. See the LICENSE file in this
+repository and META-INF/LICENSE in the published JAR.
+
+Third-party dependencies
+------------------------
+
+Third-party components are used as build tooling, test-only libraries, or compile-time / provided
+APIs (expected on the classpath when building applications that use Project Equilibrium). They are
+not bundled as proprietary code inside Project Equilibrium’s own sources. Exact versions are
+declared in pom.xml.
+
+Apache License 2.0
+
+  • Google Auto Service (provided scope)
+  • Jakarta Bean Validation API (provided scope)
+  • Google Compile Testing (test scope)
+  • Transitive dependencies of the above, where applicable
+
+Eclipse Public License 2.0
+
+  • JUnit 5 (Jupiter) (test scope)
+
+MIT License
+
+  • Project Lombok (test scope)
+
+Full license texts and copyright notices for each component appear in the artifacts published on
+Maven Central or on the upstream project pages.

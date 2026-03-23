@@ -7,8 +7,8 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Equilibrium</name>
-  <description>A Java annotation processor for generating DTOs, transport types, and value container classes</description>
+  <name>Project Equilibrium</name>
+  <description>Project Equilibrium — a Java annotation processor for generating DTOs, transport types, and value container classes</description>
   <url>https://github.com/soulcodingmatt/equilibrium</url>
 
   <licenses>
@@ -139,12 +139,13 @@
           <include>equilibrium-build-version.txt</include>
         </includes>
       </resource>
-      <!-- Single source of truth: root LICENSE → JAR META-INF/LICENSE -->
+      <!-- Single source of truth: root LICENSE / NOTICE → JAR META-INF -->
       <resource>
         <targetPath>META-INF</targetPath>
         <directory>${project.basedir}</directory>
         <includes>
           <include>LICENSE</include>
+          <include>NOTICE</include>
         </includes>
       </resource>
     </resources>
