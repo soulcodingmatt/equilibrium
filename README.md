@@ -454,7 +454,7 @@ See **[DTOs and interfaces (wrapper pattern)](docs/dto-interface-pattern.md)** f
 
 ## Changelog
 
-Release history follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). See [**CHANGELOG**](CHANGELOG.md).
+See [**CHANGELOG**](CHANGELOG.md).
 
 ## Contributing
 
@@ -473,5 +473,3 @@ For questions or issues, please use the repository’s issue tracker.
 This project uses [Lombok](https://projectlombok.org), licensed under the MIT License.
 
 ---
-
-**Note:** This project is currently under development.
