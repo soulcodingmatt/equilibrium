@@ -24,8 +24,8 @@ import javax.lang.model.type.TypeMirror;
  * Utility class containing common code generation methods shared across different generators. This
  * class helps eliminate code duplication between DtoGenerator, VoGenerator, and RecordGenerator.
  *
- * <p>Emitted source aims to follow the
- * <ahref="https://google.github.io/styleguide/javaguide.html">Google Java Style Guide</a> for
+ * <p>Emitted source aims to follow the <a
+ * href="https://google.github.io/styleguide/javaguide.html">Google Java Style Guide</a> for
  * generated code (for example {@code this.} on field reads, braces on {@code if} bodies).
  * Lombok-generated code (for example {@code @SuperBuilder} expansion) is not produced here.
  */
@@ -46,7 +46,13 @@ public class GeneratorUtility {
     RECORD
   }
 
-  /** Configuration for field inclusion logic */
+  /**
+   * Configuration for field inclusion logic.
+   *
+   * @param generatorType which generator is selecting fields
+   * @param ignoredFields field names to skip (may be empty)
+   * @param entityId {@code @Generate*} id for multi-generation filtering
+   */
   public record FieldInclusionConfig(
       GeneratorType generatorType, Set<String> ignoredFields, int entityId) {
     public FieldInclusionConfig(

@@ -7,6 +7,9 @@ import javax.lang.model.element.VariableElement;
 /**
  * Result of scanning the source AST for {@code @Builder.Default} initializers that can be copied
  * safely onto generated DTO fields.
+ *
+ * @param safeInitializers per-field initializer text safe to reuse on generated DTOs
+ * @param extraImports additional imports required by those initializers
  */
 public record InheritedBuilderDefaultScan(
     Map<VariableElement, String> safeInitializers, Set<String> extraImports) {
