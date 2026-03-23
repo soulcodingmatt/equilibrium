@@ -31,7 +31,7 @@ Short overview here; deeper guides are linked from [Documentation in this reposi
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
-- [Third party](#third-party)
+- [Third-party software](#third-party-software)
 
 ## Overview
 
@@ -484,8 +484,8 @@ This project is licensed under the GNU General Public License v3.0 — see the [
 
 For questions or issues, please use the repository’s issue tracker.
 
-## Third party
+## Third-party software
 
-This project uses [Lombok](https://projectlombok.org), licensed under the MIT License.
+Dependency names, how they are used (for example provided, test, or tooling scopes), and license families are documented in **[NOTICE](NOTICE)**. The published JAR includes the same text as **`META-INF/NOTICE`**. For exact artifact versions, see **`pom.xml`**.
 
 ---
