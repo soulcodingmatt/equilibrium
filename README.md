@@ -148,6 +148,8 @@ your `pom.xml` file **and** to the `annotationProcessorPaths` of the `maven-comp
 </project>
 ```
 
+**Style note (Lombok builders and `$` in names):** With `@GenerateDto(builder=true)`, Lombok expands `@SuperBuilder` and generates helper types and fields whose identifiers contain `$` (for example `name$set`, `$default$name`). That follows [Lombok’s own naming](https://projectlombok.org/), not the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html) rule that normal identifiers use only letters, digits, and (in limited cases) underscores (§5.1). Equilibrium does not emit those symbols; they appear only in **Lombok-generated** code. The Java language allows `$` in identifiers, but it is intended for compilers and generated code. Equilibrium-generated **source that this processor writes** (fields, accessors, constructors, `equals` / `hashCode` / `toString`) avoids `$` in names and follows Google-style conventions where practical. To avoid Lombok’s builder internals entirely, use `@GenerateDto` without `builder=true` and use constructors and setters instead.
+
 ## Installation (Gradle)
 
 **TBD**
