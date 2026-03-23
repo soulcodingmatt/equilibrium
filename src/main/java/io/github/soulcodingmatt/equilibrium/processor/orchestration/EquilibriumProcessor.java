@@ -21,7 +21,6 @@ import io.github.soulcodingmatt.equilibrium.processor.generation.vo.VoGenerator;
 import io.github.soulcodingmatt.equilibrium.processor.validation.analysis.ValidationConflictUtil;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.*;
@@ -193,9 +192,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
           return false;
         }
         if (!validateValidateVoAnnotations(typeElement)) {
-          return false;
-        }
-        if (!validateNestedMappingAnnotations(typeElement)) {
           return false;
         }
       }
@@ -882,20 +878,6 @@ public class EquilibriumProcessor extends AbstractProcessor {
     }
 
     return !hasErrors;
-  }
-
-  /**
-   * Hook for {@link NestedMapping} validation before generation.
-   *
-   * <p>Target DTO types and mapping usage are validated when DTOs are generated; this method is
-   * reserved for extra field-level rules if needed.
-   *
-   * @param classElement the class to validate
-   * @return {@code true} (no processor-level errors today)
-   */
-  private boolean validateNestedMappingAnnotations(TypeElement classElement) {
-    Objects.requireNonNull(classElement);
-    return true;
   }
 
   private void error(Element element, String message) {

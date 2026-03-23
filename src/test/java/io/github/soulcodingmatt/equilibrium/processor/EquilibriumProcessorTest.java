@@ -1386,13 +1386,6 @@ class EquilibriumProcessorTest {
             "validateValidateVoAnnotations", TypeElement.class);
     assertNotNull(validateValidateVoMethod, "validateValidateVoAnnotations method should exist");
     validateValidateVoMethod.setAccessible(true);
-
-    Method validateNestedMappingMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateNestedMappingAnnotations", TypeElement.class);
-    assertNotNull(
-        validateNestedMappingMethod, "validateNestedMappingAnnotations method should exist");
-    validateNestedMappingMethod.setAccessible(true);
   }
 
   @Test
@@ -1426,15 +1419,6 @@ class EquilibriumProcessorTest {
         boolean.class,
         validateValidateVoMethod.getReturnType(),
         "validateValidateVoAnnotations should return boolean");
-
-    // Verify validateNestedMappingAnnotations is called before generation
-    Method validateNestedMappingMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateNestedMappingAnnotations", TypeElement.class);
-    assertEquals(
-        boolean.class,
-        validateNestedMappingMethod.getReturnType(),
-        "validateNestedMappingAnnotations should return boolean");
   }
 
   @Test
@@ -1487,13 +1471,6 @@ class EquilibriumProcessorTest {
     assertTrue(
         java.lang.reflect.Modifier.isPrivate(validateValidateVoMethod.getModifiers()),
         "validateValidateVoAnnotations should be private (internal validation)");
-
-    Method validateNestedMappingMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateNestedMappingAnnotations", TypeElement.class);
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(validateNestedMappingMethod.getModifiers()),
-        "validateNestedMappingAnnotations should be private (internal validation)");
   }
 
   private static class TestInterfaceElement extends TestClassElement {
