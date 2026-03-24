@@ -4,14 +4,24 @@ A Java annotation processor for generating DTOs and other value container classe
 
 ![Project Equilibrium summary output](docs/images/equilibrium-logo-v1.0.0.png)
 
+//TODO: Add short description here - waht is it all about? Benefits? Why use it?
+
+
 If you find this project useful, consider supporting me ☕  
 [![Buy Me a Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-orange?logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/soulcodingmatt)
+
+
+## Overview
+
+Project Equilibrium is a Java annotation processor that helps you keep domain classes and their **Data Transfer Objects (DTOs)**, **Java records**, and **value objects (VOs)** in sync. It generates and updates those types from your source classes so naming, packages, and structure stay consistent across your project.
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
+
 
 ## Table of contents
 
 Short overview here; deeper guides are linked from [Documentation in this repository](#documentation-in-this-repository) (Markdown files under the `docs` directory). Same pattern many open-source projects use: README for orientation and copy-paste setup, separate files for full explanations.
 
-- [Overview](#overview)
 - [Commercial use (GPL)](#commercial-use-gpl)
 - [Requirements](#requirements)
 - [Features](#features)
@@ -31,11 +41,6 @@ Short overview here; deeper guides are linked from [Documentation in this reposi
 - [Contact](#contact)
 - [Third-party software](#third-party-software)
 
-## Overview
-
-Project Equilibrium is a Java annotation processor that helps you keep domain classes and their **Data Transfer Objects (DTOs)**, **Java records**, and **value objects (VOs)** in sync. It generates and updates those types from your source classes so naming, packages, and structure stay consistent across your project.
-
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
 
 ## Commercial use (GPL)
 
@@ -44,7 +49,7 @@ You can use this annotation processor in **commercial or closed-source projects*
 ## Requirements
 
 - **Java 21** or higher (the processor targets the Java 21 language level)
-- A build that can **resolve dependencies** from Maven Central (or your repository) and run **annotation processing** (for example Maven 3.x or Gradle 8.x)
+- A build tool that can **resolve dependencies** from Maven Central (or your repository) and run **annotation processing** (for example Maven 3.x or Gradle 8.x)
 
 Older tool versions may work but are not validated. **Building the Equilibrium library itself** uses Maven in this repository; consuming projects do not need to run this project’s `pom.xml`.
 
@@ -61,8 +66,10 @@ Older tool versions may work but are not validated. **Building the Equilibrium l
 
 ## Consuming vs building this project
 
+// TODO:
 **In your application:** add the published dependency and configure the compiler. You only need a repository that can download the JAR (Maven, Gradle, or any compatible tool).
 
+// TODO:
 **From this repository:** the library is built with **Maven** (including version stamping in the JAR). Reproducing the same artifact with another build tool would require adapting those steps.
 
 ## Documentation in this repository
