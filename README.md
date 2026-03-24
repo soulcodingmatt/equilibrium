@@ -4,8 +4,6 @@ A Java annotation processor for generating DTOs and other value container classe
 
 ![Project Equilibrium summary output](docs/images/equilibrium-logo-v1.0.0.png)
 
-**Disclaimer:** The project is currently under development.
-
 If you find this project useful, consider supporting me ☕  
 [![Buy Me a Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-orange?logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/soulcodingmatt)
 
