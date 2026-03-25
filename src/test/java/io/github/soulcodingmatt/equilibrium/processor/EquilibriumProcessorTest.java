@@ -2,9 +2,6 @@ package io.github.soulcodingmatt.equilibrium.processor;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.github.soulcodingmatt.equilibrium.annotations.dto.GenerateDto;
-import io.github.soulcodingmatt.equilibrium.annotations.record.GenerateRecord;
-import io.github.soulcodingmatt.equilibrium.annotations.vo.GenerateVo;
 import io.github.soulcodingmatt.equilibrium.processor.orchestration.EquilibriumFilerStats;
 import io.github.soulcodingmatt.equilibrium.processor.orchestration.EquilibriumMessagerStats;
 import io.github.soulcodingmatt.equilibrium.processor.orchestration.EquilibriumProcessor;
@@ -27,7 +24,6 @@ import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
@@ -190,15 +186,16 @@ class EquilibriumProcessorTest {
     // Act - initialize the processor
     testProcessor.init(testEnv);
 
-    // Assert - verify Filer and Messager are stored by using reflection
-    java.lang.reflect.Field filerField = EquilibriumProcessor.class.getDeclaredField("filer");
-    filerField.setAccessible(true);
-    Filer storedFiler = (Filer) filerField.get(testProcessor);
-    assertNotNull(storedFiler, "Filer should be stored during init");
-    assertTrue(storedFiler instanceof EquilibriumFilerStats, "Filer should be wrapped for stats");
+    // Assert - filerStats wraps the provided filer and messager is wrapped for stats
+    java.lang.reflect.Field filerStatsField =
+        EquilibriumProcessor.class.getDeclaredField("filerStats");
+    filerStatsField.setAccessible(true);
+    EquilibriumFilerStats storedFilerStats =
+        (EquilibriumFilerStats) filerStatsField.get(testProcessor);
+    assertNotNull(storedFilerStats, "FilerStats should be stored during init");
     assertSame(
         testFiler,
-        ((EquilibriumFilerStats) storedFiler).delegateFiler(),
+        storedFilerStats.delegateFiler(),
         "Stats wrapper should delegate to the ProcessingEnvironment filer");
 
     java.lang.reflect.Field messagerField = EquilibriumProcessor.class.getDeclaredField("messager");
@@ -220,43 +217,34 @@ class EquilibriumProcessorTest {
     TestMessager messager = new TestMessager();
     TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
 
-    // Add some options to verify config is built from ProcessingEnvironment
+    // Add some options to verify config is consumed from ProcessingEnvironment
     testEnv.getOptions().put("equilibrium.dto.package", "com.test.dto");
     testEnv.getOptions().put("equilibrium.dto.postfix", "Dto");
 
     // Act - initialize the processor
     testProcessor.init(testEnv);
 
-    // Assert - verify EquilibriumConfig is built by using reflection
-    java.lang.reflect.Field configField = EquilibriumProcessor.class.getDeclaredField("config");
-    configField.setAccessible(true);
-    Object storedConfig = configField.get(testProcessor);
-    assertNotNull(storedConfig, "EquilibriumConfig should be built during init");
-    assertEquals(
-        "io.github.soulcodingmatt.equilibrium.processor.config.EquilibriumConfig",
-        storedConfig.getClass().getName(),
-        "Stored config should be an instance of EquilibriumConfig");
+    // Assert - config is built and consumed during init: the orchestrators are created as evidence
+    java.lang.reflect.Field orchestratorField =
+        EquilibriumProcessor.class.getDeclaredField("dtoOrchestrator");
+    orchestratorField.setAccessible(true);
+    Object storedOrchestrator = orchestratorField.get(testProcessor);
+    assertNotNull(
+        storedOrchestrator,
+        "DtoGenerationOrchestrator should be created during init (requires EquilibriumConfig)");
   }
 
   @Test
-  void testInitObtainsTreesNullable() throws Exception {
+  void testInitObtainsTreesNullable() {
     // Create a new processor instance to test init
     EquilibriumProcessor testProcessor = new EquilibriumProcessor();
     TestMessager messager = new TestMessager();
     TestProcessingEnvironment testEnv = new TestProcessingEnvironment(messager);
 
-    // Act - initialize the processor
-    testProcessor.init(testEnv);
-
-    // Assert - verify Trees field exists and can be null (graceful degradation)
-    java.lang.reflect.Field treesField = EquilibriumProcessor.class.getDeclaredField("trees");
-    treesField.setAccessible(true);
-    Object storedTrees = treesField.get(testProcessor);
-    // Trees may be null in test environment - this is expected and acceptable
-    // The important thing is that init() doesn't fail when Trees is unavailable
-    assertTrue(
-        storedTrees == null || storedTrees.getClass().getName().contains("Trees"),
-        "Trees should be null or a Trees instance");
+    // Trees is unavailable in the test environment — init() must not throw
+    assertDoesNotThrow(
+        () -> testProcessor.init(testEnv),
+        "init() must handle missing Trees gracefully (Trees.instance may throw)");
   }
 
   @Test
@@ -1364,115 +1352,6 @@ class EquilibriumProcessorTest {
     }
   }
 
-  @Test
-  void testValidationMethodsExist() throws Exception {
-    // Verify that all validation methods exist and are accessible
-
-    Method validateValidateDtoMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateDtoAnnotations", TypeElement.class);
-    assertNotNull(validateValidateDtoMethod, "validateValidateDtoAnnotations method should exist");
-    validateValidateDtoMethod.setAccessible(true);
-
-    Method validateValidateRecordMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateRecordAnnotations", TypeElement.class);
-    assertNotNull(
-        validateValidateRecordMethod, "validateValidateRecordAnnotations method should exist");
-    validateValidateRecordMethod.setAccessible(true);
-
-    Method validateValidateVoMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateVoAnnotations", TypeElement.class);
-    assertNotNull(validateValidateVoMethod, "validateValidateVoAnnotations method should exist");
-    validateValidateVoMethod.setAccessible(true);
-  }
-
-  @Test
-  void testValidationMethodsAreCalledInProcessMethod() throws Exception {
-    // This test verifies that validation methods are called as part of the process flow
-    // by checking that the methods exist and have the correct signature
-
-    // Verify validateValidateDtoAnnotations is called before generation
-    Method validateValidateDtoMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateDtoAnnotations", TypeElement.class);
-    assertEquals(
-        boolean.class,
-        validateValidateDtoMethod.getReturnType(),
-        "validateValidateDtoAnnotations should return boolean");
-
-    // Verify validateValidateRecordAnnotations is called before generation
-    Method validateValidateRecordMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateRecordAnnotations", TypeElement.class);
-    assertEquals(
-        boolean.class,
-        validateValidateRecordMethod.getReturnType(),
-        "validateValidateRecordAnnotations should return boolean");
-
-    // Verify validateValidateVoAnnotations is called before generation
-    Method validateValidateVoMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateVoAnnotations", TypeElement.class);
-    assertEquals(
-        boolean.class,
-        validateValidateVoMethod.getReturnType(),
-        "validateValidateVoAnnotations should return boolean");
-  }
-
-  @Test
-  void testValidationMethodsReturnFalseOnError() throws Exception {
-    // This test verifies the structure: validation methods return false when errors occur
-    // The actual validation logic is tested in ValidationConflictUtilTest
-
-    // Verify that validation methods have the correct signature to return false on error
-    Method validateValidateDtoMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateDtoAnnotations", TypeElement.class);
-    validateValidateDtoMethod.setAccessible(true);
-
-    // The method returns boolean, which allows the processor to stop on validation failure
-    assertEquals(
-        boolean.class,
-        validateValidateDtoMethod.getReturnType(),
-        "Validation method must return boolean to indicate success/failure");
-  }
-
-  @Test
-  void testProcessMethodChecksValidationBeforeGeneration() throws Exception {
-    // This test verifies that the process method structure includes validation checks
-    // by examining the source code flow through reflection
-
-    // Get the process method
-    Method processMethod =
-        EquilibriumProcessor.class.getMethod(
-            "process", Set.class, javax.annotation.processing.RoundEnvironment.class);
-    assertNotNull(processMethod, "Process method should exist");
-
-    // Verify all validation methods exist and are private (called internally)
-    Method validateValidateDtoMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateDtoAnnotations", TypeElement.class);
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(validateValidateDtoMethod.getModifiers()),
-        "validateValidateDtoAnnotations should be private (internal validation)");
-
-    Method validateValidateRecordMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateRecordAnnotations", TypeElement.class);
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(validateValidateRecordMethod.getModifiers()),
-        "validateValidateRecordAnnotations should be private (internal validation)");
-
-    Method validateValidateVoMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateValidateVoAnnotations", TypeElement.class);
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(validateValidateVoMethod.getModifiers()),
-        "validateValidateVoAnnotations should be private (internal validation)");
-  }
-
   private static class TestInterfaceElement extends TestClassElement {
     public TestInterfaceElement(String qualifiedName) {
       super(qualifiedName);
@@ -1496,104 +1375,17 @@ class EquilibriumProcessorTest {
   }
 
   @Test
-  void testPreRegisterAllDtosMethodExists() throws Exception {
-    // Verify that preRegisterAllDtos method exists and has correct signature
-    Method preRegisterMethod =
-        EquilibriumProcessor.class.getDeclaredMethod("preRegisterAllDtos", Set.class);
-    assertNotNull(preRegisterMethod, "preRegisterAllDtos method should exist");
-    preRegisterMethod.setAccessible(true);
-
-    // Verify it's private (internal method)
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(preRegisterMethod.getModifiers()),
-        "preRegisterAllDtos should be private (internal method)");
-
-    // Verify it returns void
-    assertEquals(
-        void.class, preRegisterMethod.getReturnType(), "preRegisterAllDtos should return void");
-  }
-
-  @Test
-  void testPreRegisterAllDtosIsCalledBeforeProcessing() throws Exception {
-    // This test verifies that preRegisterAllDtos is called in the correct order
-    // by checking that the method exists and is accessible from the process method
-
-    // Verify preRegisterAllDtos exists
-    Method preRegisterMethod =
-        EquilibriumProcessor.class.getDeclaredMethod("preRegisterAllDtos", Set.class);
-    assertNotNull(preRegisterMethod, "preRegisterAllDtos method should exist");
-
-    // Verify processElement method exists (called after pre-registration)
-    Method processElementMethod =
-        EquilibriumProcessor.class.getDeclaredMethod("processElement", TypeElement.class);
-    assertNotNull(processElementMethod, "processElement method should exist");
-
-    // The order is verified by the code structure:
-    // 1. preRegisterAllDtos(validElements) - FIRST PASS
-    // 2. for each element: processElement(element) - SECOND PASS
-  }
-
-  @Test
-  void testDtoGeneratorHasRegisterMethod() throws Exception {
-    // Verify that DtoGenerator has the registerGeneratedDto static method
-    Method registerMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
-            .getDeclaredMethod("registerGeneratedDto", String.class, String.class);
-    assertNotNull(registerMethod, "DtoGenerator.registerGeneratedDto method should exist");
-
-    // Verify it's public static
-    assertTrue(
-        java.lang.reflect.Modifier.isPublic(registerMethod.getModifiers()),
-        "registerGeneratedDto should be public");
-    assertTrue(
-        java.lang.reflect.Modifier.isStatic(registerMethod.getModifiers()),
-        "registerGeneratedDto should be static");
-
-    // Verify it returns void
-    assertEquals(
-        void.class, registerMethod.getReturnType(), "registerGeneratedDto should return void");
-  }
-
-  @Test
-  void testDtoGeneratorHasLookupMethod() throws Exception {
-    // Verify that DtoGenerator has the lookupGeneratedDto static method
-    Method lookupMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
-            .getDeclaredMethod("lookupGeneratedDto", String.class);
-    assertNotNull(lookupMethod, "DtoGenerator.lookupGeneratedDto method should exist");
-
-    // Verify it's public static
-    assertTrue(
-        java.lang.reflect.Modifier.isPublic(lookupMethod.getModifiers()),
-        "lookupGeneratedDto should be public");
-    assertTrue(
-        java.lang.reflect.Modifier.isStatic(lookupMethod.getModifiers()),
-        "lookupGeneratedDto should be static");
-
-    // Verify it returns String
-    assertEquals(
-        String.class, lookupMethod.getReturnType(), "lookupGeneratedDto should return String");
-  }
-
-  @Test
-  void testRegisterAndLookupGeneratedDto() throws Exception {
-    // Test the registration and lookup mechanism
-    Method registerMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
-            .getDeclaredMethod("registerGeneratedDto", String.class, String.class);
-    Method lookupMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
-            .getDeclaredMethod("lookupGeneratedDto", String.class);
-
-    // Register a test DTO
+  void testRegisterAndLookupGeneratedDto() {
     String simpleName = "TestDto";
     String fullQualifiedName = "com.test.dto.TestDto";
-    registerMethod.invoke(null, simpleName, fullQualifiedName);
 
-    // Lookup the registered DTO
-    String result = (String) lookupMethod.invoke(null, simpleName);
+    io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.registerGeneratedDto(
+        simpleName, fullQualifiedName);
 
-    // Verify the lookup returns the correct full qualified name
+    String result =
+        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator
+            .lookupGeneratedDto(simpleName);
+
     assertEquals(
         fullQualifiedName,
         result,
@@ -1601,125 +1393,11 @@ class EquilibriumProcessorTest {
   }
 
   @Test
-  void testLookupNonExistentDto() throws Exception {
-    // Test that lookup returns null for non-existent DTOs
-    Method lookupMethod =
-        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator.class
-            .getDeclaredMethod("lookupGeneratedDto", String.class);
+  void testLookupNonExistentDto() {
+    String result =
+        io.github.soulcodingmatt.equilibrium.processor.generation.dto.DtoGenerator
+            .lookupGeneratedDto("NonExistentDto_" + System.nanoTime());
 
-    // Lookup a non-existent DTO
-    String result = (String) lookupMethod.invoke(null, "NonExistentDto");
-
-    // Verify the lookup returns null
     assertNull(result, "lookupGeneratedDto should return null for non-existent DTOs");
-  }
-
-  // Tests for T3.7: Uniqueness check for duplicate (package, class name) combinations
-
-  @Test
-  void testValidateUniqueDtoCombinationsMethodExists() throws Exception {
-    // Verify that validateUniqueDtoCombinations method exists and has correct signature
-    Method validateMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateUniqueDtoCombinations", TypeElement.class, GenerateDto[].class);
-    assertNotNull(validateMethod, "validateUniqueDtoCombinations method should exist");
-    validateMethod.setAccessible(true);
-
-    // Verify it's private (internal validation)
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(validateMethod.getModifiers()),
-        "validateUniqueDtoCombinations should be private (internal validation)");
-
-    // Verify it returns boolean
-    assertEquals(
-        boolean.class,
-        validateMethod.getReturnType(),
-        "validateUniqueDtoCombinations should return boolean");
-  }
-
-  @Test
-  void testValidateUniqueRecordCombinationsMethodExists() throws Exception {
-    // Verify that validateUniqueRecordCombinations method exists and has correct signature
-    Method validateMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateUniqueRecordCombinations", TypeElement.class, GenerateRecord[].class);
-    assertNotNull(validateMethod, "validateUniqueRecordCombinations method should exist");
-    validateMethod.setAccessible(true);
-
-    // Verify it's private (internal validation)
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(validateMethod.getModifiers()),
-        "validateUniqueRecordCombinations should be private (internal validation)");
-
-    // Verify it returns boolean
-    assertEquals(
-        boolean.class,
-        validateMethod.getReturnType(),
-        "validateUniqueRecordCombinations should return boolean");
-  }
-
-  @Test
-  void testValidateUniqueVoCombinationsMethodExists() throws Exception {
-    // Verify that validateUniqueVoCombinations method exists and has correct signature
-    Method validateMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateUniqueVoCombinations", TypeElement.class, GenerateVo[].class);
-    assertNotNull(validateMethod, "validateUniqueVoCombinations method should exist");
-    validateMethod.setAccessible(true);
-
-    // Verify it's private (internal validation)
-    assertTrue(
-        java.lang.reflect.Modifier.isPrivate(validateMethod.getModifiers()),
-        "validateUniqueVoCombinations should be private (internal validation)");
-
-    // Verify it returns boolean
-    assertEquals(
-        boolean.class,
-        validateMethod.getReturnType(),
-        "validateUniqueVoCombinations should return boolean");
-  }
-
-  @Test
-  void testUniquenessCheckIsCalledInProcessGenerateDtos() throws Exception {
-    // Verify that processGenerateDtos calls validateUniqueDtoCombinations
-    // by checking that the validation method exists and is accessible from processGenerateDtos
-
-    Method processGenerateDtosMethod =
-        EquilibriumProcessor.class.getDeclaredMethod("processGenerateDtos", TypeElement.class);
-    assertNotNull(processGenerateDtosMethod, "processGenerateDtos method should exist");
-
-    Method validateMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateUniqueDtoCombinations", TypeElement.class, GenerateDto[].class);
-    assertNotNull(validateMethod, "validateUniqueDtoCombinations method should exist");
-
-    // The validation method is called before processing DTOs
-    // This is verified by the code structure in EquilibriumProcessor
-  }
-
-  @Test
-  void testUniquenessCheckIsCalledInProcessGenerateRecords() throws Exception {
-    // Verify that processGenerateRecords calls validateUniqueRecordCombinations
-    Method processGenerateRecordsMethod =
-        EquilibriumProcessor.class.getDeclaredMethod("processGenerateRecords", TypeElement.class);
-    assertNotNull(processGenerateRecordsMethod, "processGenerateRecords method should exist");
-
-    Method validateMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateUniqueRecordCombinations", TypeElement.class, GenerateRecord[].class);
-    assertNotNull(validateMethod, "validateUniqueRecordCombinations method should exist");
-  }
-
-  @Test
-  void testUniquenessCheckIsCalledInProcessGenerateVos() throws Exception {
-    // Verify that processGenerateVos calls validateUniqueVoCombinations
-    Method processGenerateVosMethod =
-        EquilibriumProcessor.class.getDeclaredMethod("processGenerateVos", TypeElement.class);
-    assertNotNull(processGenerateVosMethod, "processGenerateVos method should exist");
-
-    Method validateMethod =
-        EquilibriumProcessor.class.getDeclaredMethod(
-            "validateUniqueVoCombinations", TypeElement.class, GenerateVo[].class);
-    assertNotNull(validateMethod, "validateUniqueVoCombinations method should exist");
   }
 }
