@@ -98,13 +98,29 @@ They correspond to the **`jakarta.validation.constraints`** types of the same na
 
 Each `@Validate*` annotation defines **`String[] value()`** for **additional** constraint snippets not covered by the type-safe parameters—for example constraints that do not have a dedicated wrapper in this release. Prefer type-safe parameters when they exist; use **`value`** only when you need something outside that set.
 
+## Type-constraint compatibility rules
+
+The processor enforces these rules and reports **compile errors** when they are violated:
+
+| Constraint          | Allowed field types                                        |
+|---------------------|------------------------------------------------------------|
+| `notNull`           | Reference types only — **not** primitives (`int`, `boolean`, etc.) |
+| `notBlank`          | `String` only                                              |
+| `notEmpty`          | `String`, `Collection`, `Map`, or array                   |
+| `size`              | `String`, `Collection`, `Map`, or array; `min` and `max` must be ≥ 0 |
+| `min`, `max`        | Numeric types (`int`, `long`, `Integer`, `Long`, etc.)    |
+| `positive`, `positiveOrZero`, `negative`, `negativeOrZero` | Numeric types |
+| `digits`            | Numeric types                                              |
+| `email`, `pattern`  | `String` only                                             |
+| `past`, `future`, `pastOrPresent`, `futureOrPresent` | Temporal types (`LocalDate`, `LocalDateTime`, `ZonedDateTime`, etc.) |
+
 ## Processing rules (short)
 
-- Validation metadata is **checked before generation**. Illegal combinations (for example `@NotNull` on a primitive, `@NotBlank` on a non-`String` field, or contradictory rules the processor rejects) produce **compile errors** on the source class.
+- Validation metadata is **checked before generation**. Violations of the compatibility rules above produce **compile errors** on the source class, not silent fixes in generated code.
 - You can also use **standard Jakarta constraint annotations** elsewhere in the same compilation; the processor registers those types for processing as documented in the main README.
 
 ## See also
 
-- Main README: [Experimental: `@ValidateDto`, `@ValidateRecord`, `@ValidateVo`](../README.md#experimental-validatedto-validaterecord-validatevo) — overview and parameter table.
+- Main README: [Experimental: `@ValidateDto`, `@ValidateRecord`, `@ValidateVo`](../README.md) — overview and parameter table.
 - Javadoc: `ValidateDto`, `ValidateRecord`, `ValidateVo`, and types under `experimental.validation.common`.
 

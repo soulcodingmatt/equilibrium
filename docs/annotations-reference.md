@@ -46,9 +46,14 @@ public class User {
 
 ## @DtoBuilderDefault
 
-Use `@DtoBuilderDefault` on domain fields when **`@GenerateDto(builder=true)`** is set. It drives **`@Builder.Default`** on the **generated** DTO: **type-specific parameters** (for example `intValue`, `stringValue`, `enumValue`), **empty defaults** for `List`, `Set`, `Map`, and `Optional` when you use `@DtoBuilderDefault` alone, optional **inheritance** of Lombok **`@Builder.Default`** initializers from the source class (with an **`inherit = false`** opt-out), and a **`value()`** escape hatch for expressions the typed API does not cover (see the annotation Javadoc).
+Use `@DtoBuilderDefault` on domain fields when `@GenerateDto(builder=true)` is set. It controls what `@Builder.Default` initializer the generated DTO field gets:
 
-For setup (Lombok), generated shape (`@SuperBuilder`), and practical guidance, see **[DTO builder pattern](dto-builder-pattern.md)**.
+- **Type-specific parameters** — `intValue`, `stringValue`, `enumValue`, etc., checked at compile time
+- **Empty defaults** — use `@DtoBuilderDefault` alone (no parameters) on `List`, `Set`, `Map`, or `Optional` fields to get empty initializers
+- **Inheritance** — if the source field already has Lombok's `@Builder.Default`, its initializer is copied into the DTO; use `inherit = false` to opt out
+- **`value()` escape hatch** — a raw Java expression for anything the typed parameters do not cover
+
+For setup (Lombok), generated shape (`@SuperBuilder`), and practical guidance, see [DTO builder pattern](dto-builder-pattern.md).
 
 ## @GenerateRecord
 
@@ -101,7 +106,7 @@ For setup (Lombok), generated shape (`@SuperBuilder`), and practical guidance, s
 `setters`
 
 - Usage: `@GenerateVo(setters=true)`
-- Default: `false`. By default, VOs are **immutable** (`final` fields, no setters), which matches common value-object usage. Mutable transfer types are usually better modeled with **`@GenerateDto`**; `setters=true` is for exceptional cases.
+- Default: `false`. By default, VO fields are **`private final`** and no setters are generated, which enforces immutability. Setting `setters=true` makes fields **non-final** and generates setters. Mutable transfer types are usually better modeled with **`@GenerateDto`**; `setters=true` is for exceptional cases.
 
 ## @IgnoreDto, @IgnoreRecord, @IgnoreVo, @IgnoreAll
 
@@ -114,6 +119,10 @@ For setup (Lombok), generated shape (`@SuperBuilder`), and practical guidance, s
 - `@IgnoreVo(ids={1, 2})` — same for VOs
 
 If `ids` is omitted, the ignore applies to every generation of that kind.
+
+### Automatic exclusions (no annotation needed)
+
+The processor **silently** excludes `static` and `transient` fields from all generated types regardless of any `@Ignore*` annotations. You never need to annotate these yourself.
 
 ## Multiple `@Generate*` annotations on one class
 
@@ -156,17 +165,19 @@ Use **at most one `@NestedMapping` per field** (it applies across all generated 
 public class User {
     @NestedMapping(dtoClass = VoiceDto.class)
     private Voice voice;
-    
+
     @NestedMapping(dtoClass = AddressDto.class)
     private Address address;
-    
+
     // Other fields...
 }
 ```
 
+**Compiler warning for unmapped custom types:** When a field holds a custom object type (or a collection of one) and has **no** `@NestedMapping` or `@NestedDtoMapping`, the processor emits a **warning** suggesting you add a mapping. The message names the field, the detected type, and a suggested annotation. You can suppress it by adding the appropriate `@NestedMapping` / `@NestedDtoMapping`, or ignore it if you intentionally want the raw domain type in the generated class.
+
 ## @NestedDtoMapping
 
-When you have **several `@GenerateDto` ids** and need **different nested DTO types per id**, use **`@NestedDtoMapping`** (repeatable) with **`dtoClassName`** (fully qualified name) and optional **`ids`**. Empty `ids` means the mapping applies to all DTO generations. This avoids limitations around multiple `Class` references on the same field.
+When you have several `@GenerateDto` ids and need a different nested DTO type per id, use `@NestedDtoMapping` (repeatable) with `dtoClassName` (fully qualified name) and optional `ids`. Empty `ids` means the mapping applies to all DTO generations. This avoids limitations around multiple `Class<?>` references on the same annotation.
 
 ## Experimental: `@ValidateDto`, `@ValidateRecord`, `@ValidateVo`
 
@@ -176,9 +187,9 @@ These annotations add **Jakarta Bean Validation** constraints on **generated** D
 
 ### Behavior notes
 
-- **Validation is analyzed before generation.** Invalid combinations (for example contradictory constraints, `@NotNull` on a primitive, or `@NotBlank` on a non-`String` field) are **compile errors** on your domain class, not silent fixes in generated code.
-- **Standard Jakarta annotations** on your sources are recognized in the **same compilation** as Project Equilibrium, so mixed usage is fine.
-- Use the **`ids`** parameter to limit constraints to specific `@GenerateDto` / `@GenerateRecord` / `@GenerateVo` ids; if omitted, validation applies to all generations of that kind.
+- Validation is analyzed before generation. Invalid combinations (for example `@NotNull` on a primitive or `@NotBlank` on a non-`String` field) are **compile errors** on your domain class, not silent fixes in generated code.
+- Standard Jakarta annotations on your sources are recognized in the same compilation, so mixed usage is fine.
+- Use the `ids` parameter to limit constraints to specific `@GenerateDto` / `@GenerateRecord` / `@GenerateVo` ids; if omitted, validation applies to all generations of that kind.
 
 ### Example (`@ValidateDto`)
 

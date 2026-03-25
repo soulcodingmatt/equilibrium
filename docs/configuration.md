@@ -24,7 +24,7 @@ All options use the `-A` prefix (for example in `compilerArgs`).
 | `-Aequilibrium.groupId`    | Maven-style group id used in generated metadata    |
 | `-Aequilibrium.artifactId` | Maven-style artifact id used in generated metadata |
 
-If you omit these, the processor may **infer** `groupId` and `artifactId` from a **`pom.xml`** on the compile classpath when present. Explicit `-A` values override inferred ones.
+If you omit these, the processor attempts to **infer** `groupId` and `artifactId` from a **`pom.xml`** on the compile classpath. If inference also fails, it falls back to `io.github.soulcodingmatt` / `equilibrium`. Explicit `-A` values always take precedence.
 
 ### Compile banner and colors
 
