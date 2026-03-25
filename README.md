@@ -64,6 +64,8 @@ public class User {
 
 👉 Extended copy-paste flow: [Quickstart](docs/quickstart.md).
 
+🧪 **Working example project:** [equilibrium-test](https://github.com/soulcodingmatt/equilibrium-test) — a ready-to-clone project that demonstrates how the annotations work in practice.
+
 ---
 
 ## How it works

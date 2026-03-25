@@ -2,6 +2,8 @@
 
 Guides in this folder go deeper than the [root README](../README.md). Start there for the overview and quickstart; use these pages when you need full detail.
 
+**Working example project:** [equilibrium-test](https://github.com/soulcodingmatt/equilibrium-test) — clone and run to see the annotations in action.
+
 |                                    Guide                                    |                                        What it covers                                         |
 |-----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
 | [Why Project Equilibrium?](why-equilibrium.md)                              | Benefits, when to use it, when to pick something else                                         |

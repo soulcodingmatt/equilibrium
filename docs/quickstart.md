@@ -64,4 +64,6 @@ After `mvn compile`, you get a type such as `com.example.dto.UserDto` (package a
 
 **Done** — no hand-maintained DTO stub for that class.
 
+**Want to see it in action?** Clone the [equilibrium-test](https://github.com/soulcodingmatt/equilibrium-test) project for a ready-to-run example that demonstrates the annotations in a real Maven build.
+
 Next: [Annotations reference](annotations-reference.md) for ignores, multiple variants, nesting, and records/VOs.
