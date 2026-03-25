@@ -7,18 +7,18 @@ This feature lives under **`io.github.soulcodingmatt.equilibrium.experimental.va
 ## What you need on the classpath
 
 - **Annotation API:** `jakarta.validation:jakarta.validation-api` (so the generated Jakarta constraint annotations resolve at compile time).
-- **Runtime validation** (REST endpoints, manual validation) still requires a **Bean Validation implementation** (for example Hibernate Validator) in the runtime you use to validate instances—not specific to Equilibrium, but required if you actually run validation.
+- **Runtime validation** (REST endpoints, manual validation) still requires a **Bean Validation implementation** (for example Hibernate Validator) in the runtime you use to validate instances—not specific to Project Equilibrium, but required if you actually run validation.
 
 ## Packages
 
-| Role | Package |
-|------|---------|
-| DTO field validation | `…experimental.validation.dto` (`@ValidateDto`, `@ValidateDtos`) |
-| Record component validation | `…experimental.validation.record` (`@ValidateRecord`, `@ValidateRecords`) |
-| VO field validation | `…experimental.validation.vo` (`@ValidateVo`, `@ValidateVos`) |
-| Type-safe constraint parameters | `…experimental.validation.common` (`@NotNull`, `@Size`, …) |
+|              Role               |                                  Package                                  |
+|---------------------------------|---------------------------------------------------------------------------|
+| DTO field validation            | `…experimental.validation.dto` (`@ValidateDto`, `@ValidateDtos`)          |
+| Record component validation     | `…experimental.validation.record` (`@ValidateRecord`, `@ValidateRecords`) |
+| VO field validation             | `…experimental.validation.vo` (`@ValidateVo`, `@ValidateVos`)             |
+| Type-safe constraint parameters | `…experimental.validation.common` (`@NotNull`, `@Size`, …)                |
 
-Import the **`common`** constraint types when you write `@ValidateDto(notNull = @NotNull(...))` and similar—they are **Equilibrium’s compile-time wrappers**, not the Jakarta classes you import on the generated side.
+Import the **`common`** constraint types when you write `@ValidateDto(notNull = @NotNull(...))` and similar—they are **Project Equilibrium’s compile-time wrappers**, not the Jakarta classes you import on the generated side.
 
 ## Basic example (DTO)
 
@@ -107,3 +107,4 @@ Each `@Validate*` annotation defines **`String[] value()`** for **additional** c
 
 - Main README: [Experimental: `@ValidateDto`, `@ValidateRecord`, `@ValidateVo`](../README.md#experimental-validatedto-validaterecord-validatevo) — overview and parameter table.
 - Javadoc: `ValidateDto`, `ValidateRecord`, `ValidateVo`, and types under `experimental.validation.common`.
+

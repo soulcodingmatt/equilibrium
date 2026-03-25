@@ -77,6 +77,7 @@ Historical pre-release; see `v0.1.0-RC1` tag.
 
 ## Links
 
-- **Repository:** https://github.com/soulcodingmatt/equilibrium  
-- **Maven Central:** `io.github.soulcodingmatt:equilibrium`  
+- **Repository:** https://github.com/soulcodingmatt/equilibrium
+- **Maven Central:** `io.github.soulcodingmatt:equilibrium`
 - **License:** GPL-3.0 (see repository `LICENSE`)
+

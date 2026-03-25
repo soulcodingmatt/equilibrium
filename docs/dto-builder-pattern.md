@@ -5,7 +5,7 @@ Use this when you want **Lombok’s builder** on generated DTOs. Project Equilib
 ## Prerequisites
 
 - **`@GenerateDto(builder = true)`** on your domain (or API) class.
-- **Lombok** on your classpath and on the **annotation processor path** (see the main README). Equilibrium does not replace Lombok; it generates code that Lombok then expands.
+- **Lombok** on your classpath and on the **annotation processor path** (see the main README). Project Equilibrium does not replace Lombok; it generates code that Lombok then expands.
 
 If you do not need builders, omit `builder` and use constructors and setters instead.
 
@@ -17,11 +17,11 @@ If you do not need builders, omit `builder` and use constructors and setters ins
 
 Use the parameter that matches the field type so values are checked at compile time:
 
-| Use | Annotation (examples) |
-|-----|-------------------------|
+|          Use          |                                            Annotation (examples)                                             |
+|-----------------------|--------------------------------------------------------------------------------------------------------------|
 | Primitives / wrappers | `intValue`, `longValue`, `booleanValue`, `doubleValue`, `floatValue`, `byteValue`, `shortValue`, `charValue` |
-| `String` | `stringValue = "..."` (quotes in source; the processor emits a valid Java string literal) |
-| Enum | `enumValue = "Status.ACTIVE"` or `"ACTIVE"` (must match the field’s enum type) |
+| `String`              | `stringValue = "..."` (quotes in source; the processor emits a valid Java string literal)                    |
+| Enum                  | `enumValue = "Status.ACTIVE"` or `"ACTIVE"` (must match the field’s enum type)                               |
 
 ### Collections and `Optional`
 
@@ -86,3 +86,4 @@ The processor reports errors for cases such as: **`enumValue`** that does not na
 
 - Main README: [Lombok (builders)](../README.md#lombok-builders) — add Lombok and the annotation processor path.
 - Library Javadoc: `io.github.soulcodingmatt.equilibrium.annotations.dto.DtoBuilderDefault` and `GenerateDto`.
+

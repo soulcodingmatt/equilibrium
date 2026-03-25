@@ -70,10 +70,10 @@ You can define different wrappers for different concerns (serialization-only, so
 
 ## Summary
 
-| Idea | Detail |
-|------|--------|
-| Generated DTO | Data shape, accessors, `equals` / `hashCode` / `toString`, optional Lombok builder |
-| Wrapper | Implements interfaces, encapsulates behavior, delegates to the DTO |
-| Why | Keeps generated code simple and keeps **business rules** in code you control and test |
+|     Idea      |                                        Detail                                         |
+|---------------|---------------------------------------------------------------------------------------|
+| Generated DTO | Data shape, accessors, `equals` / `hashCode` / `toString`, optional Lombok builder    |
+| Wrapper       | Implements interfaces, encapsulates behavior, delegates to the DTO                    |
+| Why           | Keeps generated code simple and keeps **business rules** in code you control and test |
 
-For custom **fields** on top of a generated DTO, the usual approach is still to **subclass** the generated class in your codebase; that is separate from implementing interfaces and is covered in the main README where noted.
+For custom **fields or methods** on top of a generated DTO, the usual approach is still to **subclass** the generated class in your codebase; that is separate from implementing interfaces. See [Custom fields and methods on generated DTOs](custom-fields-and-methods.md).
