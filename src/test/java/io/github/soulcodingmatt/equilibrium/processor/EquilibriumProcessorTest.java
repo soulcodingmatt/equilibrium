@@ -1255,7 +1255,7 @@ class EquilibriumProcessorTest {
     }
   }
 
-  @SuppressWarnings("NullableProblems")
+  @SuppressWarnings({"NullableProblems", "DataFlowIssue"})
   private static class TestClassElement implements javax.lang.model.element.TypeElement {
     private final String qualifiedName;
     private final List<Element> enclosedElements = new ArrayList<>();
