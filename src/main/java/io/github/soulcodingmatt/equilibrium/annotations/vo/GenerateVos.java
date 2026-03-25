@@ -6,11 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Container annotation for multiple @GenerateVo annotations.
- * This allows using @GenerateVo multiple times on the same class.
+ * Container annotation for multiple @GenerateVo annotations. This allows using @GenerateVo multiple
+ * times on the same class.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
 public @interface GenerateVos {
-    GenerateVo[] value();
-} 
+  GenerateVo[] value();
+}

@@ -5,11 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Container annotation for multiple NestedDtoMapping annotations.
- */
+/** Container annotation for multiple NestedDtoMapping annotations. */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)
 public @interface NestedDtoMappings {
-    NestedDtoMapping[] value();
-} 
+  NestedDtoMapping[] value();
+}
