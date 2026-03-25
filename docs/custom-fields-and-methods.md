@@ -88,13 +88,13 @@ Subclassing gets awkward with `@SuperBuilder` hierarchies. Prefer composition or
 
 ## Quick reference
 
-|            Topic             |                                                                What to do                                                                 |
-|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| Extra fields / methods       | Subclass (or wrapper)                                                                                                                     |
-| What updates automatically   | The generated base picks up domain changes (fields, types, mapping, validation, builder defaults, …); your subclass inherits that        |
-| Regeneration                 | Base class only; tweak subclass (`super(...)`, sometimes `equals` / `hashCode`) when the base API changes                                |
-| `equals` / `hashCode`        | Override when the subclass has extra state                                                                                                |
-| Base vs subclass "same data" | Not built-in; compare explicitly or compose                                                                                               |
+|            Topic             |                                                            What to do                                                             |
+|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| Extra fields / methods       | Subclass (or wrapper)                                                                                                             |
+| What updates automatically   | The generated base picks up domain changes (fields, types, mapping, validation, builder defaults, …); your subclass inherits that |
+| Regeneration                 | Base class only; tweak subclass (`super(...)`, sometimes `equals` / `hashCode`) when the base API changes                         |
+| `equals` / `hashCode`        | Override when the subclass has extra state                                                                                        |
+| Base vs subclass "same data" | Not built-in; compare explicitly or compose                                                                                       |
 
 ## Adding methods to DTOs (optional)
 
@@ -106,3 +106,4 @@ If a method only uses inherited getters, equality behavior stays as above. If yo
 
 - [DTOs and interfaces (wrapper pattern)](dto-interface-pattern.md)
 - [DTO builder pattern](dto-builder-pattern.md)
+

@@ -102,17 +102,17 @@ Each `@Validate*` annotation defines **`String[] value()`** for **additional** c
 
 The processor enforces these rules and reports **compile errors** when they are violated:
 
-| Constraint          | Allowed field types                                        |
-|---------------------|------------------------------------------------------------|
-| `notNull`           | Reference types only — **not** primitives (`int`, `boolean`, etc.) |
-| `notBlank`          | `String` only                                              |
-| `notEmpty`          | `String`, `Collection`, `Map`, or array                   |
-| `size`              | `String`, `Collection`, `Map`, or array; `min` and `max` must be ≥ 0 |
-| `min`, `max`        | Numeric types (`int`, `long`, `Integer`, `Long`, etc.)    |
-| `positive`, `positiveOrZero`, `negative`, `negativeOrZero` | Numeric types |
-| `digits`            | Numeric types                                              |
-| `email`, `pattern`  | `String` only                                             |
-| `past`, `future`, `pastOrPresent`, `futureOrPresent` | Temporal types (`LocalDate`, `LocalDateTime`, `ZonedDateTime`, etc.) |
+|                         Constraint                         |                         Allowed field types                          |
+|------------------------------------------------------------|----------------------------------------------------------------------|
+| `notNull`                                                  | Reference types only — **not** primitives (`int`, `boolean`, etc.)   |
+| `notBlank`                                                 | `String` only                                                        |
+| `notEmpty`                                                 | `String`, `Collection`, `Map`, or array                              |
+| `size`                                                     | `String`, `Collection`, `Map`, or array; `min` and `max` must be ≥ 0 |
+| `min`, `max`                                               | Numeric types (`int`, `long`, `Integer`, `Long`, etc.)               |
+| `positive`, `positiveOrZero`, `negative`, `negativeOrZero` | Numeric types                                                        |
+| `digits`                                                   | Numeric types                                                        |
+| `email`, `pattern`                                         | `String` only                                                        |
+| `past`, `future`, `pastOrPresent`, `futureOrPresent`       | Temporal types (`LocalDate`, `LocalDateTime`, `ZonedDateTime`, etc.) |
 
 ## Processing rules (short)
 
