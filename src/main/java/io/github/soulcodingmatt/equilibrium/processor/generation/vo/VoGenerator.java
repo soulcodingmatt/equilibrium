@@ -1,12 +1,10 @@
 package io.github.soulcodingmatt.equilibrium.processor.generation.vo;
 
-import io.github.soulcodingmatt.equilibrium.experimental.validation.vo.ValidateVo;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility.AccessorConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility.ConstructorConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility.FieldInclusionConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility.GeneratorType;
-import io.github.soulcodingmatt.equilibrium.processor.validation.codegen.ValidationSupport;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
@@ -25,22 +23,18 @@ public class VoGenerator {
   private final boolean generateSetters;
   private final Filer filer;
   private final int voId;
+  private final VoValidationEmitter validationEmitter;
 
-  public VoGenerator(
-      TypeElement classElement,
-      String packageName,
-      String voClassName,
-      Set<String> ignoredFields,
-      boolean generateSetters,
-      int voId,
-      Filer filer) {
-    this.classElement = classElement;
-    this.packageName = packageName;
-    this.voClassName = voClassName;
-    this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
-    this.generateSetters = generateSetters;
+  public VoGenerator(VoGeneratorTarget target, Filer filer, VoValidationEmitter validationEmitter) {
+    this.classElement = target.classElement();
+    this.packageName = target.packageName();
+    this.voClassName = target.voClassName();
+    this.ignoredFields =
+        target.ignoredFields() != null ? new HashSet<>(target.ignoredFields()) : new HashSet<>();
+    this.generateSetters = target.generateSetters();
     this.filer = filer;
-    this.voId = voId;
+    this.voId = target.voId();
+    this.validationEmitter = validationEmitter;
   }
 
   public void generate() throws IOException {
@@ -52,7 +46,7 @@ public class VoGenerator {
     List<VariableElement> fields = GeneratorUtility.getIncludedFields(classElement, fieldConfig);
 
     // Collect validation imports
-    Set<String> validationImports = ValidationSupport.collectVoValidationImports(fields, voId);
+    Set<String> validationImports = validationEmitter.collectImports(fields, voId);
 
     // Create or update the Value Object file
     JavaFileObject sourceFile =
@@ -86,12 +80,7 @@ public class VoGenerator {
       // Write fields with validation annotations
       for (VariableElement field : fields) {
         // Write validation annotations for this field
-        ValidateVo[] validateAnnotations = field.getAnnotationsByType(ValidateVo.class);
-        for (ValidateVo validateAnnotation : validateAnnotations) {
-          if (ValidationSupport.shouldApplyVoValidation(validateAnnotation, voId)) {
-            ValidationSupport.writeTypeSafeVoValidations(writer, validateAnnotation);
-          }
-        }
+        validationEmitter.emitFieldAnnotations(writer, field, voId);
 
         GeneratorUtility.writeField(writer, field, constructorConfig);
       }

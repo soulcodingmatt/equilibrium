@@ -1,11 +1,9 @@
 package io.github.soulcodingmatt.equilibrium.processor.generation.dto;
 
 import io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMapping;
-import io.github.soulcodingmatt.equilibrium.experimental.validation.dto.ValidateDto;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.CodeWriter;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.CustomObjectWarning;
 import io.github.soulcodingmatt.equilibrium.processor.model.NestedMappingResolver;
-import io.github.soulcodingmatt.equilibrium.processor.validation.codegen.ValidationSupport;
 import java.io.IOException;
 import java.io.Writer;
 import javax.annotation.processing.Messager;
@@ -19,32 +17,23 @@ public final class DtoFieldWriter {
   private final Messager messager;
   private final NestedMappingResolver nestedResolver;
   private final DtoBuilderDefaultSupport builderSupport;
+  private final DtoValidationEmitter validationEmitter;
 
   public DtoFieldWriter(
       DtoGeneratorTarget target,
       Messager messager,
       NestedMappingResolver nestedResolver,
-      DtoBuilderDefaultSupport builderSupport) {
+      DtoBuilderDefaultSupport builderSupport,
+      DtoValidationEmitter validationEmitter) {
     this.target = target;
     this.messager = messager;
     this.nestedResolver = nestedResolver;
     this.builderSupport = builderSupport;
+    this.validationEmitter = validationEmitter;
   }
 
   public void writeField(Writer writer, CodeWriter code, VariableElement field) throws IOException {
-    ValidateDto[] validateAnnotations = field.getAnnotationsByType(ValidateDto.class);
-
-    for (ValidateDto validateAnnotation : validateAnnotations) {
-      if (ValidationSupport.shouldApplyValidation(validateAnnotation, target.dtoId())) {
-        ValidationSupport.writeTypeSafeValidations(writer, validateAnnotation);
-
-        for (String validation : validateAnnotation.value()) {
-          if (!validation.trim().isEmpty()) {
-            writer.write("    " + validation + "\n");
-          }
-        }
-      }
-    }
+    validationEmitter.emitFieldAnnotations(writer, field, target.dtoId());
 
     builderSupport.writeBuilderDefaultAnnotation(writer, field);
 

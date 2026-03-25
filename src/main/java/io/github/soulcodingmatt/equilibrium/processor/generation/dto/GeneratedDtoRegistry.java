@@ -19,4 +19,9 @@ final class GeneratedDtoRegistry {
   static String lookup(String simpleName) {
     return ENTRIES.get(simpleName);
   }
+
+  /** Removes all entries. Called at the start of each processing cycle to prevent stale state. */
+  static void clear() {
+    ENTRIES.clear();
+  }
 }

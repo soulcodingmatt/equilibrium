@@ -26,6 +26,11 @@ public class DtoGenerator {
     return GeneratedDtoRegistry.lookup(simpleName);
   }
 
+  /** Clears the generated DTO registry. Called at the start of each processing cycle. */
+  public static void clearRegistry() {
+    GeneratedDtoRegistry.clear();
+  }
+
   private final DtoGeneratorTarget target;
   private final TypeElement classElement;
   private final String packageName;
@@ -34,8 +39,12 @@ public class DtoGenerator {
   private final boolean builder;
   private final int dtoId;
   private final DtoProcessorServices services;
+  private final DtoValidationEmitter validationEmitter;
 
-  public DtoGenerator(DtoGeneratorTarget target, DtoProcessorServices services) {
+  public DtoGenerator(
+      DtoGeneratorTarget target,
+      DtoProcessorServices services,
+      DtoValidationEmitter validationEmitter) {
     this.target = target;
     this.classElement = target.classElement();
     this.packageName = target.packageName();
@@ -45,6 +54,7 @@ public class DtoGenerator {
     this.builder = target.builder();
     this.dtoId = target.dtoId();
     this.services = services;
+    this.validationEmitter = validationEmitter;
   }
 
   public void generate() throws IOException {
@@ -70,17 +80,20 @@ public class DtoGenerator {
       classWriter.writeFileHeader(writer, packageName, builder);
       DtoImportPlanner.writeImports(
           writer,
-          builder,
-          dtoId,
-          fields,
-          new HashSet<>(inherited.extraImports()),
-          builderSupport,
-          nestedResolver);
+          new DtoImportContext(
+              builder,
+              dtoId,
+              fields,
+              new HashSet<>(inherited.extraImports()),
+              builderSupport,
+              nestedResolver,
+              validationEmitter));
 
       classWriter.beginClass(code, dtoClassName, classElement, builder);
 
       DtoFieldWriter fieldWriter =
-          new DtoFieldWriter(target, services.messager(), nestedResolver, builderSupport);
+          new DtoFieldWriter(
+              target, services.messager(), nestedResolver, builderSupport, validationEmitter);
 
       for (VariableElement field : fields) {
         fieldWriter.writeField(writer, code, field);

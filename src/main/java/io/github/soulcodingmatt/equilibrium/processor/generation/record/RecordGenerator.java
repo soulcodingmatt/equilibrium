@@ -1,10 +1,8 @@
 package io.github.soulcodingmatt.equilibrium.processor.generation.record;
 
-import io.github.soulcodingmatt.equilibrium.experimental.validation.record.ValidateRecord;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility.FieldInclusionConfig;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility.GeneratorType;
-import io.github.soulcodingmatt.equilibrium.processor.validation.codegen.ValidationSupport;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
@@ -22,20 +20,18 @@ public class RecordGenerator {
   private final Set<String> ignoredFields;
   private final Filer filer;
   private final int recordId;
+  private final RecordValidationEmitter validationEmitter;
 
   public RecordGenerator(
-      TypeElement classElement,
-      String packageName,
-      String recordClassName,
-      Set<String> ignoredFields,
-      int recordId,
-      Filer filer) {
-    this.classElement = classElement;
-    this.packageName = packageName;
-    this.recordClassName = recordClassName;
-    this.ignoredFields = ignoredFields != null ? ignoredFields : new HashSet<>();
+      RecordGeneratorTarget target, Filer filer, RecordValidationEmitter validationEmitter) {
+    this.classElement = target.classElement();
+    this.packageName = target.packageName();
+    this.recordClassName = target.recordClassName();
+    this.ignoredFields =
+        target.ignoredFields() != null ? new HashSet<>(target.ignoredFields()) : new HashSet<>();
     this.filer = filer;
-    this.recordId = recordId;
+    this.recordId = target.recordId();
+    this.validationEmitter = validationEmitter;
   }
 
   public void generate() throws IOException {
@@ -47,8 +43,7 @@ public class RecordGenerator {
     List<VariableElement> fields = GeneratorUtility.getIncludedFields(classElement, fieldConfig);
 
     // Collect validation imports
-    Set<String> validationImports =
-        ValidationSupport.collectRecordValidationImports(fields, recordId);
+    Set<String> validationImports = validationEmitter.collectImports(fields, recordId);
 
     // Create or update the Record file
     JavaFileObject sourceFile =
@@ -105,12 +100,7 @@ public class RecordGenerator {
       VariableElement field = fields.get(i);
 
       // Write validation annotations for this field
-      ValidateRecord[] validateAnnotations = field.getAnnotationsByType(ValidateRecord.class);
-      for (ValidateRecord validateAnnotation : validateAnnotations) {
-        if (ValidationSupport.shouldApplyRecordValidation(validateAnnotation, recordId)) {
-          ValidationSupport.writeTypeSafeRecordValidations(writer, validateAnnotation);
-        }
-      }
+      validationEmitter.emitParameterAnnotations(writer, field, recordId);
 
       // Write the field type and name
       String fieldType = field.asType().toString();

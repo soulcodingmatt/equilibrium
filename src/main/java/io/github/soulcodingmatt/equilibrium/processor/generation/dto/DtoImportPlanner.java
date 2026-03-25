@@ -4,7 +4,6 @@ import io.github.soulcodingmatt.equilibrium.annotations.dto.NestedMapping;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.GeneratorUtility;
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.imports.ImportManager;
 import io.github.soulcodingmatt.equilibrium.processor.model.NestedMappingResolver;
-import io.github.soulcodingmatt.equilibrium.processor.validation.codegen.ValidationSupport;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
@@ -18,15 +17,15 @@ public final class DtoImportPlanner {
 
   private DtoImportPlanner() {}
 
-  public static void writeImports(
-      Writer writer,
-      boolean builder,
-      int dtoId,
-      List<VariableElement> fields,
-      Set<String> extraImportsForInheritedDefaults,
-      DtoBuilderDefaultSupport builderSupport,
-      NestedMappingResolver nestedResolver)
-      throws IOException {
+  public static void writeImports(Writer writer, DtoImportContext context) throws IOException {
+    boolean builder = context.builder();
+    int dtoId = context.dtoId();
+    List<VariableElement> fields = context.fields();
+    Set<String> extraImportsForInheritedDefaults = context.extraImportsForInheritedDefaults();
+    DtoBuilderDefaultSupport builderSupport = context.builderSupport();
+    NestedMappingResolver nestedResolver = context.nestedResolver();
+    DtoValidationEmitter validationEmitter = context.validationEmitter();
+
     Set<String> imports = new HashSet<>();
     Set<VariableElement> fieldsWithNestedMapping = new HashSet<>();
 
@@ -52,7 +51,7 @@ public final class DtoImportPlanner {
             .collect(Collectors.toSet());
     imports.addAll(fieldImports);
 
-    Set<String> validationImports = ValidationSupport.collectValidationImports(fields, dtoId);
+    Set<String> validationImports = validationEmitter.collectImports(fields, dtoId);
     imports.addAll(validationImports);
 
     if (builder && builderSupport.hasBuilderDefaults(fields)) {

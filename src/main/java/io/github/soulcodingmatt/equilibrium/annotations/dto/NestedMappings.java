@@ -6,18 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Container annotation for multiple nested DTO mappings. Use this when you need different DTO
- * classes for different DTO IDs on the same field.
+ * Container annotation that holds multiple {@link NestedMapping} annotations on a single field.
  *
- * <p>Example:
- *
- * <pre>
- * &#64;NestedMappings({
- *     &#64;NestedMapping(ids = 1, dtoClass = NestedBodyDto.class),
- *     &#64;NestedMapping(ids = 2, dtoClass = NestedBodyAltDto.class)
- * })
- * private Body body;
- * </pre>
+ * <p>Note: {@link NestedMapping} applies the same DTO type to <em>all</em> generated DTO variants.
+ * If you need <em>different</em> DTO types per {@code @GenerateDto} id, use {@link
+ * NestedDtoMapping} / {@link NestedDtoMappings} instead, which support per-id scoping via their
+ * {@code ids} parameter.
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.SOURCE)

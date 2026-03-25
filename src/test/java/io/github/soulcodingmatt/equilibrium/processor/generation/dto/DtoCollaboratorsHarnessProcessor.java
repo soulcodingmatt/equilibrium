@@ -2,6 +2,7 @@ package io.github.soulcodingmatt.equilibrium.processor.generation.dto;
 
 import io.github.soulcodingmatt.equilibrium.processor.generation.emit.CodeWriter;
 import io.github.soulcodingmatt.equilibrium.processor.model.NestedMappingResolver;
+import io.github.soulcodingmatt.equilibrium.processor.validation.codegen.DtoValidationEmitterImpl;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -77,7 +78,15 @@ public class DtoCollaboratorsHarnessProcessor extends AbstractProcessor {
     try {
       StringWriter imports = new StringWriter();
       DtoImportPlanner.writeImports(
-          imports, true, 1, fields, new HashSet<>(), builderSupport, nestedResolver);
+          imports,
+          new DtoImportContext(
+              true,
+              1,
+              fields,
+              new HashSet<>(),
+              builderSupport,
+              nestedResolver,
+              new DtoValidationEmitterImpl()));
       lastImportSection = imports.toString();
     } catch (IOException e) {
       throw new AssertionError(e);
@@ -89,7 +98,8 @@ public class DtoCollaboratorsHarnessProcessor extends AbstractProcessor {
       StringWriter fieldOutput = new StringWriter();
       CodeWriter code = new CodeWriter(fieldOutput);
       DtoFieldWriter fieldWriter =
-          new DtoFieldWriter(target, messager, nestedResolver, builderSupport);
+          new DtoFieldWriter(
+              target, messager, nestedResolver, builderSupport, new DtoValidationEmitterImpl());
       fieldWriter.writeField(fieldOutput, code, labelField);
       lastFieldWriterLabelBlock = fieldOutput.toString();
     } catch (IOException e) {

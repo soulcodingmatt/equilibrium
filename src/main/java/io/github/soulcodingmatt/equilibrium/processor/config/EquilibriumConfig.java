@@ -48,6 +48,63 @@ public class EquilibriumConfig {
   public static final String DTO = "DTO";
   public static final String VO = "VO";
 
+  /** Lazy holder for pom.xml coordinates — initialized at most once per JVM. */
+  private static final class PomCoordinatesHolder {
+    static final Map.Entry<String, String> INSTANCE = inferFromPom().orElse(null);
+
+    private static Optional<Map.Entry<String, String>> inferFromPom() {
+      try {
+        Path projectRoot = Paths.get(System.getProperty("user.dir"));
+        Path pomFile = projectRoot.resolve("pom.xml");
+
+        if (Files.exists(pomFile)) {
+          String content = Files.readString(pomFile);
+
+          // Try to find project coordinates that are NOT inside a <parent> tag
+          Pattern projectPattern =
+              Pattern.compile(
+                  "(?:(?!</parent>)(?!<parent>).)++<groupId>\\s*(.*?)\\s*</groupId>"
+                      + "(?:(?!</parent>)(?!<parent>).)*+<artifactId>\\s*(.*?)\\s*</artifactId>",
+                  Pattern.DOTALL);
+          Matcher projectMatcher = projectPattern.matcher(content);
+
+          if (projectMatcher.find()) {
+            return Optional.of(
+                Map.entry(projectMatcher.group(1).trim(), projectMatcher.group(2).trim()));
+          }
+
+          // Remove the parent section entirely and search again
+          String contentWithoutParent = content.replaceAll("(?s)<parent>.*?</parent>", "");
+          Pattern simplePattern =
+              Pattern.compile(
+                  "<groupId>\\s*(.*?)\\s*</groupId>.*?<artifactId>\\s*(.*?)\\s*</artifactId>",
+                  Pattern.DOTALL);
+          Matcher simpleMatcher = simplePattern.matcher(contentWithoutParent);
+
+          if (simpleMatcher.find()) {
+            return Optional.of(
+                Map.entry(simpleMatcher.group(1).trim(), simpleMatcher.group(2).trim()));
+          }
+
+          // Fallback: use the original pattern if nothing else works
+          Pattern fallbackPattern =
+              Pattern.compile(
+                  "<groupId>\\s*(.*?)\\s*</groupId>\\s*<artifactId>\\s*(.*?)\\s*</artifactId>",
+                  Pattern.DOTALL);
+          Matcher fallbackMatcher = fallbackPattern.matcher(content);
+          if (fallbackMatcher.find()) {
+            return Optional.of(
+                Map.entry(fallbackMatcher.group(1).trim(), fallbackMatcher.group(2).trim()));
+          }
+        }
+      } catch (IOException e) {
+        // If we can't read the file, return empty
+      }
+
+      return Optional.empty();
+    }
+  }
+
   private final Map<String, String> options;
   private final String groupId;
   private final String artifactId;
@@ -65,11 +122,11 @@ public class EquilibriumConfig {
       return;
     }
 
-    // Try to infer from source files
-    Optional<Map.Entry<String, String>> coordinates = inferProjectCoordinates();
-    if (coordinates.isPresent()) {
-      this.groupId = sanitizePackageName(coordinates.get().getKey());
-      this.artifactId = sanitizePackageName(coordinates.get().getValue());
+    // Try to infer from pom.xml (cached via lazy holder)
+    Map.Entry<String, String> coordinates = PomCoordinatesHolder.INSTANCE;
+    if (coordinates != null) {
+      this.groupId = sanitizePackageName(coordinates.getKey());
+      this.artifactId = sanitizePackageName(coordinates.getValue());
       return;
     }
 
@@ -121,74 +178,6 @@ public class EquilibriumConfig {
     }
 
     return result.toString();
-  }
-
-  /**
-   * Attempts to infer the current project's groupId and artifactId from the pom.xml file. This
-   * method specifically looks for the project's own coordinates, NOT the parent's coordinates. It
-   * uses multiple parsing strategies to handle various pom.xml structures: 1. First tries to find
-   * coordinates outside of any &lt;parent&gt; tags 2. Then tries removing the parent section
-   * entirely and searching again 3. Finally falls back to the original simple pattern as a last
-   * resort
-   *
-   * @return Optional containing the project's groupId and artifactId, or empty if not found
-   */
-  private Optional<Map.Entry<String, String>> inferProjectCoordinates() {
-    try {
-      // Try to find pom.xml in the project root
-      Path projectRoot = Paths.get(System.getProperty("user.dir"));
-      Path pomFile = projectRoot.resolve("pom.xml");
-
-      if (Files.exists(pomFile)) {
-        String content = Files.readString(pomFile);
-
-        // First try to find project coordinates that are NOT inside a <parent> tag
-        // This pattern looks for groupId and artifactId that are direct children of the project
-        // element
-        Pattern projectPattern =
-            Pattern.compile(
-                "(?:(?!</parent>)(?!<parent>).)++<groupId>\\s*(.*?)\\s*</groupId>(?:(?!</parent>)(?!<parent>).)*+<artifactId>\\s*(.*?)\\s*</artifactId>",
-                Pattern.DOTALL);
-        Matcher projectMatcher = projectPattern.matcher(content);
-
-        if (projectMatcher.find()) {
-          String foundGroupId = projectMatcher.group(1).trim();
-          String foundArtifactId = projectMatcher.group(2).trim();
-          return Optional.of(Map.entry(foundGroupId, foundArtifactId));
-        }
-
-        // If the above pattern doesn't work, try a simpler approach:
-        // Remove the parent section entirely and then search for groupId/artifactId
-        String contentWithoutParent = content.replaceAll("(?s)<parent>.*?</parent>", "");
-        Pattern simplePattern =
-            Pattern.compile(
-                "<groupId>\\s*(.*?)\\s*</groupId>.*?<artifactId>\\s*(.*?)\\s*</artifactId>",
-                Pattern.DOTALL);
-        Matcher simpleMatcher = simplePattern.matcher(contentWithoutParent);
-
-        if (simpleMatcher.find()) {
-          String foundGroupId = simpleMatcher.group(1).trim();
-          String foundArtifactId = simpleMatcher.group(2).trim();
-          return Optional.of(Map.entry(foundGroupId, foundArtifactId));
-        }
-
-        // Fallback: use the original pattern if nothing else works
-        Pattern fallbackPattern =
-            Pattern.compile(
-                "<groupId>\\s*(.*?)\\s*</groupId>\\s*<artifactId>\\s*(.*?)\\s*</artifactId>",
-                Pattern.DOTALL);
-        Matcher fallbackMatcher = fallbackPattern.matcher(content);
-        if (fallbackMatcher.find()) {
-          String foundGroupId = fallbackMatcher.group(1).trim();
-          String foundArtifactId = fallbackMatcher.group(2).trim();
-          return Optional.of(Map.entry(foundGroupId, foundArtifactId));
-        }
-      }
-    } catch (IOException e) {
-      // If we can't read the file, return empty
-    }
-
-    return Optional.empty();
   }
 
   /**
