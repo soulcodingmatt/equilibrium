@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.Processor;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.SourceVersion;
@@ -34,13 +33,12 @@ class EquilibriumProcessorTest {
 
   private EquilibriumProcessor processor;
   private TestMessager fixtureMessager;
-  private TestProcessingEnvironment testProcessingEnv;
 
   @BeforeEach
   void setUp() {
     processor = new EquilibriumProcessor();
     fixtureMessager = new TestMessager();
-    testProcessingEnv = new TestProcessingEnvironment(fixtureMessager);
+    TestProcessingEnvironment testProcessingEnv = new TestProcessingEnvironment(fixtureMessager);
 
     // Initialize the processor
     processor.init(testProcessingEnv);
@@ -155,14 +153,6 @@ class EquilibriumProcessorTest {
   }
 
   @Test
-  void testProcessorImplementsProcessorInterface() {
-    // Verify the processor implements the Processor interface
-    assertTrue(
-        Processor.class.isAssignableFrom(EquilibriumProcessor.class),
-        "EquilibriumProcessor must implement javax.annotation.processing.Processor");
-  }
-
-  @Test
   void testProcessorSupportedSourceVersion() {
     // Verify the processor supports the correct source version
     SourceVersion supportedVersion = processor.getSupportedSourceVersion();
@@ -202,8 +192,8 @@ class EquilibriumProcessorTest {
     messagerField.setAccessible(true);
     Messager storedMessager = (Messager) messagerField.get(testProcessor);
     assertNotNull(storedMessager, "Messager should be stored during init");
-    assertTrue(
-        storedMessager instanceof EquilibriumMessagerStats, "Messager should be wrapped for stats");
+    assertInstanceOf(
+        EquilibriumMessagerStats.class, storedMessager, "Messager should be wrapped for stats");
     assertSame(
         messager,
         ((EquilibriumMessagerStats) storedMessager).delegateMessager(),
@@ -258,9 +248,9 @@ class EquilibriumProcessorTest {
 
     assertFalse(messager.getNoteMessages().isEmpty(), "banner should emit NOTE diagnostics");
     List<TestMessage> notes = messager.getNoteMessages();
-    assertEquals("", notes.get(0).getMessage(), "blank line precedes top rule");
+    assertEquals("", notes.getFirst().getMessage(), "blank line precedes top rule");
     String topRule = notes.get(1).getMessage();
-    String bottomRule = notes.get(notes.size() - 1).getMessage();
+    String bottomRule = notes.getLast().getMessage();
     assertTrue(topRule.chars().allMatch(ch -> ch == '='));
     assertTrue(bottomRule.chars().allMatch(ch -> ch == '-'));
     assertEquals(topRule.length(), bottomRule.length());
@@ -444,7 +434,7 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getErrorMessages().size());
-    TestMessage errorMessage = fixtureMessager.getErrorMessages().get(0);
+    TestMessage errorMessage = fixtureMessager.getErrorMessages().getFirst();
     assertEquals(Diagnostic.Kind.ERROR, errorMessage.getKind());
     assertEquals("Test error with element", errorMessage.getMessage());
     assertNull(errorMessage.getElement());
@@ -461,7 +451,8 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getGeneralErrorMessages().size());
-    assertEquals("Test error without element", fixtureMessager.getGeneralErrorMessages().get(0));
+    assertEquals(
+        "Test error without element", fixtureMessager.getGeneralErrorMessages().getFirst());
   }
 
   @Test
@@ -484,7 +475,7 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getGeneralErrorMessages().size());
-    String actualMessage = fixtureMessager.getGeneralErrorMessages().get(0);
+    String actualMessage = fixtureMessager.getGeneralErrorMessages().getFirst();
     assertTrue(actualMessage.contains("Failed to process annotations"));
     assertTrue(actualMessage.contains("Test exception message"));
     assertTrue(actualMessage.contains("RuntimeException"));
@@ -502,7 +493,7 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getNoteMessages().size());
-    TestMessage noteMessage = fixtureMessager.getNoteMessages().get(0);
+    TestMessage noteMessage = fixtureMessager.getNoteMessages().getFirst();
     assertEquals(Diagnostic.Kind.NOTE, noteMessage.getKind());
     assertEquals("Test note message", noteMessage.getMessage());
   }
@@ -809,7 +800,7 @@ class EquilibriumProcessorTest {
     assertTrue(
         fixtureMessager
             .getErrorMessages()
-            .get(0)
+            .getFirst()
             .getMessage()
             .contains("can only be applied to classes"),
         "Error message should indicate annotations can only be applied to classes");
@@ -834,13 +825,13 @@ class EquilibriumProcessorTest {
     assertTrue(
         fixtureMessager
             .getErrorMessages()
-            .get(0)
+            .getFirst()
             .getMessage()
             .contains("can only be applied to classes"),
         "Error message should indicate annotations can only be applied to classes");
   }
 
-  // Test helper classes
+  // Test helper classes — stubs only implement the methods actually exercised by tests.
 
   private static class TestRoundEnvironment
       implements javax.annotation.processing.RoundEnvironment {
@@ -891,6 +882,7 @@ class EquilibriumProcessorTest {
     }
   }
 
+  @SuppressWarnings("NullableProblems")
   private static class TestTypeElement implements javax.lang.model.element.TypeElement {
     private final String qualifiedName;
 
@@ -976,6 +968,7 @@ class EquilibriumProcessorTest {
     }
   }
 
+  @SuppressWarnings("NullableProblems")
   private static class TestName implements javax.lang.model.element.Name {
     private final String name;
 
@@ -1262,16 +1255,13 @@ class EquilibriumProcessorTest {
     }
   }
 
+  @SuppressWarnings("NullableProblems")
   private static class TestClassElement implements javax.lang.model.element.TypeElement {
     private final String qualifiedName;
     private final List<Element> enclosedElements = new ArrayList<>();
 
     public TestClassElement(String qualifiedName) {
       this.qualifiedName = qualifiedName;
-    }
-
-    public void addEnclosedElement(Element element) {
-      enclosedElements.add(element);
     }
 
     @Override
@@ -1352,6 +1342,7 @@ class EquilibriumProcessorTest {
     }
   }
 
+  @SuppressWarnings("NullableProblems")
   private static class TestInterfaceElement extends TestClassElement {
     public TestInterfaceElement(String qualifiedName) {
       super(qualifiedName);
@@ -1363,6 +1354,7 @@ class EquilibriumProcessorTest {
     }
   }
 
+  @SuppressWarnings("NullableProblems")
   private static class TestEnumElement extends TestClassElement {
     public TestEnumElement(String qualifiedName) {
       super(qualifiedName);

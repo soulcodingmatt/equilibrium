@@ -10,7 +10,7 @@ import java.lang.annotation.*;
  * <p>This annotation is repeatable — use it multiple times to generate several Value Objects with
  * different configurations from the same source class.
  *
- * <h3>Examples</h3>
+ * <p><b>Examples:</b>
  *
  * <p>Basic usage:
  *

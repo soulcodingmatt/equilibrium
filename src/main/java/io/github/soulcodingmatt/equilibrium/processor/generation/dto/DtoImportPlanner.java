@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.VariableElement;
 
 /** Collects import lines required for a generated DTO source file. */
-public final class DtoImportPlanner {
+final class DtoImportPlanner {
 
   private DtoImportPlanner() {}
 
-  public static void writeImports(Writer writer, DtoImportContext context) throws IOException {
+  static void writeImports(Writer writer, DtoImportContext context) throws IOException {
     boolean builder = context.builder();
     int dtoId = context.dtoId();
     List<VariableElement> fields = context.fields();
