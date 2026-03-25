@@ -127,4 +127,4 @@ Annotated domain types must be Java classes. Kotlin sources (or Kotlin-first too
 
 This repository is built and tested with Maven, and we do not yet ship a verified Gradle snippet or step-by-step instructions. If you already wire Java annotation processors in Gradle, Project Equilibrium should follow the same pattern.
 
-**Planned:** a dedicated Gradle section with a verified Java + Gradle example once it has been exercised and reviewed (see [Roadmap](roadmap.md)).
+A dedicated Gradle section with a verified example is planned for a future release.

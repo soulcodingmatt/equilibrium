@@ -11,7 +11,6 @@ Guides in this folder go deeper than the [root README](../README.md). Start ther
 | [Configuration](configuration.md)                                           | `-Aequilibrium.*` options, precedence, compile banner                                         |
 | [Annotations reference](annotations-reference.md)                           | `@GenerateDto` / `@GenerateRecord` / `@GenerateVo`, ignores, nesting, experimental validation |
 | [Ecosystem](ecosystem.md)                                                   | MapStruct and other complementary tools                                                       |
-| [Roadmap](roadmap.md)                                                       | Planned work and releases                                                                     |
 | [DTO builder pattern](dto-builder-pattern.md)                               | `@GenerateDto(builder=true)`, `@DtoBuilderDefault`, Lombok                                    |
 | [Experimental validation](experimental-validation.md)                       | `@ValidateDto` / `@ValidateRecord` / `@ValidateVo`                                            |
 | [DTOs and interfaces (wrapper pattern)](dto-interface-pattern.md)           | `Serializable`, `Comparable`, etc.                                                            |

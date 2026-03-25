@@ -1,6 +1,6 @@
 # Project Equilibrium
 
-> **Compile-time** generation of DTOs, Java records, and value objects — fast, type-safe, **no reflection**.
+#### **Compile-time** generation of DTOs, Java records, and value objects — fast, type-safe, **no reflection**.
 
 ![Project Equilibrium summary output](docs/images/equilibrium-logo-v1.0.0.png)
 
@@ -18,9 +18,9 @@ If you find this project useful, consider supporting me ☕
 
 Hand-maintained DTOs and cousins often mean:
 
-- **Boilerplate** and copy-paste types that drift from the domain
-- **Surprises at runtime** when something no longer lines up
-- **Refactors** that sprawl across many files
+- 😩  Boilerplate and copy-paste types that drift from the domain
+- 💥  Surprises at runtime** when something no longer lines up
+- 🔧  Refactors that sprawl across many files
 
 **Project Equilibrium pushes that work to compilation:** generated Java sources, consistent defaults, and errors when configuration is impossible — not when a user hits an edge case.
 
@@ -78,12 +78,6 @@ Use Project Equilibrium **alongside** mappers and frameworks — for example **M
 
 ---
 
-## Roadmap
-
-High-level plans (releases, Gradle, docs): [Roadmap](docs/roadmap.md).
-
----
-
 ## Documentation
 
 **Index of all guides:** [docs/README.md](docs/README.md)
@@ -131,6 +125,14 @@ Older tool versions may work but are not validated. **Building Project Equilibri
 **In your application:** add the published Maven dependency (`artifactId` **equilibrium**), put the processor on **`annotationProcessorPaths`**, and pass **`-Aequilibrium.*`** flags (or rely on annotation parameters) for packages and postfixes. Any tool that resolves Maven artifacts and runs Java annotation processing can consume the JAR.
 
 **From this repository:** build with **Maven** (`mvn verify` or `mvn install`) to compile, run tests, and produce the same artifact layout this project publishes — including metadata stamped from the POM. Porting that to another build system means replicating dependency scopes, processor path, and resource packaging.
+
+## 🤖 Usage of AI
+
+AI tools were used throughout the development of this project — including prototyping, testing, bug fixing, and refactoring.
+The primary author has over 25 years of experience with Java and more than 10 years as a professional software developer. AI was used as a productivity tool, not as a substitute for expertise.
+All architectural decisions, design, and final validation were carried out by a human. AI assisted the process, but responsibility and ownership remain human.
+
+Using tools that improve efficiency is a natural part of modern software development.
 
 ## Contributing
 
