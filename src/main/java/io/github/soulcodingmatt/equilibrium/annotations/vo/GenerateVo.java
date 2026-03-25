@@ -3,12 +3,39 @@ package io.github.soulcodingmatt.equilibrium.annotations.vo;
 import java.lang.annotation.*;
 
 /**
- * Annotation to generate a Value Object class from the annotated class. The generated class will
- * mirror the structure of the annotated class, excluding any fields marked with @IgnoreVo
- * or @IgnoreAll.
+ * Generates an immutable Value Object class from the annotated source class. The generated class
+ * has {@code private final} fields, a constructor, getters, and {@code equals}/{@code hashCode}/
+ * {@code toString} — excluding any fields marked with {@code @IgnoreVo} or {@code @IgnoreAll}.
  *
- * <p>This annotation can be used multiple times on the same class to generate multiple VOs with
- * different configurations.
+ * <p>This annotation is repeatable — use it multiple times to generate several Value Objects with
+ * different configurations from the same source class.
+ *
+ * <h3>Examples</h3>
+ *
+ * <p>Basic usage:
+ *
+ * <pre>{@code
+ * @GenerateVo
+ * public class Money {
+ *   private String currency;
+ *   private BigDecimal amount;
+ * }
+ * // generates: immutable MoneyVo with constructor, getters, equals, hashCode, toString
+ * }</pre>
+ *
+ * <p>Excluding identity fields (typical for Value Objects):
+ *
+ * <pre>{@code
+ * @GenerateVo(pkg = "com.example.domain", name = "Address", ignore = {"id"})
+ * public class AddressEntity { ... }
+ * }</pre>
+ *
+ * <p>With setters (opt-in, not the default for Value Objects):
+ *
+ * <pre>{@code
+ * @GenerateVo(setters = true)
+ * public class Coordinate { ... }
+ * }</pre>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)

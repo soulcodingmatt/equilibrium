@@ -3,11 +3,38 @@ package io.github.soulcodingmatt.equilibrium.annotations.dto;
 import java.lang.annotation.*;
 
 /**
- * Annotation to generate a DTO class from the annotated class. The generated class will mirror the
- * structure of the annotated class, excluding any fields marked with @IgnoreDto or @IgnoreAll.
+ * Generates a DTO class from the annotated source class. The generated DTO mirrors the field
+ * structure, excluding any fields marked with {@code @IgnoreDto} or {@code @IgnoreAll}.
  *
- * <p>This annotation can be used multiple times on the same class to generate multiple DTOs with
- * different configurations.
+ * <p>This annotation is repeatable — use it multiple times to generate several DTOs with different
+ * configurations from the same source class.
+ *
+ * <h3>Examples</h3>
+ *
+ * <p>Basic usage (package and name inferred from configuration):
+ *
+ * <pre>{@code
+ * @GenerateDto
+ * public class Person {
+ *   private String name;
+ *   private int age;
+ * }
+ * }</pre>
+ *
+ * <p>Explicit package and name:
+ *
+ * <pre>{@code
+ * @GenerateDto(pkg = "com.example.api", name = "PersonResponse")
+ * public class Person { ... }
+ * }</pre>
+ *
+ * <p>Multiple DTOs with selective field exclusion:
+ *
+ * <pre>{@code
+ * @GenerateDto(id = 1, name = "PersonSummary", ignore = {"address", "phone"})
+ * @GenerateDto(id = 2, name = "PersonDetail")
+ * public class Person { ... }
+ * }</pre>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)

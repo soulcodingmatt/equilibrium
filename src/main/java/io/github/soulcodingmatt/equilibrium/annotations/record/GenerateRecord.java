@@ -3,12 +3,40 @@ package io.github.soulcodingmatt.equilibrium.annotations.record;
 import java.lang.annotation.*;
 
 /**
- * Annotation to generate a Record class from the annotated class. The generated class will mirror
- * the structure of the annotated class, excluding any fields marked with @IgnoreRecord
- * or @IgnoreAll.
+ * Generates a Java {@code record} from the annotated source class. The record's components mirror
+ * the field structure, excluding any fields marked with {@code @IgnoreRecord} or
+ * {@code @IgnoreAll}.
  *
- * <p>This annotation can be used multiple times on the same class to generate multiple Records with
- * different configurations.
+ * <p>This annotation is repeatable — use it multiple times to generate several records with
+ * different configurations from the same source class.
+ *
+ * <h3>Examples</h3>
+ *
+ * <p>Basic usage:
+ *
+ * <pre>{@code
+ * @GenerateRecord
+ * public class Person {
+ *   private String name;
+ *   private int age;
+ * }
+ * // generates: public record PersonRecord(String name, int age) {}
+ * }</pre>
+ *
+ * <p>Explicit package and name:
+ *
+ * <pre>{@code
+ * @GenerateRecord(pkg = "com.example.api", name = "PersonData")
+ * public class Person { ... }
+ * }</pre>
+ *
+ * <p>Multiple records with selective field exclusion:
+ *
+ * <pre>{@code
+ * @GenerateRecord(id = 1, name = "PersonSummary", ignore = {"address"})
+ * @GenerateRecord(id = 2, name = "PersonFull")
+ * public class Person { ... }
+ * }</pre>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
