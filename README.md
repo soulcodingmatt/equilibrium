@@ -106,7 +106,7 @@ You can use this annotation processor in **commercial or closed-source projects*
 
 ## Requirements
 
-- **Java 21** or higher (the processor targets the Java 21 language level)
+- **Java 17** or higher (the processor targets the Java 17 language level)
 - A build tool that can **resolve dependencies** from Maven Central (or your repository) and run **annotation processing** (for example Maven 3.x or Gradle 8.x)
 
 Older tool versions may work but are not validated. **Building Project Equilibrium** uses Maven in this repository; consuming projects do not need to run this project’s `pom.xml`.

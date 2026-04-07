@@ -128,7 +128,7 @@ Details: [Annotations reference](annotations-reference.md) (*Selective exclusion
 
 - Equilibrium targets **Java** sources; **Kotlin** / **`kapt`** is **not** supported or tested here.
 - This repo is validated with **Maven**; **Gradle** can work in principle but you must wire the processor path and **`-Aequilibrium.*`** yourself—see [Build tooling](build-tooling.md) (*Installation (Gradle)*).
-- **Java 21+** is required for the language level this processor assumes.
+- **Java 17+** is required for the language level this processor assumes.
 
 ---
 
