@@ -158,10 +158,10 @@ class EquilibriumProcessorTest {
     SourceVersion supportedVersion = processor.getSupportedSourceVersion();
     assertNotNull(supportedVersion, "Processor must declare a supported source version");
 
-    // Should support at least Java 21 or latest
+    // Should support at least Java 17 or latest
     assertTrue(
-        supportedVersion.ordinal() >= SourceVersion.RELEASE_21.ordinal(),
-        "Processor should support Java 21 or later");
+        supportedVersion.ordinal() >= SourceVersion.RELEASE_17.ordinal(),
+        "Processor should support Java 17 or later");
   }
 
   @Test
@@ -248,9 +248,9 @@ class EquilibriumProcessorTest {
 
     assertFalse(messager.getNoteMessages().isEmpty(), "banner should emit NOTE diagnostics");
     List<TestMessage> notes = messager.getNoteMessages();
-    assertEquals("", notes.getFirst().getMessage(), "blank line precedes top rule");
+    assertEquals("", notes.get(0).getMessage(), "blank line precedes top rule");
     String topRule = notes.get(1).getMessage();
-    String bottomRule = notes.getLast().getMessage();
+    String bottomRule = notes.get(notes.size() - 1).getMessage();
     assertTrue(topRule.chars().allMatch(ch -> ch == '='));
     assertTrue(bottomRule.chars().allMatch(ch -> ch == '-'));
     assertEquals(topRule.length(), bottomRule.length());
@@ -434,7 +434,7 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getErrorMessages().size());
-    TestMessage errorMessage = fixtureMessager.getErrorMessages().getFirst();
+    TestMessage errorMessage = fixtureMessager.getErrorMessages().get(0);
     assertEquals(Diagnostic.Kind.ERROR, errorMessage.getKind());
     assertEquals("Test error with element", errorMessage.getMessage());
     assertNull(errorMessage.getElement());
@@ -451,8 +451,7 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getGeneralErrorMessages().size());
-    assertEquals(
-        "Test error without element", fixtureMessager.getGeneralErrorMessages().getFirst());
+    assertEquals("Test error without element", fixtureMessager.getGeneralErrorMessages().get(0));
   }
 
   @Test
@@ -475,7 +474,7 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getGeneralErrorMessages().size());
-    String actualMessage = fixtureMessager.getGeneralErrorMessages().getFirst();
+    String actualMessage = fixtureMessager.getGeneralErrorMessages().get(0);
     assertTrue(actualMessage.contains("Failed to process annotations"));
     assertTrue(actualMessage.contains("Test exception message"));
     assertTrue(actualMessage.contains("RuntimeException"));
@@ -493,7 +492,7 @@ class EquilibriumProcessorTest {
 
     // Assert
     assertEquals(1, fixtureMessager.getNoteMessages().size());
-    TestMessage noteMessage = fixtureMessager.getNoteMessages().getFirst();
+    TestMessage noteMessage = fixtureMessager.getNoteMessages().get(0);
     assertEquals(Diagnostic.Kind.NOTE, noteMessage.getKind());
     assertEquals("Test note message", noteMessage.getMessage());
   }
@@ -800,7 +799,7 @@ class EquilibriumProcessorTest {
     assertTrue(
         fixtureMessager
             .getErrorMessages()
-            .getFirst()
+            .get(0)
             .getMessage()
             .contains("can only be applied to classes"),
         "Error message should indicate annotations can only be applied to classes");
@@ -825,7 +824,7 @@ class EquilibriumProcessorTest {
     assertTrue(
         fixtureMessager
             .getErrorMessages()
-            .getFirst()
+            .get(0)
             .getMessage()
             .contains("can only be applied to classes"),
         "Error message should indicate annotations can only be applied to classes");
@@ -1117,7 +1116,7 @@ class EquilibriumProcessorTest {
 
     @Override
     public SourceVersion getSourceVersion() {
-      return SourceVersion.RELEASE_21;
+      return SourceVersion.RELEASE_17;
     }
 
     @Override
@@ -1195,7 +1194,7 @@ class EquilibriumProcessorTest {
 
     @Override
     public SourceVersion getSourceVersion() {
-      return SourceVersion.RELEASE_21;
+      return SourceVersion.RELEASE_17;
     }
 
     @Override
