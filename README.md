@@ -5,6 +5,7 @@
 ![Project Equilibrium summary output](docs/images/equilibrium-logo-v1.0.0.png)
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
+[![Java 17+](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk&logoColor=white)](https://github.com/soulcodingmatt/equilibrium)
 [![License](https://img.shields.io/github/license/soulcodingmatt/equilibrium)](https://github.com/soulcodingmatt/equilibrium/blob/main/LICENSE)
 
 Annotate your domain model once; Project Equilibrium’s **annotation processor** generates matching **transfer types** so names, packages, and structure stay aligned. You still map *data* however you like (constructors, MapStruct, hand-written code) — this project focuses on **generating the shapes** with compile-time validation and optional Jakarta constraints on generated members.
