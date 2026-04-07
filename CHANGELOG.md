@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-07
+
+### Changed
+
+- **Java 17 compatibility:** the processor now targets Java 17 (`@SupportedSourceVersion(RELEASE_17)`,
+  `maven.compiler.release` set to 17). Projects on Java 17 or higher can use Equilibrium.
+  Java 21-only API calls replaced with Java 17-compatible equivalents.
+- **CI/CD workflows:** GitHub Actions CI and release pipelines updated to build and test with JDK 17.
+
+### Documentation
+
+- Minimum Lombok version (**1.18.2+**) documented for users of `@GenerateDto(builder = true)`.
+- Lombok version compatibility section added to the ecosystem guide.
+- Java 17+ badge added to the README.
+- All documentation references updated from Java 21 to Java 17.
+
+---
+
 ## [1.0.0] - 2026-03-24
 
 First **stable** release as **`1.0.0`** on Maven Central (`io.github.soulcodingmatt:equilibrium:1.0.0`). The matching **Git** release tag follows the usual `v1.0.0` form. Earlier `0.x.x-RC*` tags were pre-releases; **1.0.0** is the baseline for SemVer compatibility promises.
