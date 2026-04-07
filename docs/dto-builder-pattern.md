@@ -5,7 +5,7 @@ Use this when you want **Lombok’s builder** on generated DTOs. Project Equilib
 ## Prerequisites
 
 - **`@GenerateDto(builder = true)`** on your domain (or API) class.
-- **Lombok** on your classpath and on the **annotation processor path** (see the main README). Project Equilibrium does not replace Lombok; it generates code that Lombok then expands.
+- **Lombok 1.18.2 or higher** on your classpath and on the **annotation processor path** (see the main README). Project Equilibrium does not replace Lombok; it generates code that Lombok then expands. Version 1.18.2 is the minimum because `@SuperBuilder` was introduced in that release.
 
 If you do not need builders, omit `builder` and use constructors and setters instead.
 
