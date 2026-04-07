@@ -6,7 +6,7 @@
 #   on-pre-close <issue-number>
 #   on-post-merge <issue-number>
 #   on-follow-up-closed <issue-number>
-#   sweep
+#   sweep [--thorough] [--no-fix]
 set -euo pipefail
 
 # --- Dependency checks ---
@@ -259,6 +259,81 @@ cmd_on_follow_up_closed() {
   fi
 }
 
+# --- Autofix helpers ---
+
+infer_hierarchy_label() {
+  local title="$1"
+  if echo "$title" | grep -qiP '^epic:\s'; then
+    echo "epic"
+  elif echo "$title" | grep -qiP '^story:\s'; then
+    echo "story"
+  elif echo "$title" | grep -qP '^\w+:\s'; then
+    echo "task"
+  else
+    echo ""
+  fi
+}
+
+autofix_labels() {
+  local number="$1" label_names="$2" title="$3"
+  local fixed=()
+
+  # Fix missing hierarchy label
+  local has_task has_story has_epic
+  has_task=$(echo "$label_names" | jq 'any(.[]; . == "task")')
+  has_story=$(echo "$label_names" | jq 'any(.[]; . == "story")')
+  has_epic=$(echo "$label_names" | jq 'any(.[]; . == "epic")')
+
+  if [[ "$has_task" != "true" && "$has_story" != "true" && "$has_epic" != "true" ]]; then
+    local inferred
+    inferred=$(infer_hierarchy_label "$title")
+    if [[ -n "$inferred" ]]; then
+      gh issue edit "$number" --repo "$REPO" --add-label "$inferred" >&2
+      fixed+=("added '$inferred' label")
+    fi
+  fi
+
+  # Fix missing area label — default to backend for this project
+  local has_area
+  has_area=$(echo "$label_names" | jq 'any(.[]; . == "backend" or . == "frontend" or . == "infrastructure" or . == "devops" or . == "database")')
+  if [[ "$has_area" != "true" ]]; then
+    local default_area
+    default_area=$(python3 -c "import json; print(json.load(open('$CONFIG')).get('github',{}).get('defaultAreaLabel','backend'))" 2>/dev/null || echo "backend")
+    gh issue edit "$number" --repo "$REPO" --add-label "$default_area" >&2
+    fixed+=("added '$default_area' area label")
+  fi
+
+  if [[ ${#fixed[@]} -gt 0 ]]; then
+    local joined
+    joined=$(IFS=", "; echo "${fixed[*]}")
+    echo "$joined"
+  fi
+}
+
+autofix_body() {
+  local number="$1" body="$2" has_epic="$3" has_story="$4"
+  local appended=""
+
+  if [[ "$has_epic" == "true" ]]; then
+    if ! echo "$body" | grep -qiP '(^|\n)\s*(goal|objective)\s*:'; then
+      appended+="\n\n## Goal\n\n_TODO: Define the goal of this epic._"
+    fi
+    if ! echo "$body" | grep -qiP '(^|\n)\s*success\s*criteria\s*:'; then
+      appended+="\n\n## Success Criteria\n\n_TODO: Define success criteria for this epic._"
+    fi
+  elif [[ "$has_story" == "true" ]]; then
+    if ! echo "$body" | grep -qiP '(^|\n)\s*acceptance\s*criteria\s*:'; then
+      appended+="\n\n## Acceptance Criteria\n\n_TODO: Define acceptance criteria for this story._"
+    fi
+  fi
+
+  if [[ -n "$appended" ]]; then
+    local new_body="${body}$(echo -e "$appended")"
+    gh issue edit "$number" --repo "$REPO" --body "$new_body" >&2
+    echo "appended missing body sections"
+  fi
+}
+
 cmd_sweep() {
   local issues_found=false
 
@@ -377,9 +452,10 @@ cmd_sweep() {
 
   echo "  Checked $nfc_count closed issue(s) with needs-follow-up" >&2
 
-  # --- Step 4: Comprehensive compliance check ---
+  # --- Step 4: Comprehensive compliance check (with optional autofix) ---
 
   local thorough="${1:-false}"
+  local autofix="${2:-true}"
 
   if [[ "$thorough" == "true" ]]; then
     echo "Step 4: Thorough compliance check (all open issues)..." >&2
@@ -387,11 +463,17 @@ cmd_sweep() {
     echo "Step 4: Checking unchecked issues for compliance..." >&2
   fi
 
+  if [[ "$autofix" == "true" ]]; then
+    echo "  Autofix enabled — will attempt to fix non-compliant issues" >&2
+  fi
+
   local all_open_issues
   all_open_issues=$(gh issue list --repo "$REPO" --state open \
     --json number,title,labels,body --limit 500 2>/dev/null) || all_open_issues="[]"
 
   local non_compliant=()
+  local auto_fixed=()
+  local needs_refinement=()
   local checked_count=0
   local skipped_count=0
 
@@ -413,6 +495,7 @@ cmd_sweep() {
     checked_count=$((checked_count + 1))
 
     local issues_for_this=()
+    local fixes_for_this=()
 
     # --- Check 1: Hierarchy label ---
     local has_task has_story has_epic
@@ -442,37 +525,126 @@ cmd_sweep() {
     local body_len=${#body}
 
     if [[ "$has_epic" == "true" ]]; then
-      # Epic: must have Goal section
       if ! echo "$body" | grep -qiP '(^|\n)\s*(goal|objective)\s*:'; then
         issues_for_this+=("epic missing Goal section")
       fi
-      # Epic: must have Success Criteria
       if ! echo "$body" | grep -qiP '(^|\n)\s*success\s*criteria\s*:'; then
         issues_for_this+=("epic missing Success Criteria")
       fi
     elif [[ "$has_story" == "true" ]]; then
-      # Story: must have As a / I want / So that
       if ! echo "$body" | grep -qiP 'as\s+a\s'; then
         issues_for_this+=("story missing 'As a' user statement")
       fi
-      # Story: must have Acceptance Criteria
       if ! echo "$body" | grep -qiP '(^|\n)\s*acceptance\s*criteria\s*:'; then
         issues_for_this+=("story missing Acceptance Criteria")
       fi
     elif [[ "$has_task" == "true" ]]; then
-      # Task: must have a meaningful description (>50 chars)
       if [[ "$body_len" -lt 50 ]]; then
         issues_for_this+=("task has empty or too short description")
       fi
     fi
 
-    # No hierarchy label = can't check body format, already flagged
     if [[ "$has_task" != "true" && "$has_story" != "true" && "$has_epic" != "true" && "$body_len" -lt 20 ]]; then
       issues_for_this+=("empty or near-empty body")
     fi
 
+    # --- Detect content gaps needing AI refinement ---
+    local needs_content_refinement=false
+
+    if [[ "$has_epic" == "true" ]]; then
+      # Epic with TODO stubs or missing substantive content
+      if echo "$body" | grep -qiP '_TODO:'; then
+        needs_content_refinement=true
+      fi
+    elif [[ "$has_story" == "true" ]]; then
+      # Story with TODO stubs or missing substantive content
+      if echo "$body" | grep -qiP '_TODO:'; then
+        needs_content_refinement=true
+      fi
+    elif [[ "$has_task" == "true" ]]; then
+      # Task with thin description
+      if [[ "$body_len" -lt 50 ]]; then
+        needs_content_refinement=true
+      fi
+    fi
+
+    # Also flag issues with no hierarchy (can't assess body) and very thin content
+    if [[ "$has_task" != "true" && "$has_story" != "true" && "$has_epic" != "true" && "$body_len" -lt 100 ]]; then
+      needs_content_refinement=true
+    fi
+
+    # --- Autofix if enabled ---
+    if [[ "$autofix" == "true" && ${#issues_for_this[@]} -gt 0 ]]; then
+      # Fix labels
+      local label_fix
+      label_fix=$(autofix_labels "$number" "$label_names" "$title")
+      if [[ -n "$label_fix" ]]; then
+        fixes_for_this+=("$label_fix")
+        # Re-read labels after fix to get updated hierarchy for body fix
+        label_names=$(gh api "repos/${REPO}/issues/${number}" --jq '[.labels[].name]' 2>/dev/null || echo "$label_names")
+        has_task=$(echo "$label_names" | jq 'any(.[]; . == "task")')
+        has_story=$(echo "$label_names" | jq 'any(.[]; . == "story")')
+        has_epic=$(echo "$label_names" | jq 'any(.[]; . == "epic")')
+      fi
+
+      # Fix body
+      local body_fix
+      body_fix=$(autofix_body "$number" "$body" "$has_epic" "$has_story")
+      if [[ -n "$body_fix" ]]; then
+        fixes_for_this+=("$body_fix")
+      fi
+    fi
+
+    # --- Track issues needing content refinement ---
+    # Body stubs just added by autofix also need refinement
+    if [[ "$autofix" == "true" && -n "${body_fix:-}" ]]; then
+      needs_content_refinement=true
+    fi
+
+    if [[ "$needs_content_refinement" == true ]]; then
+      needs_refinement+=("$number")
+    fi
+
     # --- Collect results ---
-    if [[ ${#issues_for_this[@]} -gt 0 ]]; then
+    if [[ ${#fixes_for_this[@]} -gt 0 ]]; then
+      local fix_joined
+      fix_joined=$(IFS=", "; echo "${fixes_for_this[*]}")
+      auto_fixed+=("#$number [fixed: $fix_joined]: $title")
+
+      # Re-check remaining issues after fix — remove issues that were resolved
+      local remaining_issues=()
+      for issue in "${issues_for_this[@]}"; do
+        case "$issue" in
+          "missing hierarchy label")
+            if [[ "$has_task" != "true" && "$has_story" != "true" && "$has_epic" != "true" ]]; then
+              remaining_issues+=("$issue")
+            fi
+            ;;
+          "missing area label")
+            local area_now
+            area_now=$(echo "$label_names" | jq 'any(.[]; . == "backend" or . == "frontend" or . == "infrastructure" or . == "devops" or . == "database")')
+            if [[ "$area_now" != "true" ]]; then
+              remaining_issues+=("$issue")
+            fi
+            ;;
+          *"Goal"*|*"Success Criteria"*|*"Acceptance Criteria"*)
+            # Body sections were appended if autofix_body ran
+            if [[ -z "$body_fix" ]]; then
+              remaining_issues+=("$issue")
+            fi
+            ;;
+          *)
+            remaining_issues+=("$issue")
+            ;;
+        esac
+      done
+
+      if [[ ${#remaining_issues[@]} -gt 0 ]]; then
+        local joined
+        joined=$(IFS="; "; echo "${remaining_issues[*]}")
+        non_compliant+=("#$number [$joined]: $title")
+      fi
+    elif [[ ${#issues_for_this[@]} -gt 0 ]]; then
       local joined
       joined=$(IFS="; "; echo "${issues_for_this[*]}")
       non_compliant+=("#$number [$joined]: $title")
@@ -483,14 +655,29 @@ cmd_sweep() {
     echo "  Skipped $skipped_count already-checked issue(s)" >&2
   fi
 
+  if [[ ${#auto_fixed[@]} -gt 0 ]]; then
+    echo "  Auto-fixed ${#auto_fixed[@]} issue(s):" >&2
+    for item in "${auto_fixed[@]}"; do
+      echo "    - $item" >&2
+    done
+  fi
+
   if [[ ${#non_compliant[@]} -gt 0 ]]; then
-    echo "  Found ${#non_compliant[@]} non-compliant issue(s) out of $checked_count checked:" >&2
+    echo "  Found ${#non_compliant[@]} non-compliant issue(s) out of $checked_count checked (require manual fix):" >&2
     for item in "${non_compliant[@]}"; do
       echo "    - $item" >&2
     done
     echo "ISSUE_HYGIENE_REQUIRED"
   else
     echo "  All $checked_count checked issue(s) are compliant" >&2
+  fi
+
+  # --- Signal issues needing AI-powered content refinement ---
+  if [[ ${#needs_refinement[@]} -gt 0 ]]; then
+    local refinement_list
+    refinement_list=$(IFS=","; echo "${needs_refinement[*]}")
+    echo "  ${#needs_refinement[@]} issue(s) have thin or placeholder content and need refinement" >&2
+    echo "ISSUE_REFINEMENT_NEEDED:$refinement_list"
   fi
 }
 
@@ -504,7 +691,7 @@ if [[ $# -lt 1 ]]; then
   echo "  on-pre-close <issue-number>" >&2
   echo "  on-post-merge <issue-number>" >&2
   echo "  on-follow-up-closed <issue-number>" >&2
-  echo "  sweep [--thorough]" >&2
+  echo "  sweep [--thorough] [--no-fix]" >&2
   exit 1
 fi
 
@@ -526,10 +713,14 @@ case "$SUBCOMMAND" in
     ;;
   sweep)
     thorough_flag="false"
-    if [[ "${1:-}" == "--thorough" ]]; then
-      thorough_flag="true"
-    fi
-    cmd_sweep "$thorough_flag"
+    autofix_flag="true"
+    for arg in "$@"; do
+      case "$arg" in
+        --thorough) thorough_flag="true" ;;
+        --no-fix)   autofix_flag="false" ;;
+      esac
+    done
+    cmd_sweep "$thorough_flag" "$autofix_flag"
     ;;
   *)
     echo "Unknown subcommand: $SUBCOMMAND" >&2
