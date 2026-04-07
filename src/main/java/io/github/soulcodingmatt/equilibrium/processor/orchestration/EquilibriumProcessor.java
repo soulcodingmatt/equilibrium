@@ -62,7 +62,7 @@ import javax.tools.Diagnostic;
   "jakarta.validation.constraints.PastOrPresent",
   "jakarta.validation.constraints.FutureOrPresent"
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SupportedOptions({
   "equilibrium.dto.package",
   "equilibrium.dto.postfix",

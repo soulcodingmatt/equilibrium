@@ -17,7 +17,7 @@ Project Equilibrium generates those types at compile time from your annotated do
 
 - You have a domain model you annotate once and one or more layers (API, persistence, messaging) that need derived types from it
 - You want fast, predictable builds with plain generated Java sources you can read
-- You are comfortable with annotation-driven configuration and Java 21+
+- You are comfortable with annotation-driven configuration and Java 17+
 
 ## When to reach for something else
 

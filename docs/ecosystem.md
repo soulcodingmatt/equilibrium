@@ -17,6 +17,14 @@ Use [MapStruct](https://mapstruct.org/) `@Mapper` interfaces to map between doma
 
 Different modules can standardize on different pieces: for example, generated DTOs in an API module and MapStruct mappers in an adapter layer.
 
+## Lombok version compatibility
+
+Project Equilibrium has **no runtime dependency** on Lombok. When you enable `@GenerateDto(builder = true)`, the processor emits `@SuperBuilder` and `@Builder.Default` annotations into generated source code. Your project's Lombok then expands these during its own annotation processing pass.
+
+- **Minimum Lombok version for builders:** **1.18.2** (`@SuperBuilder` was introduced in this release)
+- **No maximum version constraint** — Equilibrium emits standard Lombok annotations as string literals, so any newer Lombok version that supports `@SuperBuilder` will work
+- **Without builders:** Lombok is entirely optional; Equilibrium has no Lombok dependency
+
 ## Related guides
 
 - [DTO builder pattern](dto-builder-pattern.md) when using Lombok `@SuperBuilder` on generated DTOs

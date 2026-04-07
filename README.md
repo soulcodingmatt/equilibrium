@@ -5,6 +5,7 @@
 ![Project Equilibrium summary output](docs/images/equilibrium-logo-v1.0.0.png)
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.soulcodingmatt/equilibrium.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.soulcodingmatt/equilibrium)
+[![Java 17+](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk&logoColor=white)](https://github.com/soulcodingmatt/equilibrium)
 [![License](https://img.shields.io/github/license/soulcodingmatt/equilibrium)](https://github.com/soulcodingmatt/equilibrium/blob/main/LICENSE)
 
 Annotate your domain model once; Project Equilibrium’s **annotation processor** generates matching **transfer types** so names, packages, and structure stay aligned. You still map *data* however you like (constructors, MapStruct, hand-written code) — this project focuses on **generating the shapes** with compile-time validation and optional Jakarta constraints on generated members.
@@ -106,7 +107,7 @@ You can use this annotation processor in **commercial or closed-source projects*
 
 ## Requirements
 
-- **Java 21** or higher (the processor targets the Java 21 language level)
+- **Java 17** or higher (the processor targets the Java 17 language level)
 - A build tool that can **resolve dependencies** from Maven Central (or your repository) and run **annotation processing** (for example Maven 3.x or Gradle 8.x)
 
 Older tool versions may work but are not validated. **Building Project Equilibrium** uses Maven in this repository; consuming projects do not need to run this project’s `pom.xml`.
